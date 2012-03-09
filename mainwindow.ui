@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>739</width>
-    <height>674</height>
+    <width>830</width>
+    <height>759</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,55 +20,105 @@
    <bool>false</bool>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QHBoxLayout" name="horizontalLayout">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>1</verstretch>
+    </sizepolicy>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout_4">
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
+     <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <widget class="QPlainTextEdit" name="plainTextEdit">
-        <property name="font">
-         <font>
-          <family>Courier New</family>
-          <pointsize>9</pointsize>
-          <weight>75</weight>
-          <bold>true</bold>
-         </font>
-        </property>
-       </widget>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QLabel" name="label_7">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>&lt;b&gt;Population:&lt;/b&gt;</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="LabelVis">
+            <property name="text">
+             <string> Coding Genome</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QGraphicsView" name="GV_Population">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>400</width>
+            <height>400</height>
+           </size>
+          </property>
+          <property name="autoFillBackground">
+           <bool>false</bool>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Box</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Plain</enum>
+          </property>
+          <property name="verticalScrollBarPolicy">
+           <enum>Qt::ScrollBarAsNeeded</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
       <item>
-       <layout class="QGridLayout" name="gridLayout_2">
-        <item row="0" column="0">
-         <widget class="QLabel" name="LabelIteration">
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QLabel" name="label_2">
           <property name="text">
-           <string>Iteration: 0</string>
+           <string>&lt;b&gt;Environment:&lt;/b&gt;</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
           </property>
          </widget>
         </item>
-        <item row="0" column="1">
-         <widget class="QLabel" name="LabelCritters">
-          <property name="text">
-           <string>Critters: 1</string>
+        <item>
+         <widget class="QGraphicsView" name="GV_Environment">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
           </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="LabelEnvironment">
-          <property name="text">
-           <string>Environment: [Not defined]</string>
+          <property name="minimumSize">
+           <size>
+            <width>400</width>
+            <height>400</height>
+           </size>
           </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLabel" name="LabelFitness">
-          <property name="text">
-           <string>Mean Fit: -</string>
+          <property name="frameShape">
+           <enum>QFrame::Box</enum>
           </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QLabel" name="LabelSpeed">
-          <property name="text">
-           <string>ms/iteration: -</string>
+          <property name="frameShadow">
+           <enum>QFrame::Plain</enum>
           </property>
          </widget>
         </item>
@@ -77,43 +127,135 @@
      </layout>
     </item>
     <item>
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <item>
-       <widget class="QLabel" name="LabelVis">
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="iterationLabel">
         <property name="text">
-         <string>Population: Coding Genome</string>
+         <string>&lt;b&gt;Iteration:&lt;/b&gt;</string>
         </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
+        <property name="textFormat">
+         <enum>Qt::AutoText</enum>
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QGraphicsView" name="GV_Population"/>
-      </item>
-      <item>
-       <widget class="QLabel" name="label_2">
+      <item row="0" column="1">
+       <widget class="QLabel" name="LabelIteration">
         <property name="text">
-         <string>Environment</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
+         <string>0</string>
         </property>
        </widget>
       </item>
-      <item>
-       <widget class="QGraphicsView" name="GV_Environment"/>
+      <item row="0" column="2">
+       <widget class="QLabel" name="crittersLabel">
+        <property name="text">
+         <string>&lt;b&gt;Critters:&lt;/b&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="QLabel" name="LabelCritters">
+        <property name="text">
+         <string>1</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4">
+       <widget class="QLabel" name="msPerIterationLabel">
+        <property name="text">
+         <string>&lt;b&gt;ms/iteration:&lt;/b&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="5">
+       <widget class="QLabel" name="LabelSpeed">
+        <property name="text">
+         <string>-</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="6">
+       <widget class="QLabel" name="meanFitLabel">
+        <property name="text">
+         <string>&lt;b&gt;Mean Fit:&lt;/b&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="7">
+       <widget class="QLabel" name="LabelFitness">
+        <property name="text">
+         <string>-</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="8">
+       <widget class="QLabel" name="environmentLabel">
+        <property name="text">
+         <string>&lt;b&gt;Environment:&lt;/b&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="9">
+       <widget class="QLabel" name="LabelEnvironment">
+        <property name="text">
+         <string>[Not defined]</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
+    <item>
+     <widget class="Line" name="line">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>&lt;b&gt;Report Viewer:&lt;/b&gt;</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPlainTextEdit" name="plainTextEdit">
+      <property name="font">
+       <font>
+        <family>Courier New</family>
+        <pointsize>9</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+     </widget>
+    </item>
    </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QDockWidget" name="genomeComparisonDock">
+   <property name="minimumSize">
+    <size>
+     <width>250</width>
+     <height>150</height>
+    </size>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>Genome Comparison</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QWidget" name="genomeComparisonContent"/>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>739</width>
+     <width>830</width>
      <height>21</height>
     </rect>
    </property>
@@ -131,16 +273,16 @@
     <addaction name="actionStart_Sim"/>
     <addaction name="actionPause_Sim"/>
     <addaction name="actionRun_for"/>
-    <addaction name="actionSettings"/>
-    <addaction name="actionEnvironment_Files"/>
+    <addaction name="separator"/>
     <addaction name="actionSave"/>
     <addaction name="actionLoad"/>
+    <addaction name="separator"/>
+    <addaction name="actionSettings"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
-     <string>View</string>
+     <string>Population</string>
     </property>
-    <addaction name="actionRefresh_Rate"/>
     <addaction name="actionPopulation_Count"/>
     <addaction name="actionMean_fitness"/>
     <addaction name="actionGenome_as_colour"/>
@@ -150,6 +292,8 @@
     <addaction name="actionBreed_Fails"/>
     <addaction name="actionSettles"/>
     <addaction name="actionSettle_Fails"/>
+    <addaction name="separator"/>
+    <addaction name="actionRefresh_Rate"/>
    </widget>
    <widget class="QMenu" name="menuTest_Commands">
     <property name="title">
@@ -167,6 +311,8 @@
     <addaction name="actionSorted_Summary"/>
     <addaction name="actionGroups"/>
     <addaction name="actionGroups2"/>
+    <addaction name="separator"/>
+    <addaction name="actionGenomeComparison"/>
    </widget>
    <widget class="QMenu" name="menuEnvironment">
     <property name="title">
@@ -176,14 +322,15 @@
     <addaction name="actionOnce"/>
     <addaction name="actionLoop"/>
     <addaction name="actionBounce"/>
+    <addaction name="separator"/>
+    <addaction name="actionEnvironment_Files"/>
    </widget>
    <addaction name="menuCommands"/>
    <addaction name="menuView"/>
+   <addaction name="menuEnvironment"/>
    <addaction name="menuReports"/>
    <addaction name="menuTest_Commands"/>
-   <addaction name="menuEnvironment"/>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
   <action name="actionReseed">
    <property name="text">
     <string>Reset Critters</string>
@@ -451,8 +598,52 @@
     <string>Static</string>
    </property>
   </action>
+  <action name="actionInformation">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Information</string>
+   </property>
+  </action>
+  <action name="actionGenomeComparison">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Genome Comparison</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <tabstops>
+  <tabstop>GV_Population</tabstop>
+  <tabstop>GV_Environment</tabstop>
+  <tabstop>plainTextEdit</tabstop>
+ </tabstops>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>actionGenomeComparison</sender>
+   <signal>triggered(bool)</signal>
+   <receiver>genomeComparisonDock</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>369</x>
+     <y>588</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

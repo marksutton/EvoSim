@@ -2,10 +2,13 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QActionGroup>
+
 #include "simmanager.h"
 #include "populationscene.h"
 #include "environmentscene.h"
-#include <QActionGroup>
+#include "genomecomparison.h"
+
 
 namespace Ui {
     class MainWindow;
@@ -18,6 +21,8 @@ public:
     ~MainWindow();
     void RefreshReport();
 
+    GenomeComparison *genoneComparison; //---- ARTS: Add Genome Comparison UI
+    void genomeComparisonAdd();
 
 protected:
     void changeEvent(QEvent *e);
