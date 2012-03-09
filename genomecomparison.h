@@ -23,10 +23,14 @@ public:
     bool addGenomeCritter(Critter critter, quint8 *environment);
 
 private slots:
+    //---- Actions
     bool resetTable();
     bool deleteGenome();
+    bool compareGenomes();
+    void scrollHorizontal(int y);
 
 private:
+    //---- Tables
     bool renderTable();
     void insertRow(
             int row,
@@ -42,17 +46,20 @@ private:
             int nonCodeG,
             int nonCodeB,
             int fitness,
-            QTableWidget *table);
+            QTableWidget *table,
+            QString comparisonMask = QString(""));
+
+    //---- Buttons
     void buttonUpdate();
     void buttonActions();
+
+    //---- Table Functions
     QList<int> isGenomeChecked();
 
-    QList< QMap<QString,QString> > genomeList;
-    QList< QMap<QString,QString> > compareList;
+    //---- Vars
+    QList< QMap<QString,QString> > genomeList, compareList;
+    QColor first32, last32, spacerCol, highlight;
 
-    QColor first32;
-    QColor last32;
-    QColor spacerCol;
 };
 
 #endif // GENOMECOMPARISON_H
