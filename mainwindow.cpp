@@ -23,6 +23,13 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    //---- ARTS: Add Genome Comparison UI
+    ui->genomeComparisonDock->hide();
+    genoneComparison = new GenomeComparison;
+    QVBoxLayout *genomeLayout = new QVBoxLayout;
+    genomeLayout->addWidget(genoneComparison);
+    ui->genomeComparisonContent->setLayout(genomeLayout);
+
     viewgroup = new QActionGroup(this);
     // These actions were created via qt designer
     viewgroup->addAction(ui->actionPopulation_Count);
@@ -240,15 +247,15 @@ void MainWindow::Report()
 
     //now back to sprintf for convenience
     if (CurrentEnvFile>=EnvFiles.count())
-    out.sprintf("Environment: Finished (%d)",EnvFiles.count());
+    out.sprintf("Finished (%d)",EnvFiles.count());
     else
-    out.sprintf("Environment: %d/%d",CurrentEnvFile+1,EnvFiles.count());
+    out.sprintf("%d/%d",CurrentEnvFile+1,EnvFiles.count());
     ui->LabelEnvironment->setText(out);
-    out.sprintf("Fitness: %.2f%",t);
+    out.sprintf("%.2f",t);
     ui->LabelFitness->setText(out);
-    out.sprintf("ms/iteration: %.2f",atime);
+    out.sprintf("%.2f",atime);
     ui->LabelSpeed->setText(out);
-    out.sprintf("Critters: %d",AliveCount);
+    out.sprintf("%d",AliveCount);
     ui->LabelCritters->setText(out);
 
     RefreshReport();
@@ -343,35 +350,35 @@ void MainWindow::RefreshReport()
 void MainWindow::UpdateTitles()
 {
     if (ui->actionPopulation_Count->isChecked())
-        ui->LabelVis->setText("Population: Population Count");
+        ui->LabelVis->setText("Population Count");
 
     if (ui->actionMean_fitness->isChecked())
-        ui->LabelVis->setText("Population: Mean Fitness");
+        ui->LabelVis->setText("Mean Fitness");
 
 
     if (ui->actionGenome_as_colour->isChecked())
-        ui->LabelVis->setText("Population: Coding Genome bitcount as colour (top critter)");
+        ui->LabelVis->setText("Coding Genome bitcount as colour (top critter)");
 
     if (ui->actionNonCoding_genome_as_colour->isChecked())
-        ui->LabelVis->setText("Population: Non-Coding Genome bitcount as colour (top critter)");
+        ui->LabelVis->setText("Non-Coding Genome bitcount as colour (top critter)");
 
     if (ui->actionGene_Frequencies_012->isChecked())
-        ui->LabelVis->setText("Population: Frequences genes 0,1,2 (all critters)");
+        ui->LabelVis->setText("Frequences genes 0,1,2 (all critters)");
 
     if (ui->actionBreed_Attempts->isChecked())
-        ui->LabelVis->setText("Population: Breed Attempts");
+        ui->LabelVis->setText("Breed Attempts");
 
     if (ui->actionBreed_Fails->isChecked())
-        ui->LabelVis->setText("Population: Breed Fails");
+        ui->LabelVis->setText("Breed Fails");
 
     if (ui->actionSettles->isChecked())
-        ui->LabelVis->setText("Population: Successful Settles");
+        ui->LabelVis->setText("Successful Settles");
 
     if (ui->actionSettle_Fails->isChecked())
-        ui->LabelVis->setText("Population: Breed Fails (red) and Settle Fails (green)");
+        ui->LabelVis->setText("Breed Fails (red) and Settle Fails (green)");
 
     if (ui->actionBreed_Fails_2->isChecked())
-        ui->LabelVis->setText("Population: Breed Fails 2 (unused?)");
+        ui->LabelVis->setText("Breed Fails 2 (unused?)");
 }
 
 void MainWindow::RefreshPopulations()
@@ -1038,4 +1045,23 @@ void MainWindow::on_actionLoad_triggered()
     infile.close();
     NextRefresh=0;
     Report();
+}
+
+//---- ARTS: Genome Comparison UI
+bool MainWindow::genomeComparisonAdd()
+{
+    int x=popscene->selectedx;
+    int y=popscene->selectedy;
+
+    //---- Get genome colour
+    if (totalfit[x][y]!=0) {
+        for (int c=0; c<slotsPerSq; c++)
+        {
+            if (critters[x][y][c].age>0){
+                genoneComparison->addGenomeCritter(critters[x][y][c],environment[x][y]);
+                return true;
+            }
+        }       
+    }
+    return false;
 }

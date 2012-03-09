@@ -12,7 +12,8 @@ SOURCES += main.cpp \
     environmentscene.cpp \
     settings.cpp \
     sortablegenome.cpp \
-    analyser.cpp
+    analyser.cpp \
+    genomecomparison.cpp
 HEADERS += mainwindow.h \
     simmanager.h \
     critter.h \
@@ -20,9 +21,11 @@ HEADERS += mainwindow.h \
     environmentscene.h \
     settings.h \
     sortablegenome.h \
-    analyser.h
+    analyser.h \
+    genomecomparison.h
 FORMS += mainwindow.ui \
-    dialog.ui
+    dialog.ui \
+    genomecomparison.ui
 
 OTHER_FILES += \
     README.TXT \
