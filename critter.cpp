@@ -11,8 +11,9 @@ Critter::Critter()
     genome=0;
     age=0;  //this is the tested flag for dead
     fitness=0;
-    energy=1;
     energy=0;
+
+    //'Fossil Record' branch
 }
 
 void Critter::initialise(quint64 gen, quint8 *env, int x, int y, int z)
