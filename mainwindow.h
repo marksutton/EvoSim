@@ -22,7 +22,7 @@ public:
     void RefreshReport();
 
     GenomeComparison *genoneComparison; //---- ARTS: Add Genome Comparison UI
-    void genomeComparisonAdd();
+    bool genomeComparisonAdd();
 
 protected:
     void changeEvent(QEvent *e);

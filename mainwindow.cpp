@@ -1048,59 +1048,20 @@ void MainWindow::on_actionLoad_triggered()
 }
 
 //---- ARTS: Genome Comparison UI
-void MainWindow::genomeComparisonAdd()
+bool MainWindow::genomeComparisonAdd()
 {
-    int n=popscene->selectedx;
-    int m=popscene->selectedy;
-    quint32 genome;
-    quint32 b;
-    quint32 g;
-    quint32 r;
-    QColor genomeColour;
-    QColor nonCodeColour;
-    QColor envColour;
-    QString genomeStr;
-    int fitness = 0;
+    int x=popscene->selectedx;
+    int y=popscene->selectedy;
 
     //---- Get genome colour
-    if (totalfit[n][m]==0) {
-        genomeColour = QColor(0, 0, 0);
-    } else {
+    if (totalfit[x][y]!=0) {
         for (int c=0; c<slotsPerSq; c++)
         {
-            if (critters[n][m][c].age>0){
-
-                fitness = critters[n][m][c].fitness;
-
-                //---- Genome
-                for (int j=0; j<64; j++)
-                    if (tweakers[j] & critters[n][m][c].genome) genomeStr.append("1"); else genomeStr.append("0");
-                //---- Genome Colour
-                genome= (quint32)(critters[n][m][c].genome & ((quint64)65536*(quint64)65536-(quint64)1));
-                b = bitcounts[genome & 2047] * 23;
-                genome /=2048;
-                g = bitcounts[genome & 2047] * 23;
-                genome /=2048;
-                r = bitcounts[genome] * 25;
-                genomeColour = QColor(r, g, b);
-
-                //---- Non coding Colour
-                genome= (quint32)(critters[n][m][c].genome / ((quint64)65536*(quint64)65536));
-                b = bitcounts[genome & 2047] * 23;
-                genome /=2048;
-                g = bitcounts[genome & 2047] * 23;
-                genome /=2048;
-                r = bitcounts[genome] * 25;
-                nonCodeColour = QColor(r, g, b);
-
-
-                envColour = QColor(environment[n][m][0],environment[n][m][1],environment[n][m][2]);
-                break;
+            if (critters[x][y][c].age>0){
+                genoneComparison->addGenomeCritter(critters[x][y][c],environment[x][y]);
+                return true;
             }
-        }
+        }       
     }
-
-
-    if (genomeStr.length() != 0)
-        genoneComparison->setGenome(genomeStr,envColour,genomeColour,nonCodeColour,fitness);
+    return false;
 }

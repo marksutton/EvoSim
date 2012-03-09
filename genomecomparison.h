@@ -2,7 +2,9 @@
 #define GENOMECOMPARISON_H
 
 #include <QWidget>
-#include <QRgb>
+#include <QTableWidget>
+
+#include "simmanager.h"
 
 namespace Ui {
 class GenomeComparison;
@@ -17,13 +19,40 @@ public:
     ~GenomeComparison();
     Ui::GenomeComparison *ui;
 
-    //---- Setters
-    bool setGenome(QString genomeStr, QColor envColour, QColor genomeColour, QColor nonCodeColour, int fitness);
+    //---- Add to Table
+    bool addGenomeCritter(Critter critter, quint8 *environment);
 
+private slots:
+    bool resetTable();
+    bool deleteGenome();
 
 private:
-    QList<QString> genomeList;
-    QList<int> fitnessList;
+    bool renderTable();
+    void insertRow(
+            int row,
+            QString genomeName,
+            QString genomeStr,
+            int environmentR,
+            int environmentG,
+            int environmentB,
+            int genomeR,
+            int genomeG,
+            int genomeB,
+            int nonCodeR,
+            int nonCodeG,
+            int nonCodeB,
+            int fitness,
+            QTableWidget *table);
+    void buttonUpdate();
+    void buttonActions();
+    QList<int> isGenomeChecked();
+
+    QList< QMap<QString,QString> > genomeList;
+    QList< QMap<QString,QString> > compareList;
+
+    QColor first32;
+    QColor last32;
+    QColor spacerCol;
 };
 
 #endif // GENOMECOMPARISON_H
