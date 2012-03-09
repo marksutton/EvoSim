@@ -27,7 +27,7 @@ private slots:
     bool resetTable();
     bool deleteGenome();
     bool compareGenomes();
-    void scrollHorizontal(int y);
+    void setAuto(bool toggle);
 
 private:
     //---- Tables
@@ -59,6 +59,7 @@ private:
     //---- Vars
     QList< QMap<QString,QString> > genomeList, compareList;
     QColor first32, last32, spacerCol, highlight;
+    bool autoComparison;
 
 };
 
