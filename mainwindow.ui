@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>830</width>
+    <width>981</width>
     <height>759</height>
    </rect>
   </property>
@@ -255,7 +255,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>830</width>
+     <width>981</width>
      <height>21</height>
     </rect>
    </property>
@@ -556,6 +556,9 @@
   <action name="actionSave">
    <property name="text">
     <string>Save...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
    </property>
   </action>
   <action name="actionLoad">
