@@ -14,6 +14,9 @@ GenomeComparison::GenomeComparison(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    //---- Set Auto Comapare
+    autoComparison = true;
+
     //---- Set Column Colours
     first32 = QColor(51, 153, 51);
     last32 = QColor(51, 51, 153);
@@ -55,14 +58,9 @@ GenomeComparison::~GenomeComparison()
 void GenomeComparison::buttonActions()
 {
     connect(ui->compareButton, SIGNAL(pressed()), this, SLOT(compareGenomes()));
+    connect(ui->autoButton, SIGNAL(toggled(bool)), this, SLOT(setAuto(bool)));
     connect(ui->resetButton, SIGNAL(pressed()), this, SLOT(resetTable()));
     connect(ui->deleteButton, SIGNAL(pressed()), this, SLOT(deleteGenome()));
-}
-
-void GenomeComparison::scrollHorizontal(int y)
-{
-    qDebug() << "Scroll = " << y;
-    ui->compareTableWidget->scroll(0,y);
 }
 
 void GenomeComparison::buttonUpdate()
@@ -84,7 +82,6 @@ void GenomeComparison::buttonUpdate()
 //---------------------------------------------------------------------------*/
 
 bool GenomeComparison::renderTable(){
-    qDebug() << "Rendering Table....";
     ui->genomeTableWidget->hide();
     ui->genomeTableWidget->clear();
     ui->genomeTableWidget->setRowCount(0);
@@ -124,13 +121,11 @@ bool GenomeComparison::renderTable(){
 
     //----- Add rows if genomeList.count() != 0
     int numGenomes = genomeList.count();
-    qDebug() << "Num Genomes to add to table = " << numGenomes;
     if (numGenomes != 0) {
         for (int i=0; i<numGenomes; i++)
         {
 
             QMap<QString,QString> genomeListMap = genomeList.at(i);
-            qDebug() << "Add to table at Row(" << i << ")";
             insertRow(
                         i,
                         genomeListMap["name"],
@@ -177,7 +172,7 @@ void GenomeComparison::insertRow(
     QColor genomeColour = QColor(genomeR,genomeG,genomeB);
     QColor nonCodeColour = QColor(nonCodeR,nonCodeG,nonCodeB);
 
-    if (comparisonMask.length() == 0) {
+    if (table == ui->genomeTableWidget) {
         QTableWidgetItem *newItem = new QTableWidgetItem();
         newItem->setCheckState(Qt::Unchecked);
         newItem->setTextAlignment(Qt:: AlignCenter);
@@ -305,24 +300,59 @@ bool GenomeComparison::addGenomeCritter(Critter critter, quint8 *environment)
     genomeListMap.insert("nonCodeColorB",QString("%1").arg(nonCodeB));
     genomeListMap.insert("fitness",QString("%1").arg(fitness));
     genomeList.append(genomeListMap);
-    qDebug() << "Add Genome Map = " << genomeListMap;
 
     //---- Add to table
-    insertRow(
-                row,
-                genomeListMap["name"],
-                genomeListMap["genome"],
-                genomeListMap["envColorR"].toInt(),
-                genomeListMap["envColorG"].toInt(),
-                genomeListMap["envColorB"].toInt(),
-                genomeListMap["genomeColorR"].toInt(),
-                genomeListMap["genomeColorG"].toInt(),
-                genomeListMap["genomeColorB"].toInt(),
-                genomeListMap["nonCodeColorR"].toInt(),
-                genomeListMap["nonCodeColorG"].toInt(),
-                genomeListMap["nonCodeColorB"].toInt(),
-                genomeListMap["fitness"].toInt(),
-                ui->genomeTableWidget);
+    if (autoComparison == true && row!=0) {
+        //---- Do comparison with last genome...
+        QMap<QString,QString> genomeListMapA = genomeList[row-1];
+        QMap<QString,QString> genomeListMapB = genomeList[row];
+        QString compareMask;
+
+        //---- Create Masks
+        for (int i=0; i<64; i++)
+        {
+            if (genomeListMapA["genome"].at(i) == genomeListMapB["genome"].at(i)) {
+                //---- Same bit
+                compareMask.append("0");
+            } else {
+                compareMask.append("1");
+            }
+        }
+
+        insertRow(
+                    row,
+                    genomeListMapB["name"],
+                    genomeListMapB["genome"],
+                    genomeListMapB["envColorR"].toInt(),
+                    genomeListMapB["envColorG"].toInt(),
+                    genomeListMapB["envColorB"].toInt(),
+                    genomeListMapB["genomeColorR"].toInt(),
+                    genomeListMapB["genomeColorG"].toInt(),
+                    genomeListMapB["genomeColorB"].toInt(),
+                    genomeListMapB["nonCodeColorR"].toInt(),
+                    genomeListMapB["nonCodeColorG"].toInt(),
+                    genomeListMapB["nonCodeColorB"].toInt(),
+                    genomeListMapB["fitness"].toInt(),
+                    ui->genomeTableWidget,
+                    compareMask);
+    } else {
+        //---- No compare, just add...
+        insertRow(
+                    row,
+                    genomeListMap["name"],
+                    genomeListMap["genome"],
+                    genomeListMap["envColorR"].toInt(),
+                    genomeListMap["envColorG"].toInt(),
+                    genomeListMap["envColorB"].toInt(),
+                    genomeListMap["genomeColorR"].toInt(),
+                    genomeListMap["genomeColorG"].toInt(),
+                    genomeListMap["genomeColorB"].toInt(),
+                    genomeListMap["nonCodeColorR"].toInt(),
+                    genomeListMap["nonCodeColorG"].toInt(),
+                    genomeListMap["nonCodeColorB"].toInt(),
+                    genomeListMap["fitness"].toInt(),
+                    ui->genomeTableWidget);
+    }
 
     //---- Update Button States
     buttonUpdate();
@@ -332,29 +362,24 @@ bool GenomeComparison::addGenomeCritter(Critter critter, quint8 *environment)
 
 bool GenomeComparison::compareGenomes()
 {
-    qDebug() << "Comparing Genomes...";
-
     //---- Are there any checked genomes?
     QList<int> checkedList = isGenomeChecked();
     int numChecked = checkedList.count();
 
     //---- Check that there two genomes checked
     if (numChecked == 0) {
-        qDebug() << "Error: no genomes checked!";
         QMessageBox msgBox;
         msgBox.setWindowTitle(tr("Genome Comparison: Error"));
         msgBox.setText(tr("You need to select 2 genomes from the table in order to compare."));
         msgBox.exec();
         return false;
     } else if (numChecked == 1) {
-        qDebug() << "Error: no genomes checked!";
         QMessageBox msgBox;
         msgBox.setWindowTitle(tr("Genome Comparison: Error"));
         msgBox.setText(tr("You need to select 1 more genome from the table to begin comparing."));
         msgBox.exec();
         return false;
     } else if (numChecked > 2) {
-        qDebug() << "Error: no genomes checked!";
         QMessageBox msgBox;
         msgBox.setWindowTitle(tr("Genome Comparison: Error"));
         msgBox.setText(tr("You can not select more than 2 genomes to compare."));
@@ -369,7 +394,6 @@ bool GenomeComparison::compareGenomes()
         ui->compareTableWidget->setColumnWidth(68,30);
         ui->compareTableWidget->setColumnWidth(69,30);
         ui->compareTableWidget->setColumnWidth(70,30);
-
 
         //---- Compare...
         QMap<QString,QString> genomeListMapA = genomeList[checkedList[0]];
@@ -394,8 +418,6 @@ bool GenomeComparison::compareGenomes()
                 }
             }
         }
-        qDebug() << "Mask A = " << compareMaskA;
-        qDebug() << "Mask B = " << compareMaskB;
 
         //---- Insert Rows
         insertRow(
@@ -439,44 +461,48 @@ bool GenomeComparison::compareGenomes()
 
 bool GenomeComparison::resetTable()
 {
-    qDebug() << "Reseting Table...";
     genomeList.clear();
     renderTable();
+    ui->compareTableWidget->clear();
+    ui->compareTableWidget->setRowCount(0);
     buttonUpdate();
     return true;
 }
 
 bool GenomeComparison::deleteGenome()
 {
-    qDebug() << "Delete a Genome...";
-
     //---- Are there any checked genomes?
     QList<int> checkedList = isGenomeChecked();
     int numChecked = checkedList.count();
 
     if (numChecked == 0) {
         //---- Nothing Checked
-        qDebug() << "Error: no genomes checked!";
         QMessageBox msgBox;
         msgBox.setWindowTitle(tr("Genome Comparison: Error"));
         msgBox.setText(tr("You need to select at least 1 genome from the table to delete."));
         msgBox.exec();
         return false;
     } else {
-        //---- Something Checked
-        qDebug() << "Num genomes checked = " << numChecked;
-
-        //---- Remove selected from genomeList
+        //---- Something Checked, Remove selected from genomeList
         for(int i=0;i<numChecked; i++)
         {
-            qDebug() << "Removing = " << checkedList[i-i];
             genomeList.removeAt(checkedList[i-i]);
         }
-
         renderTable();
         buttonUpdate();
     }
     return true;
+}
+
+void GenomeComparison::setAuto(bool toggle)
+{
+    if (toggle) {
+        ui->autoButton->setText(QString("Auto Compare ON"));
+    } else {
+        ui->autoButton->setText(QString("Auto Compare OFF"));
+    }
+
+    autoComparison = toggle;
 }
 
 /*---------------------------------------------------------------------------//

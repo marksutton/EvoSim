@@ -246,7 +246,7 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0">
      <property name="sizeConstraint">
       <enum>QLayout::SetMinimumSize</enum>
      </property>
@@ -257,6 +257,19 @@
        </property>
        <property name="text">
         <string>Compare</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="autoButton">
+       <property name="text">
+        <string>Auto Compare ON</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -289,7 +302,7 @@
         <bool>false</bool>
        </property>
        <property name="text">
-        <string>Reset</string>
+        <string>Reset All</string>
        </property>
       </widget>
      </item>
