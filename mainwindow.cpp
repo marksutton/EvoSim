@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include "settings.h"
 #include "analyser.h"
+#include "fossilrecordwidget.h"
 #include <QTextStream>
 #include <QInputDialog>
 #include <QGraphicsPixmapItem>
@@ -16,12 +17,17 @@
 
 #define VERSION 1
 SimManager *TheSimManager; //the only global
+MainWindow *MainWin;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    MainWin=this;
+
+    FRW = new FossilRecordWidget(this);
+    FRW->setFloating(true);
 
     viewgroup = new QActionGroup(this);
     // These actions were created via qt designer

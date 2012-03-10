@@ -12,7 +12,11 @@ SOURCES += main.cpp \
     environmentscene.cpp \
     settings.cpp \
     sortablegenome.cpp \
-    analyser.cpp
+    analyser.cpp \
+    ../EvolutionSim - Working 3March/fossilrecord.cpp \
+    ../EvolutionSim - Working 3March/fossilrecordwidget.cpp \
+    fossilrecord.cpp \
+    fossilrecordwidget.cpp
 HEADERS += mainwindow.h \
     simmanager.h \
     critter.h \
@@ -20,9 +24,15 @@ HEADERS += mainwindow.h \
     environmentscene.h \
     settings.h \
     sortablegenome.h \
-    analyser.h
+    analyser.h \
+    ../EvolutionSim - Working 3March/fossilrecord.h \
+    ../EvolutionSim - Working 3March/fossilrecordwidget.h \
+    fossilrecord.h \
+    fossilrecordwidget.h
 FORMS += mainwindow.ui \
-    dialog.ui
+    dialog.ui \
+    ../EvolutionSim - Working 3March/fossilrecordwidget.ui \
+    fossilrecordwidget.ui
 
 OTHER_FILES += \
     README.TXT \

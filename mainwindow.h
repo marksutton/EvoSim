@@ -6,6 +6,8 @@
 #include "populationscene.h"
 #include "environmentscene.h"
 #include <QActionGroup>
+#include "fossilrecordwidget.h"
+extern MainWindow *MainWin;
 
 namespace Ui {
     class MainWindow;
@@ -17,6 +19,7 @@ public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void RefreshReport();
+    FossilRecordWidget *FRW;
 
 
 protected:

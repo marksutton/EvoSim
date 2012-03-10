@@ -13,7 +13,6 @@ Critter::Critter()
     fitness=0;
     energy=0;
 
-    //'Fossil Record' branch
 }
 
 void Critter::initialise(quint64 gen, quint8 *env, int x, int y, int z)
