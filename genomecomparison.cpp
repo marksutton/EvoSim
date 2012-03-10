@@ -40,6 +40,9 @@ GenomeComparison::GenomeComparison(QWidget *parent) :
     //---- Add Button Actions
     buttonActions();
     buttonUpdate();
+
+    //---- Widget Styling
+    widgetStyling();
 }
 
 /*---------------------------------------------------------------------------//
@@ -49,6 +52,52 @@ GenomeComparison::GenomeComparison(QWidget *parent) :
 GenomeComparison::~GenomeComparison()
 {
     delete ui;
+}
+
+/*---------------------------------------------------------------------------//
+    Widget Styling
+//---------------------------------------------------------------------------*/
+
+void GenomeComparison::widgetStyling()
+{
+    //---- Auto Button
+    this->setStyleSheet("QPushButton {"
+                        "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #E0E0E0, stop: 1 #FFFFFF);"
+                        "border-radius: 5px;"
+                        "padding:3px;"
+                        "border: 1px solid #4D4D4D;"
+                        "}"
+
+                        "QPushButton:hover {"
+                        "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #FFFFFF, stop: 1 #E0E0E0);"
+                        "}"
+
+                        "QPushButton#deleteButton:hover, QPushButton#resetButton:hover {"
+                        "color: #FF0000;"
+                        "}"
+
+                        "QPushButton:disabled {"
+                        "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #E0E0E0, stop: 1 #FFFFFF);"
+                        "border: 1px solid #BABABA;"
+                        "}"
+
+                        "QPushButton#compareButton {"
+                        "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #FFDD75, stop: 1 #FFF6DB);"
+                        "}"
+
+                        "QPushButton#compareButton:hover {"
+                        "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #FFF6DB, stop: 1 #FFDD75);"
+                        "}"
+
+                        "QPushButton#autoButton {"
+                        "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #FF8A8A, stop: 1 #FFD6D6);"
+                        "}"
+
+                        "QPushButton#autoButton:checked {"
+                        "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #BEDF9F, stop: 1 #E4F2D9);"
+                        "}"
+                        );
+
 }
 
 /*---------------------------------------------------------------------------//
@@ -498,8 +547,10 @@ void GenomeComparison::setAuto(bool toggle)
 {
     if (toggle) {
         ui->autoButton->setText(QString("Auto Compare ON"));
+        //ui->autoButton->setStyleSheet("background-color: green;");
     } else {
         ui->autoButton->setText(QString("Auto Compare OFF"));
+        //ui->autoButton->setStyleSheet("background-color: red;");
     }
 
     autoComparison = toggle;

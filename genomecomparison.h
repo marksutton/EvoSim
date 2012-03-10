@@ -30,6 +30,9 @@ private slots:
     void setAuto(bool toggle);
 
 private:
+    //---- Styling
+    void widgetStyling();
+
     //---- Tables
     bool renderTable();
     void insertRow(
