@@ -242,7 +242,7 @@ void MainWindow::Report()
 
     QString out;
     QTextStream o(&out);
-    o<<"Iteration: "<<generation; //need to use to avoid int64 issues
+    o<<generation; //need to use to avoid int64 issues
     ui->LabelIteration->setText(out);
 
     //now back to sprintf for convenience
