@@ -9,7 +9,6 @@
 #include "environmentscene.h"
 #include "genomecomparison.h"
 
-
 namespace Ui {
     class MainWindow;
 }
@@ -21,7 +20,8 @@ public:
     ~MainWindow();
     void RefreshReport();
 
-    GenomeComparison *genoneComparison; //---- ARTS: Add Genome Comparison UI
+    //---- ARTS: Add Genome Comparison UI
+    GenomeComparison *genoneComparison;
     bool genomeComparisonAdd();
 
 protected:
