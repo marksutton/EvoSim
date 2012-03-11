@@ -269,10 +269,10 @@
     <property name="title">
      <string>Commands</string>
     </property>
-    <addaction name="actionReseed"/>
     <addaction name="actionStart_Sim"/>
-    <addaction name="actionPause_Sim"/>
     <addaction name="actionRun_for"/>
+    <addaction name="actionPause_Sim"/>
+    <addaction name="actionReseed"/>
     <addaction name="separator"/>
     <addaction name="actionSave"/>
     <addaction name="actionLoad"/>
@@ -344,7 +344,10 @@
   </widget>
   <action name="actionReseed">
    <property name="text">
-    <string>Reset Critters</string>
+    <string>Reset</string>
+   </property>
+   <property name="toolTip">
+    <string>Reset</string>
    </property>
    <property name="shortcut">
     <string>Alt+X</string>
@@ -352,7 +355,10 @@
   </action>
   <action name="actionStart_Sim">
    <property name="text">
-    <string>Start Sim</string>
+    <string>Run</string>
+   </property>
+   <property name="toolTip">
+    <string>Run</string>
    </property>
    <property name="shortcut">
     <string>Alt+S</string>
@@ -360,7 +366,10 @@
   </action>
   <action name="actionPause_Sim">
    <property name="text">
-    <string>Pause Sim</string>
+    <string>Pause</string>
+   </property>
+   <property name="toolTip">
+    <string>Pause</string>
    </property>
    <property name="shortcut">
     <string>Alt+P</string>
@@ -369,6 +378,9 @@
   <action name="actionRun_for">
    <property name="text">
     <string>Run for ...</string>
+   </property>
+   <property name="toolTip">
+    <string>Run for</string>
    </property>
    <property name="shortcut">
     <string>Alt+R</string>
