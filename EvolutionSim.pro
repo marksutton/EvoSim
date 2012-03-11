@@ -28,11 +28,7 @@ FORMS += mainwindow.ui \
     genomecomparison.ui
 
 OTHER_FILES += \
-    README.TXT \
-    image004.bmp \
-    image003.bmp \
-    image002.bmp \
-    image001.bmp
+    README.TXT
 
 RESOURCES += \
     resources.qrc
