@@ -28,6 +28,7 @@ private slots:
     bool deleteGenome();
     bool compareGenomes();
     void setAuto(bool toggle);
+    void updateGenomeName(int row, int col);
 
 private:
     //---- Styling

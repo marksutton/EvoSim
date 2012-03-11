@@ -37,6 +37,9 @@ GenomeComparison::GenomeComparison(QWidget *parent) :
     ui->compareTableWidget->setColumnWidth(1,100);
     ui->compareTableWidget->setColumnWidth(34,2);
 
+    //---- Signal to capture name change
+    connect(ui->genomeTableWidget, SIGNAL(cellChanged(int, int)), this, SLOT(updateGenomeName(int, int)));
+
     //---- Add Button Actions
     buttonActions();
     buttonUpdate();
@@ -216,6 +219,7 @@ void GenomeComparison::insertRow(
         QTableWidget *table,
         QString comparisonMask)
 {
+    table->blockSignals(true);
     table->insertRow(row);
 
     QColor envColour = QColor(environmentR,environmentG,environmentB);
@@ -227,6 +231,11 @@ void GenomeComparison::insertRow(
         newItem->setCheckState(Qt::Unchecked);
         newItem->setTextAlignment(Qt:: AlignCenter);
         table->setItem(row, 0, newItem);
+
+        newItem = new QTableWidgetItem(genomeName);
+        newItem->setTextAlignment(Qt:: AlignCenter);
+        table->setItem(row, 1, newItem);
+
     } else {
         QString val;
         if (row == 0) { val = "A"; } else { val = "B"; }
@@ -234,17 +243,18 @@ void GenomeComparison::insertRow(
         newItem->setTextAlignment(Qt:: AlignCenter);
         newItem->setFlags(Qt::ItemIsEnabled);
         table->setItem(row, 0, newItem);
-    }
 
-    QTableWidgetItem *newItem = new QTableWidgetItem(genomeName);
-    newItem->setTextAlignment(Qt:: AlignCenter);
-    table->setItem(row, 1, newItem);
+        newItem = new QTableWidgetItem(genomeName);
+        newItem->setTextAlignment(Qt:: AlignCenter);
+        newItem->setFlags(Qt::ItemIsEnabled);
+        table->setItem(row, 1, newItem);
+    }
 
     int col=2;
     for (int i=0; i<64; i++)
     {
         if (col==34) {
-            newItem = new QTableWidgetItem(tr(""));
+            QTableWidgetItem *newItem = new QTableWidgetItem(tr(""));
             newItem->setFlags(Qt::ItemIsEnabled);
             table->setItem(row, col, newItem);
             table->item(row, col)->setBackground(QBrush(spacerCol));
@@ -252,7 +262,7 @@ void GenomeComparison::insertRow(
         }
 
         QString bit = genomeStr.at(i);
-        newItem = new QTableWidgetItem(bit);
+        QTableWidgetItem *newItem = new QTableWidgetItem(bit);
         newItem->setTextAlignment(Qt:: AlignCenter);
         newItem->setFlags(Qt::ItemIsEnabled);
 
@@ -272,7 +282,7 @@ void GenomeComparison::insertRow(
     }
 
     //---- Add environment as cell background
-    newItem = new QTableWidgetItem(tr(""));
+    QTableWidgetItem *newItem = new QTableWidgetItem(tr(""));
     newItem->setTextAlignment(Qt:: AlignCenter);
     newItem->setFlags(Qt::ItemIsEnabled);
     newItem->setToolTip(QString(tr("%1,%2,%3").arg(environmentR).arg(environmentG).arg(environmentB)));
@@ -304,11 +314,21 @@ void GenomeComparison::insertRow(
     newItem->setFlags(Qt::ItemIsEnabled);
     newItem->setData(Qt::DisplayRole, fitness);
     table->setItem(row, col, newItem);
+
+    table->blockSignals(false);
 }
 
 /*---------------------------------------------------------------------------//
-    Actions
+    Table Actions
 //---------------------------------------------------------------------------*/
+
+void GenomeComparison::updateGenomeName(int row, int col) {
+    if (col == 1) {
+        QString newName = ui->genomeTableWidget->item(row, col)->text();
+        genomeList[row].insert("name",newName);
+    }
+}
+
 
 bool GenomeComparison::addGenomeCritter(Critter critter, quint8 *environment)
 {
@@ -412,6 +432,10 @@ bool GenomeComparison::addGenomeCritter(Critter critter, quint8 *environment)
 
     return true;
 }
+
+/*---------------------------------------------------------------------------//
+    Button Actions
+//---------------------------------------------------------------------------*/
 
 bool GenomeComparison::compareGenomes()
 {
