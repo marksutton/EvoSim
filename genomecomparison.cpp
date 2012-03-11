@@ -137,6 +137,7 @@ bool GenomeComparison::renderTable(){
 
     int i = 0;
     ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("")));
+    ui->genomeTableWidget->setColumnWidth(i,20);
     i++;
     ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("Name")));
     i++;
@@ -274,14 +275,16 @@ void GenomeComparison::insertRow(
     newItem = new QTableWidgetItem(tr(""));
     newItem->setTextAlignment(Qt:: AlignCenter);
     newItem->setFlags(Qt::ItemIsEnabled);
+    newItem->setToolTip(QString(tr("%1,%2,%3").arg(environmentR).arg(environmentG).arg(environmentB)));
     table->setItem(row, col, newItem);
-    table->item(row, col)->setBackgroundColor(envColour);
+    table->item(row, col)->setBackgroundColor(envColour);    
     col++;
 
     //---- Add genome colour as cell background
     newItem = new QTableWidgetItem(tr(""));
     newItem->setTextAlignment(Qt:: AlignCenter);
     newItem->setFlags(Qt::ItemIsEnabled);
+    newItem->setToolTip(QString(tr("%1,%2,%3").arg(genomeR).arg(genomeG).arg(genomeB)));
     table->setItem(row, col, newItem);
     table->item(row, col)->setBackgroundColor(genomeColour);
     col++;
@@ -290,6 +293,7 @@ void GenomeComparison::insertRow(
     newItem = new QTableWidgetItem(tr(""));
     newItem->setTextAlignment(Qt:: AlignCenter);
     newItem->setFlags(Qt::ItemIsEnabled);
+    newItem->setToolTip(QString(tr("%1,%2,%3").arg(nonCodeR).arg(nonCodeG).arg(nonCodeB)));
     table->setItem(row, col, newItem);
     table->item(row, col)->setBackgroundColor(nonCodeColour);
     col++;
@@ -439,6 +443,7 @@ bool GenomeComparison::compareGenomes()
         ui->compareTableWidget->hide();
         ui->compareTableWidget->clear();
         ui->compareTableWidget->setRowCount(0);
+        ui->compareTableWidget->setColumnWidth(0,20);
         ui->compareTableWidget->setColumnWidth(67,30);
         ui->compareTableWidget->setColumnWidth(68,30);
         ui->compareTableWidget->setColumnWidth(69,30);
@@ -447,24 +452,16 @@ bool GenomeComparison::compareGenomes()
         //---- Compare...
         QMap<QString,QString> genomeListMapA = genomeList[checkedList[0]];
         QMap<QString,QString> genomeListMapB = genomeList[checkedList[1]];
-        QString compareMaskA;
-        QString compareMaskB;
+        QString compareMask;
 
         //---- Create Masks
         for (int i=0; i<64; i++)
         {
             if (genomeListMapA["genome"].at(i) == genomeListMapB["genome"].at(i)) {
                 //---- Same bit
-                compareMaskA.append("0");
-                compareMaskB.append("0");
+                compareMask.append("0");
             } else {
-                if (genomeListMapA["genome"].at(i) == QChar(49)) {
-                    compareMaskA.append("1");
-                    compareMaskB.append("0");
-                } else {
-                    compareMaskA.append("0");
-                    compareMaskB.append("1");
-                }
+                compareMask.append("1");
             }
         }
 
@@ -483,8 +480,7 @@ bool GenomeComparison::compareGenomes()
                     genomeListMapA["nonCodeColorG"].toInt(),
                     genomeListMapA["nonCodeColorB"].toInt(),
                     genomeListMapA["fitness"].toInt(),
-                    ui->compareTableWidget,
-                    compareMaskA);
+                    ui->compareTableWidget);
 
         insertRow(
                     1,
@@ -501,7 +497,7 @@ bool GenomeComparison::compareGenomes()
                     genomeListMapB["nonCodeColorB"].toInt(),
                     genomeListMapB["fitness"].toInt(),
                     ui->compareTableWidget,
-                    compareMaskB);
+                    compareMask);
 
         ui->compareTableWidget->show();
     }
