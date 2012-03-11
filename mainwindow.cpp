@@ -23,6 +23,16 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    //---- ARTS: Add Toolbar
+    startButton = new QAction(QIcon(QPixmap(":/toolbar/startButton-Enabled.png")), QString("Start Simulation"), this);
+    pauseButton = new QAction(QIcon(QPixmap(":/toolbar/pauseButton-Enabled.png")), QString("Pause Simulation"), this);
+    startButton->setEnabled(false);
+    pauseButton->setEnabled(false);
+    ui->toolBar->addAction(startButton);
+    ui->toolBar->addAction(pauseButton);
+    QObject::connect(startButton, SIGNAL(triggered()), this, SLOT(on_actionStart_Sim_triggered()));
+    QObject::connect(pauseButton, SIGNAL(triggered()), this, SLOT(on_actionPause_Sim_triggered()));
+
     //---- ARTS: Add Genome Comparison UI
     ui->genomeComparisonDock->hide();
     genoneComparison = new GenomeComparison;
@@ -59,8 +69,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->actionLoop->setChecked(true);
 
     QObject::connect(viewgroup2, SIGNAL(triggered(QAction *)), this, SLOT(report_mode_changed(QAction *)));
-
-
 
     //create scenes, add to the GVs
     envscene = new EnvironmentScene;
@@ -193,8 +201,10 @@ void MainWindow::RunSetUp()
 {
     pauseflag=false;
     ui->actionStart_Sim->setEnabled(false);
+    startButton->setEnabled(false);
     ui->actionRun_for->setEnabled(false);
     ui->actionPause_Sim->setEnabled(true);
+    pauseButton->setEnabled(true);
     ui->actionReseed->setEnabled(false);
     ui->actionSettings->setEnabled(false);
     ui->actionEnvironment_Files->setEnabled(false);
@@ -205,9 +215,11 @@ void MainWindow::RunSetUp()
 void MainWindow::FinishRun()
 {
     ui->actionStart_Sim->setEnabled(true);
+    startButton->setEnabled(true);
     ui->actionRun_for->setEnabled(true);
     ui->actionReseed->setEnabled(true);
     ui->actionPause_Sim->setEnabled(false);
+    pauseButton->setEnabled(false);
     ui->actionSettings->setEnabled(true);
     ui->actionEnvironment_Files->setEnabled(true);
     NextRefresh=0;
