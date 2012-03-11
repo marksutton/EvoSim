@@ -29,3 +29,9 @@ FORMS += mainwindow.ui \
 
 OTHER_FILES += \
     README.TXT
+<<<<<<< HEAD
+=======
+
+RESOURCES += \
+    resources.qrc
+>>>>>>> bdba2d6e54c0b0f0f1a4b048040a19329cbc8a6c
