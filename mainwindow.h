@@ -53,7 +53,7 @@ private:
     Ui::MainWindow *ui;
     void ResetSquare(int n, int m);
 
-    QAction *startButton, *pauseButton;
+    QAction *startButton, *pauseButton, *runForButton, *resetButton;
 
 private slots:
     void on_actionReseed_triggered();
