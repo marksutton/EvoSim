@@ -33,3 +33,6 @@ OTHER_FILES += \
     image003.bmp \
     image002.bmp \
     image001.bmp
+
+RESOURCES += \
+    resources.qrc

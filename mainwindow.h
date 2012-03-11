@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 #include <QActionGroup>
+#include <QAction>
+
 
 #include "simmanager.h"
 #include "populationscene.h"
@@ -37,7 +39,6 @@ private:
     void RefreshEnvironment();
     void UpdateTitles();
 
-
     bool pauseflag;
     int NextRefresh;
     EnvironmentScene *envscene;
@@ -51,6 +52,8 @@ private:
     QGraphicsPixmapItem *pop_item, *env_item;
     Ui::MainWindow *ui;
     void ResetSquare(int n, int m);
+
+    QAction *startButton, *pauseButton;
 
 private slots:
     void on_actionReseed_triggered();
