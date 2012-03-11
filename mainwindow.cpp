@@ -24,14 +24,21 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
 
     //---- ARTS: Add Toolbar
-    startButton = new QAction(QIcon(QPixmap(":/toolbar/startButton-Enabled.png")), QString("Start Simulation"), this);
-    pauseButton = new QAction(QIcon(QPixmap(":/toolbar/pauseButton-Enabled.png")), QString("Pause Simulation"), this);
+    startButton = new QAction(QIcon(QPixmap(":/toolbar/startButton-Enabled.png")), QString("Run"), this);
+    runForButton = new QAction(QIcon(QPixmap(":/toolbar/runForButton-Enabled.png")), QString("Run For..."), this);
+    pauseButton = new QAction(QIcon(QPixmap(":/toolbar/pauseButton-Enabled.png")), QString("Pause"), this);
+    resetButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton-Enabled.png")), QString("Reset"), this);
     startButton->setEnabled(false);
-    pauseButton->setEnabled(false);
+    runForButton->setEnabled(false);
+    pauseButton->setEnabled(false);    
     ui->toolBar->addAction(startButton);
+    ui->toolBar->addAction(runForButton);
     ui->toolBar->addAction(pauseButton);
+    ui->toolBar->addAction(resetButton);
     QObject::connect(startButton, SIGNAL(triggered()), this, SLOT(on_actionStart_Sim_triggered()));
+    QObject::connect(runForButton, SIGNAL(triggered()), this, SLOT(on_actionRun_for_triggered()));
     QObject::connect(pauseButton, SIGNAL(triggered()), this, SLOT(on_actionPause_Sim_triggered()));
+    QObject::connect(resetButton, SIGNAL(triggered()), this, SLOT(on_actionReseed_triggered()));
 
     //---- ARTS: Add Genome Comparison UI
     ui->genomeComparisonDock->hide();
@@ -203,9 +210,11 @@ void MainWindow::RunSetUp()
     ui->actionStart_Sim->setEnabled(false);
     startButton->setEnabled(false);
     ui->actionRun_for->setEnabled(false);
+    runForButton->setEnabled(false);
     ui->actionPause_Sim->setEnabled(true);
     pauseButton->setEnabled(true);
     ui->actionReseed->setEnabled(false);
+    resetButton->setEnabled(false);
     ui->actionSettings->setEnabled(false);
     ui->actionEnvironment_Files->setEnabled(false);
     timer.restart();
@@ -217,7 +226,9 @@ void MainWindow::FinishRun()
     ui->actionStart_Sim->setEnabled(true);
     startButton->setEnabled(true);
     ui->actionRun_for->setEnabled(true);
+    runForButton->setEnabled(true);
     ui->actionReseed->setEnabled(true);
+    resetButton->setEnabled(true);
     ui->actionPause_Sim->setEnabled(false);
     pauseButton->setEnabled(false);
     ui->actionSettings->setEnabled(true);
