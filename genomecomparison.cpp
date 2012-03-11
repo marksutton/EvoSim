@@ -37,9 +37,15 @@ GenomeComparison::GenomeComparison(QWidget *parent) :
     ui->compareTableWidget->setColumnWidth(1,100);
     ui->compareTableWidget->setColumnWidth(34,2);
 
+    //---- Signal to capture name change
+    connect(ui->genomeTableWidget, SIGNAL(cellChanged(int, int)), this, SLOT(updateGenomeName(int, int)));
+
     //---- Add Button Actions
     buttonActions();
     buttonUpdate();
+
+    //---- Widget Styling
+    widgetStyling();
 }
 
 /*---------------------------------------------------------------------------//
@@ -49,6 +55,52 @@ GenomeComparison::GenomeComparison(QWidget *parent) :
 GenomeComparison::~GenomeComparison()
 {
     delete ui;
+}
+
+/*---------------------------------------------------------------------------//
+    Widget Styling
+//---------------------------------------------------------------------------*/
+
+void GenomeComparison::widgetStyling()
+{
+    //---- Auto Button
+    this->setStyleSheet("QPushButton {"
+                        "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #E0E0E0, stop: 1 #FFFFFF);"
+                        "border-radius: 5px;"
+                        "padding:3px;"
+                        "border: 1px solid #4D4D4D;"
+                        "}"
+
+                        "QPushButton:hover {"
+                        "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #FFFFFF, stop: 1 #E0E0E0);"
+                        "}"
+
+                        "QPushButton#deleteButton:hover, QPushButton#resetButton:hover {"
+                        "color: #FF0000;"
+                        "}"
+
+                        "QPushButton:disabled {"
+                        "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #E0E0E0, stop: 1 #FFFFFF);"
+                        "border: 1px solid #BABABA;"
+                        "}"
+
+                        "QPushButton#compareButton {"
+                        "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #FFDD75, stop: 1 #FFF6DB);"
+                        "}"
+
+                        "QPushButton#compareButton:hover {"
+                        "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #FFF6DB, stop: 1 #FFDD75);"
+                        "}"
+
+                        "QPushButton#autoButton {"
+                        "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #FF8A8A, stop: 1 #FFD6D6);"
+                        "}"
+
+                        "QPushButton#autoButton:checked {"
+                        "background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #BEDF9F, stop: 1 #E4F2D9);"
+                        "}"
+                        );
+
 }
 
 /*---------------------------------------------------------------------------//
@@ -88,6 +140,7 @@ bool GenomeComparison::renderTable(){
 
     int i = 0;
     ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("")));
+    ui->genomeTableWidget->setColumnWidth(i,20);
     i++;
     ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("Name")));
     i++;
@@ -166,6 +219,7 @@ void GenomeComparison::insertRow(
         QTableWidget *table,
         QString comparisonMask)
 {
+    table->blockSignals(true);
     table->insertRow(row);
 
     QColor envColour = QColor(environmentR,environmentG,environmentB);
@@ -177,6 +231,11 @@ void GenomeComparison::insertRow(
         newItem->setCheckState(Qt::Unchecked);
         newItem->setTextAlignment(Qt:: AlignCenter);
         table->setItem(row, 0, newItem);
+
+        newItem = new QTableWidgetItem(genomeName);
+        newItem->setTextAlignment(Qt:: AlignCenter);
+        table->setItem(row, 1, newItem);
+
     } else {
         QString val;
         if (row == 0) { val = "A"; } else { val = "B"; }
@@ -184,17 +243,18 @@ void GenomeComparison::insertRow(
         newItem->setTextAlignment(Qt:: AlignCenter);
         newItem->setFlags(Qt::ItemIsEnabled);
         table->setItem(row, 0, newItem);
-    }
 
-    QTableWidgetItem *newItem = new QTableWidgetItem(genomeName);
-    newItem->setTextAlignment(Qt:: AlignCenter);
-    table->setItem(row, 1, newItem);
+        newItem = new QTableWidgetItem(genomeName);
+        newItem->setTextAlignment(Qt:: AlignCenter);
+        newItem->setFlags(Qt::ItemIsEnabled);
+        table->setItem(row, 1, newItem);
+    }
 
     int col=2;
     for (int i=0; i<64; i++)
     {
         if (col==34) {
-            newItem = new QTableWidgetItem(tr(""));
+            QTableWidgetItem *newItem = new QTableWidgetItem(tr(""));
             newItem->setFlags(Qt::ItemIsEnabled);
             table->setItem(row, col, newItem);
             table->item(row, col)->setBackground(QBrush(spacerCol));
@@ -202,7 +262,7 @@ void GenomeComparison::insertRow(
         }
 
         QString bit = genomeStr.at(i);
-        newItem = new QTableWidgetItem(bit);
+        QTableWidgetItem *newItem = new QTableWidgetItem(bit);
         newItem->setTextAlignment(Qt:: AlignCenter);
         newItem->setFlags(Qt::ItemIsEnabled);
 
@@ -222,17 +282,19 @@ void GenomeComparison::insertRow(
     }
 
     //---- Add environment as cell background
-    newItem = new QTableWidgetItem(tr(""));
+    QTableWidgetItem *newItem = new QTableWidgetItem(tr(""));
     newItem->setTextAlignment(Qt:: AlignCenter);
     newItem->setFlags(Qt::ItemIsEnabled);
+    newItem->setToolTip(QString(tr("%1,%2,%3").arg(environmentR).arg(environmentG).arg(environmentB)));
     table->setItem(row, col, newItem);
-    table->item(row, col)->setBackgroundColor(envColour);
+    table->item(row, col)->setBackgroundColor(envColour);    
     col++;
 
     //---- Add genome colour as cell background
     newItem = new QTableWidgetItem(tr(""));
     newItem->setTextAlignment(Qt:: AlignCenter);
     newItem->setFlags(Qt::ItemIsEnabled);
+    newItem->setToolTip(QString(tr("%1,%2,%3").arg(genomeR).arg(genomeG).arg(genomeB)));
     table->setItem(row, col, newItem);
     table->item(row, col)->setBackgroundColor(genomeColour);
     col++;
@@ -241,6 +303,7 @@ void GenomeComparison::insertRow(
     newItem = new QTableWidgetItem(tr(""));
     newItem->setTextAlignment(Qt:: AlignCenter);
     newItem->setFlags(Qt::ItemIsEnabled);
+    newItem->setToolTip(QString(tr("%1,%2,%3").arg(nonCodeR).arg(nonCodeG).arg(nonCodeB)));
     table->setItem(row, col, newItem);
     table->item(row, col)->setBackgroundColor(nonCodeColour);
     col++;
@@ -251,11 +314,21 @@ void GenomeComparison::insertRow(
     newItem->setFlags(Qt::ItemIsEnabled);
     newItem->setData(Qt::DisplayRole, fitness);
     table->setItem(row, col, newItem);
+
+    table->blockSignals(false);
 }
 
 /*---------------------------------------------------------------------------//
-    Actions
+    Table Actions
 //---------------------------------------------------------------------------*/
+
+void GenomeComparison::updateGenomeName(int row, int col) {
+    if (col == 1) {
+        QString newName = ui->genomeTableWidget->item(row, col)->text();
+        genomeList[row].insert("name",newName);
+    }
+}
+
 
 bool GenomeComparison::addGenomeCritter(Critter critter, quint8 *environment)
 {
@@ -360,6 +433,10 @@ bool GenomeComparison::addGenomeCritter(Critter critter, quint8 *environment)
     return true;
 }
 
+/*---------------------------------------------------------------------------//
+    Button Actions
+//---------------------------------------------------------------------------*/
+
 bool GenomeComparison::compareGenomes()
 {
     //---- Are there any checked genomes?
@@ -390,6 +467,7 @@ bool GenomeComparison::compareGenomes()
         ui->compareTableWidget->hide();
         ui->compareTableWidget->clear();
         ui->compareTableWidget->setRowCount(0);
+        ui->compareTableWidget->setColumnWidth(0,20);
         ui->compareTableWidget->setColumnWidth(67,30);
         ui->compareTableWidget->setColumnWidth(68,30);
         ui->compareTableWidget->setColumnWidth(69,30);
@@ -398,24 +476,16 @@ bool GenomeComparison::compareGenomes()
         //---- Compare...
         QMap<QString,QString> genomeListMapA = genomeList[checkedList[0]];
         QMap<QString,QString> genomeListMapB = genomeList[checkedList[1]];
-        QString compareMaskA;
-        QString compareMaskB;
+        QString compareMask;
 
         //---- Create Masks
         for (int i=0; i<64; i++)
         {
             if (genomeListMapA["genome"].at(i) == genomeListMapB["genome"].at(i)) {
                 //---- Same bit
-                compareMaskA.append("0");
-                compareMaskB.append("0");
+                compareMask.append("0");
             } else {
-                if (genomeListMapA["genome"].at(i) == QChar(49)) {
-                    compareMaskA.append("1");
-                    compareMaskB.append("0");
-                } else {
-                    compareMaskA.append("0");
-                    compareMaskB.append("1");
-                }
+                compareMask.append("1");
             }
         }
 
@@ -434,8 +504,7 @@ bool GenomeComparison::compareGenomes()
                     genomeListMapA["nonCodeColorG"].toInt(),
                     genomeListMapA["nonCodeColorB"].toInt(),
                     genomeListMapA["fitness"].toInt(),
-                    ui->compareTableWidget,
-                    compareMaskA);
+                    ui->compareTableWidget);
 
         insertRow(
                     1,
@@ -452,7 +521,7 @@ bool GenomeComparison::compareGenomes()
                     genomeListMapB["nonCodeColorB"].toInt(),
                     genomeListMapB["fitness"].toInt(),
                     ui->compareTableWidget,
-                    compareMaskB);
+                    compareMask);
 
         ui->compareTableWidget->show();
     }
@@ -498,8 +567,10 @@ void GenomeComparison::setAuto(bool toggle)
 {
     if (toggle) {
         ui->autoButton->setText(QString("Auto Compare ON"));
+        //ui->autoButton->setStyleSheet("background-color: green;");
     } else {
         ui->autoButton->setText(QString("Auto Compare OFF"));
+        //ui->autoButton->setStyleSheet("background-color: red;");
     }
 
     autoComparison = toggle;
