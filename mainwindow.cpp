@@ -274,9 +274,9 @@ void MainWindow::Report()
     else
     out.sprintf("%d/%d",CurrentEnvFile+1,EnvFiles.count());
     ui->LabelEnvironment->setText(out);
-    out.sprintf("%.2f",t);
+    out.sprintf("%.2f%%",t);
     ui->LabelFitness->setText(out);
-    out.sprintf("%.2f%%",atime);
+    out.sprintf("%.2f",atime);
     ui->LabelSpeed->setText(out);
     out.sprintf("%d",AliveCount);
     ui->LabelCritters->setText(out);
