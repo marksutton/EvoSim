@@ -30,6 +30,7 @@ int breedCost = 500;
 int maxDiff = 2;
 int mutate = 10;
 int envchangerate=100;
+int yearsPerIteration=15;
 QStringList EnvFiles;
 int CurrentEnvFile;
 int EnvChangeCounter;

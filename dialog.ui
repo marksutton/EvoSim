@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>318</width>
+    <width>324</width>
     <height>280</height>
    </rect>
   </property>
@@ -246,6 +246,26 @@
       <widget class="QLabel" name="label_13">
        <property name="text">
         <string>Env. change rate</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="2">
+      <widget class="QLabel" name="label_14">
+       <property name="text">
+        <string>Years/Iteration</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="3">
+      <widget class="QSpinBox" name="SpinBoxYearsPerIteration">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>99</number>
+       </property>
+       <property name="value">
+        <number>15</number>
        </property>
       </widget>
      </item>
