@@ -70,6 +70,7 @@ extern quint32 newgenomeY[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
 extern int newgenomeDisp[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
 extern int newgenomecount;
 extern int envchangerate;
+extern int yearsPerIteration;
 extern QStringList EnvFiles;
 extern int CurrentEnvFile;
 

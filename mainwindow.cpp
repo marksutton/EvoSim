@@ -265,8 +265,12 @@ void MainWindow::Report()
 
     QString out;
     QTextStream o(&out);
+
     o<<generation; //need to use to avoid int64 issues
     ui->LabelIteration->setText(out);
+
+    out.sprintf("%d",generation/yearsPerIteration);
+    ui->LabelYears->setText(out);
 
     //now back to sprintf for convenience
     if (CurrentEnvFile>=EnvFiles.count())
@@ -274,10 +278,13 @@ void MainWindow::Report()
     else
     out.sprintf("%d/%d",CurrentEnvFile+1,EnvFiles.count());
     ui->LabelEnvironment->setText(out);
+
     out.sprintf("%.2f%%",t);
     ui->LabelFitness->setText(out);
+
     out.sprintf("%.2f",atime);
     ui->LabelSpeed->setText(out);
+
     out.sprintf("%d",AliveCount);
     ui->LabelCritters->setText(out);
 
