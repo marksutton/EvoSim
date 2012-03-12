@@ -269,7 +269,7 @@ void MainWindow::Report()
     o<<generation; //need to use to avoid int64 issues
     ui->LabelIteration->setText(out);
 
-    out.sprintf("%d",generation/yearsPerIteration);
+    out.sprintf("%d",out.toInt()/yearsPerIteration);
     ui->LabelYears->setText(out);
 
     //now back to sprintf for convenience
