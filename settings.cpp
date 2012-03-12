@@ -26,6 +26,7 @@ SettingsImpl::SettingsImpl( QWidget * parent, Qt::WFlags f)
         SpinBoxGridY->setValue(gridY);
         SpinBoxFitnessTarget->setValue(target);
         SpinBoxEnvChangeRate->setValue(envchangerate);
+        SpinBoxYearsPerIteration->setValue(yearsPerIteration);
 
         RedoImages=false;        
 }
@@ -47,6 +48,7 @@ void SettingsImpl::on_buttonBox_accepted()
         gridY= SpinBoxGridY->value();
         target= SpinBoxFitnessTarget->value();
         EnvChangeCounter=envchangerate=SpinBoxEnvChangeRate->value();
+        yearsPerIteration=SpinBoxYearsPerIteration->value();
 }
 
 
