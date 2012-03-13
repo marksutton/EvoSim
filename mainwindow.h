@@ -10,6 +10,9 @@
 #include "populationscene.h"
 #include "environmentscene.h"
 #include "genomecomparison.h"
+#include <QActionGroup>
+#include "fossrecwidget.h"
+extern MainWindow *MainWin;
 
 namespace Ui {
     class MainWindow;
@@ -21,11 +24,12 @@ public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void RefreshReport();
+    FossRecWidget *FRW;
 
     //---- ARTS: Add Genome Comparison UI
     GenomeComparison *genoneComparison;
     bool genomeComparisonAdd();
-
+    void Resize();
 protected:
     void changeEvent(QEvent *e);
     void resizeEvent(QResizeEvent *event);
@@ -69,6 +73,7 @@ private slots:
     void on_actionEnvironment_Files_triggered();
     void on_actionSave_triggered();
     void on_actionLoad_triggered();
+    void on_actionChoose_Log_Directory_triggered();
 
 };
 

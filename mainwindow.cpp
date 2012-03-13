@@ -2,6 +2,8 @@
 #include "ui_mainwindow.h"
 #include "settings.h"
 #include "analyser.h"
+#include "fossrecwidget.h"
+#include "resizecatcher.h"
 #include <QTextStream>
 #include <QInputDialog>
 #include <QGraphicsPixmapItem>
@@ -14,14 +16,22 @@
 #include <QActionGroup>
 #include <QDataStream>
 
+//define version for files
 #define VERSION 1
-SimManager *TheSimManager; //the only global
+
+SimManager *TheSimManager;
+MainWindow *MainWin;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    MainWin=this;
+
+    //Install filter to catch resize events to central widget and deliver to mainwindow (handle dock resizes)
+    ResizeCatcher *rescatch = new ResizeCatcher(this);
+    ui->centralWidget->installEventFilter(rescatch);
 
     //---- ARTS: Add Toolbar
     startButton = new QAction(QIcon(QPixmap(":/toolbar/startButton-Enabled.png")), QString("Run"), this);
@@ -46,6 +56,15 @@ MainWindow::MainWindow(QWidget *parent) :
     QVBoxLayout *genomeLayout = new QVBoxLayout;
     genomeLayout->addWidget(genoneComparison);
     ui->genomeComparisonContent->setLayout(genomeLayout);
+
+    //----MDS as above for fossil record dock and report dock
+    ui->fossRecDock->hide();
+    FRW = new FossRecWidget();
+    QVBoxLayout *frwLayout = new QVBoxLayout;
+    frwLayout->addWidget(FRW);
+    ui->fossRecDockContents->setLayout(frwLayout);
+
+    ui->reportViewerDock->hide();
 
     viewgroup = new QActionGroup(this);
     // These actions were created via qt designer
@@ -164,6 +183,7 @@ void MainWindow::on_actionStart_Sim_triggered()
         if (ui->actionBounce->isChecked()) emode=3;
         if (ui->actionLoop->isChecked()) emode=2;
         if (TheSimManager->iterate(emode)) pauseflag=true; //returns true if reached end
+        FRW->MakeRecords();
     }
     FinishRun();
 }
@@ -190,6 +210,7 @@ void MainWindow::on_actionRun_for_triggered()
         if (ui->actionBounce->isChecked()) emode=3;
         if (ui->actionLoop->isChecked()) emode=2;
         if (TheSimManager->iterate(emode)) pauseflag=true;
+        FRW->MakeRecords();
         i--;
     }
     FinishRun();
@@ -291,6 +312,8 @@ void MainWindow::Report()
     RefreshReport();
     RefreshPopulations();
     RefreshEnvironment();
+    FRW->RefreshMe();
+    FRW->WriteFiles();
 
     //reset the breedattempts and breedfails arrays
     for (int n2=0; n2<gridX; n2++)
@@ -638,6 +661,11 @@ void MainWindow::RefreshEnvironment()
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
     //force a rescale of the graphic view
+    Resize();
+}
+
+void MainWindow::Resize()
+{
     ui->GV_Population->fitInView(pop_item,Qt::KeepAspectRatio);
     ui->GV_Environment->fitInView(env_item,Qt::KeepAspectRatio);
 }
@@ -824,6 +852,18 @@ void  MainWindow::on_actionEnvironment_Files_triggered()
     CurrentEnvFile=0;
     TheSimManager->loadEnvironmentFromFile();
     RefreshEnvironment();
+}
+
+void MainWindow::on_actionChoose_Log_Directory_triggered()
+{
+    QString dirname = QFileDialog::getExistingDirectory(this,"Select directory to log fossil record to");
+
+
+    if (dirname.length()==0) return;
+    FRW->LogDirectory=dirname;
+    FRW->LogDirectoryChosen=true;
+    FRW->HideWarnLabel();
+
 }
 
 void MainWindow::on_actionSave_triggered()

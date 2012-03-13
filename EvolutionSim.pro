@@ -13,7 +13,10 @@ SOURCES += main.cpp \
     settings.cpp \
     sortablegenome.cpp \
     analyser.cpp \
-    genomecomparison.cpp
+    genomecomparison.cpp \
+    fossilrecord.cpp \
+    fossrecwidget.cpp \
+    resizecatcher.cpp
 HEADERS += mainwindow.h \
     simmanager.h \
     critter.h \
@@ -22,10 +25,13 @@ HEADERS += mainwindow.h \
     settings.h \
     sortablegenome.h \
     analyser.h \
-    genomecomparison.h
+    genomecomparison.h \
+    fossilrecord.h \
+    fossrecwidget.h \
+    resizecatcher.h
 FORMS += mainwindow.ui \
     dialog.ui \
-    genomecomparison.ui
+    fossrecwidget.ui
 
 OTHER_FILES += \
     README.TXT
