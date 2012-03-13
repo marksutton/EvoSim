@@ -161,7 +161,7 @@ void FossRecWidget::on_treeWidget_itemDoubleClicked(QTreeWidgetItem *item, int c
     //3 is start -can't edit
     //4 is count of records - can't edit
 
-    if (column==5)
+    if (column==4)
     //Sparsity
     {
         bool ok;
