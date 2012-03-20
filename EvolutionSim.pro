@@ -31,7 +31,8 @@ HEADERS += mainwindow.h \
     resizecatcher.h
 FORMS += mainwindow.ui \
     dialog.ui \
-    fossrecwidget.ui
+    fossrecwidget.ui \
+    genomecomparison.ui
 
 OTHER_FILES += \
     README.TXT
