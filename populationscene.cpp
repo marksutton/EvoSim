@@ -23,13 +23,13 @@ PopulationScene::PopulationScene() : QGraphicsScene()
 
 void PopulationScene::DoMouse(int x, int y, int button)
 {
-    if (button==1 && x>0 && x<GRID_X && y>0 && y<GRID_Y)
+    if (button==1 && x>=0 && x<gridX && y>=0 && y<gridY)
         selectedx=x;
         selectedy=y;
         mw->RefreshReport();
 
     //---- ARTS: Genome Comparison UI
-    if (button==2 && x>0 && x<GRID_X && y>0 && y<GRID_Y)
+    if (button==2 && x>=0 && x<gridX && y>=0 && y<gridY)
         selectedx=x;
         selectedy=y;
         mw->genomeComparisonAdd();

@@ -30,6 +30,7 @@ public:
     GenomeComparison *genoneComparison;
     bool genomeComparisonAdd();
     void Resize();
+    void RefreshEnvironment();
 protected:
     void changeEvent(QEvent *e);
     void resizeEvent(QResizeEvent *event);
@@ -40,7 +41,6 @@ private:
     void RunSetUp();
     void FinishRun();
     void RefreshPopulations();
-    void RefreshEnvironment();
     void UpdateTitles();
 
     bool pauseflag;

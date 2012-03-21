@@ -320,7 +320,7 @@ void GenomeComparison::insertRow(
 
 /*---------------------------------------------------------------------------//
     Table Actions
-//---------------------------------------------------------------------------*/
+//--------------------`-------------------------------------------------------*/
 
 void GenomeComparison::updateGenomeName(int row, int col) {
     if (col == 1) {
@@ -338,7 +338,7 @@ bool GenomeComparison::addGenomeCritter(Critter critter, quint8 *environment)
     //---- Genome
     QString genomeStr;
     for (int j=0; j<64; j++)
-        if (tweakers[j] & critter.genome) genomeStr.append("1"); else genomeStr.append("0");
+        if (tweakers64[63-j] & critter.genome) genomeStr.append("1"); else genomeStr.append("0");
 
     //---- Genome Colour
     genome = (quint32)(critter.genome & ((quint64)65536*(quint64)65536-(quint64)1));

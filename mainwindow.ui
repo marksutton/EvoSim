@@ -580,6 +580,7 @@
      <string>Fossil Record</string>
     </property>
     <addaction name="actionChoose_Log_Directory"/>
+    <addaction name="actionShow_positions"/>
    </widget>
    <addaction name="menuCommands"/>
    <addaction name="menuView"/>
@@ -912,6 +913,44 @@
   <action name="actionChoose_Log_Directory">
    <property name="text">
     <string>Choose Log Directory...</string>
+   </property>
+  </action>
+  <action name="actionShow_positions">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show selected positions</string>
+   </property>
+  </action>
+  <action name="actionSelect_Report_Position">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Select Report Position</string>
+   </property>
+  </action>
+  <action name="actionAdd_Genome">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Add Genome</string>
+   </property>
+  </action>
+  <action name="actionFossil_Record_2">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Fossil Record</string>
    </property>
   </action>
  </widget>

@@ -1,6 +1,8 @@
 #include "fossrecwidget.h"
 #include "ui_fossrecwidget.h"
+#include "mainwindow.h"
 #include "simmanager.h"
+#include <math.h>
 #include <QInputDialog>
 #include <QMessageBox>
 
@@ -31,6 +33,27 @@ void FossRecWidget::HideWarnLabel()
     ui->WarnLabel->setVisible(false);
 }
 
+int FossRecWidget::findclosest(int x, int y, int min)
+{
+    //find closest selected item to the given position. Return -1 if its further than min away
+
+    int dist2=99999999;
+    int closest=-1;
+    QList<bool> selections = GetSelections();
+    for (int i=0; i<FossilRecords.count(); i++)
+        if (selections[i])
+        {
+            int dist=(FossilRecords[i]->xpos-x)*(FossilRecords[i]->xpos-x) + (FossilRecords[i]->ypos-y)*(FossilRecords[i]->ypos-y);
+            qDebug()<<"dist:"<<dist<<"  root is "<<sqrt((double)dist);
+            if (dist<dist2)
+            {
+                dist2=dist;
+                closest=i;
+            }
+        }
+    if (sqrt((double)dist2)<min) return closest; else return -1;
+}
+
 FossRecWidget::~FossRecWidget()
 {
     delete ui;
@@ -39,6 +62,7 @@ FossRecWidget::~FossRecWidget()
 
 void FossRecWidget::RefreshMe()
 {
+    QList<bool> selections=GetSelections();
     //write in all the current records
     ui->treeWidget->clear();
 
@@ -63,6 +87,11 @@ void FossRecWidget::RefreshMe()
         item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
         ui->treeWidget->addTopLevelItem(item);
     }
+
+    //redo selections
+    for (int i=0; i<selections.count(); i++)
+        ui->treeWidget->topLevelItem(i)->setSelected(selections[i]);
+
    ui->treeWidget->setUpdatesEnabled(true);
 
    return;
@@ -101,11 +130,13 @@ void FossRecWidget::on_DeleteButton_pressed()
 
     }
     RefreshMe();
+    MainWin->RefreshEnvironment();
 }
 
 void FossRecWidget::on_NewButton_pressed()
 {
     NewItem(50,50,10);
+    MainWin->RefreshEnvironment();
 }
 
 void FossRecWidget::NewItem(int x, int y, int s)
@@ -114,6 +145,11 @@ void FossRecWidget::NewItem(int x, int y, int s)
     String.sprintf("Record %d",NextItem++);
     FossilRecords.append(new FossilRecord(50,50,10,String));
     RefreshMe();
+}
+
+void FossRecWidget::on_treeWidget_itemSelectionChanged()
+{
+    MainWin->RefreshEnvironment();
 }
 
 void FossRecWidget::on_treeWidget_itemDoubleClicked(QTreeWidgetItem *item, int column)
@@ -175,6 +211,7 @@ void FossRecWidget::on_treeWidget_itemDoubleClicked(QTreeWidgetItem *item, int c
         FossilRecords[index]->recording = !FossilRecords[index]->recording;
 
     RefreshMe();
+    MainWin->RefreshEnvironment();
 }
 
 void FossRecWidget::WriteFiles()
@@ -186,4 +223,23 @@ void FossRecWidget::WriteFiles()
         FossilRecords[i]->WriteRecord(LogDirectory + "/" + FossilRecords[i]->name + ".csv");
         qDebug()<<"Written";
     }
+}
+
+QList<bool> FossRecWidget::GetSelections()
+{
+    QList<bool> sl;
+
+    QList<QTreeWidgetItem *> allitems;
+
+    for (int i=0; i<ui->treeWidget->topLevelItemCount(); i++)
+        allitems.append(ui->treeWidget->topLevelItem(i));
+
+    for (int i=0; i<allitems.count(); i++)
+    if (allitems[i]->isSelected())
+        sl.append(true);
+    else
+        sl.append(false);
+
+    while (sl.count()<FossilRecords.count()) sl.append(false);  //this is a safety feature - ensure list is right length
+    return sl;
 }

@@ -94,6 +94,7 @@ MainWindow::MainWindow(QWidget *parent) :
     envgroup->addAction(ui->actionLoop);
     ui->actionLoop->setChecked(true);
 
+
     QObject::connect(viewgroup2, SIGNAL(triggered(QAction *)), this, SLOT(report_mode_changed(QAction *)));
 
     //create scenes, add to the GVs
@@ -108,6 +109,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //add images to the scenes    
     env_item= new QGraphicsPixmapItem();
     envscene->addItem(env_item);
+    env_item->setZValue(0);
 
     pop_item = new QGraphicsPixmapItem();
     popscene->addItem(pop_item);
@@ -351,8 +353,11 @@ void MainWindow::RefreshReport()
             if (i<10) sout<<" "<<i<<": "; else  sout<<i<<": ";
             if (critters[x][y][i].age > 0 )
             {
-                for (int j=0; j<64; j++)
-                    if (tweakers[j] & critters[x][y][i].genome) sout<<"1"; else sout<<"0";
+                for (int j=0; j<32; j++)
+                    if (tweakers64[63-j] & critters[x][y][i].genome) sout<<"1"; else sout<<"0";
+                sout<<" ";
+                for (int j=32; j<64; j++)
+                    if (tweakers64[63-j] & critters[x][y][i].genome) sout<<"1"; else sout<<"0";
                 sout<<"  decimal: "<<critters[x][y][i].genome<<"  fitness: "<<critters[x][y][i].fitness;
             }
             else sout<<" EMPTY";
@@ -410,13 +415,13 @@ void MainWindow::UpdateTitles()
 
 
     if (ui->actionGenome_as_colour->isChecked())
-        ui->LabelVis->setText("Coding Genome bitcount as colour (top critter)");
+        ui->LabelVis->setText("Coding Genome bitcount as colour (modal critter)");
 
     if (ui->actionNonCoding_genome_as_colour->isChecked())
-        ui->LabelVis->setText("Non-Coding Genome bitcount as colour (top critter)");
+        ui->LabelVis->setText("Non-Coding Genome bitcount as colour (modal critter)");
 
     if (ui->actionGene_Frequencies_012->isChecked())
-        ui->LabelVis->setText("Frequences genes 0,1,2 (all critters)");
+        ui->LabelVis->setText("Frequences genes 0,1,2 (all critters in square)");
 
     if (ui->actionBreed_Attempts->isChecked())
         ui->LabelVis->setText("Breed Attempts");
@@ -483,56 +488,130 @@ void MainWindow::RefreshPopulations()
 
     if (ui->actionGenome_as_colour->isChecked())
     {
-        //Popcount
+        //find modal genome in each square, convert to colour
         for (int n=0; n<gridX; n++)
         for (int m=0; m<gridY; m++)
         {
-            if (totalfit[n][m]==0) pop_image_colour->setPixel(n,m,0);
+            //data structure for mode
+            quint64 genomes[SLOTS_PER_GRID_SQUARE];
+            int counts[SLOTS_PER_GRID_SQUARE];
+            int arraypos=0; //pointer
+
+            if (totalfit[n][m]==0) pop_image_colour->setPixel(n,m,0); //black if square is empty
             else
-            for (int c=0; c<slotsPerSq; c++)
             {
-                if (critters[n][m][c].age>0)
+                //for each used slot
+                for (int c=0; c<maxused[n][m]; c++)
                 {
-                    quint32 genome= (quint32)(critters[n][m][c].genome & ((quint64)65536*(quint64)65536-(quint64)1));
-                    quint32 b = bitcounts[genome & 2047] * 23;
-                    genome /=2048;
-                    quint32 g = bitcounts[genome & 2047] * 23;
-                    genome /=2048;
-                    quint32 r = bitcounts[genome] * 25;
-                    pop_image_colour->setPixel(n,m,qRgb(r, g, b));
-                    break;
+                    if (critters[n][m][c].age>0)
+                    {
+                        //If critter is alive
+
+                        quint64 g = critters[n][m][c].genome;
+
+                        //find genome frequencies
+                        for (int i=0; i<arraypos; i++)
+                        {
+                            if (genomes[i]==g) //found it
+                            {
+                                counts[i]++;
+                                goto gotcounts;
+                            }
+                        }
+                        //didn't find it
+                        genomes[arraypos]=g;
+                        counts[arraypos++]=1;
+                    }
                 }
+                gotcounts:
+
+                //find max frequency
+                int max=-1;
+                quint64 maxg=0;
+
+                for (int i=0; i<arraypos; i++)
+                    if (counts[i]>max)
+                    {
+                        max=counts[i];
+                        maxg=genomes[i];
+                    }
+
+                //now convert first 32 bits to a colour
+                // r,g,b each counts of 5,5,6 bits
+                quint32 genome= (quint32)(maxg & ((quint64)65536*(quint64)65536-(quint64)1));
+                quint32 b = bitcounts[genome & 2047] * 23;
+                genome /=2048;
+                quint32 g = bitcounts[genome & 2047] * 23;
+                genome /=2048;
+                quint32 r = bitcounts[genome] * 25;
+                pop_image_colour->setPixel(n,m,qRgb(r, g, b));
             }
-        }
+
+       }
         pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
     }
 
     if (ui->actionNonCoding_genome_as_colour->isChecked())
     {
-        //Popcount
+        //find modal genome in each square, convert non-coding to colour
         for (int n=0; n<gridX; n++)
         for (int m=0; m<gridY; m++)
         {
-            if (totalfit[n][m]==0) pop_image_colour->setPixel(n,m,0);
+            //data structure for mode
+            quint64 genomes[SLOTS_PER_GRID_SQUARE];
+            int counts[SLOTS_PER_GRID_SQUARE];
+            int arraypos=0; //pointer
+
+            if (totalfit[n][m]==0) pop_image_colour->setPixel(n,m,0); //black if square is empty
             else
-            for (int c=0; c<slotsPerSq; c++)
             {
-                if (critters[n][m][c].age>0)
+                //for each used slot
+                for (int c=0; c<maxused[n][m]; c++)
                 {
+                    if (critters[n][m][c].age>0)
+                    {
+                        //If critter is alive
 
-                    quint32 genome= (quint32)(critters[n][m][c].genome / ((quint64)65536*(quint64)65536));
-                    quint32 b = bitcounts[genome & 2047] * 23;
-                    genome /=2048;
-                    quint32 g = bitcounts[genome & 2047] * 23;
-                    genome /=2048;
-                    quint32 r = bitcounts[genome] * 25;
+                        quint64 g = critters[n][m][c].genome;
 
-
-                    pop_image_colour->setPixel(n,m,qRgb(r, g, b));
-                    break;
+                        //find genome frequencies
+                        for (int i=0; i<arraypos; i++)
+                        {
+                            if (genomes[i]==g) //found it
+                            {
+                                counts[i]++;
+                                goto gotcounts2;
+                            }
+                        }
+                        //didn't find it
+                        genomes[arraypos]=g;
+                        counts[arraypos++]=1;
+                    }
                 }
+                gotcounts2:
+
+                //find max frequency
+                int max=-1;
+                quint64 maxg=0;
+
+                for (int i=0; i<arraypos; i++)
+                    if (counts[i]>max)
+                    {
+                        max=counts[i];
+                        maxg=genomes[i];
+                    }
+
+                //now convert first 32 bits to a colour
+                // r,g,b each counts of 5,5,6 bits
+                quint32 genome= (quint32)(maxg / ((quint64)65536*(quint64)65536));
+                quint32 b = bitcounts[genome & 2047] * 23;
+                genome /=2048;
+                quint32 g = bitcounts[genome & 2047] * 23;
+                genome /=2048;
+                quint32 r = bitcounts[genome] * 25;
+                pop_image_colour->setPixel(n,m,qRgb(r, g, b));
             }
-        }
+       }
         pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
     }
 
@@ -656,6 +735,16 @@ void MainWindow::RefreshEnvironment()
         env_image->setPixel(n,m,qRgb(environment[n][m][0], environment[n][m][1], environment[n][m][2]));
 
     env_item->setPixmap(QPixmap::fromImage(*env_image));
+
+    if (ui->actionShow_positions->isChecked())
+    {
+        //Show all selected fossil record items
+        QList<bool> selectedlist = FRW->GetSelections();
+
+        //get list of which is selected
+        envscene->DrawLocations(FRW->FossilRecords,selectedlist);
+    }
+
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)

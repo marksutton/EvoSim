@@ -26,7 +26,8 @@ public:
     QString LogDirectory;
     bool LogDirectoryChosen;
     void WriteFiles();
-
+    QList<bool> GetSelections();
+    int findclosest(int x, int y, int min);
 private:
     Ui::FossRecWidget *ui;
 
@@ -37,6 +38,7 @@ private slots:
     void on_DeleteButton_pressed();
     void on_NewButton_pressed();
     void on_treeWidget_itemDoubleClicked(QTreeWidgetItem *item, int column);
+    void on_treeWidget_itemSelectionChanged();
 };
 
 #endif // FOSSRECWIDGET_H
