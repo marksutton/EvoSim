@@ -19,12 +19,14 @@ public:
     ~GenomeComparison();
     Ui::GenomeComparison *ui;
 
-    //---- Add to Table
+    //---- Comparison Public Interface Functions
     bool addGenomeCritter(Critter critter, quint8 *environment);
+    QByteArray saveComparison();
+    bool loadComparison(QByteArray data);
 
 private slots:
     //---- Actions
-    bool resetTable();
+    bool resetTables();
     bool deleteGenome();
     bool compareGenomes();
     void setAuto(bool toggle);
@@ -35,7 +37,7 @@ private:
     void widgetStyling();
 
     //---- Tables
-    bool renderTable();
+    bool renderGenomesTable();
     void insertRow(
             int row,
             QString genomeName,
@@ -52,6 +54,7 @@ private:
             int fitness,
             QTableWidget *table,
             QString comparisonMask = QString(""));
+    bool renderCompareTable();
 
     //---- Buttons
     void buttonUpdate();
