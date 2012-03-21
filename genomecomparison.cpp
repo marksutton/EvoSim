@@ -179,8 +179,7 @@ bool GenomeComparison::renderGenomesTable(){
     ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("F.")));
 
     //----- Add rows if genomeList.count() != 0
-    int numGenomes = genomeList.count();
-    if (numGenomes != 0) {
+    if (!genomeList.empty()) {
         for(int row=0; row<genomeList.count(); row++){
             //---- Add to table
             if (autoComparison == true && row!=0) {
@@ -358,6 +357,73 @@ void GenomeComparison::insertRow(
     table->blockSignals(false);
 }
 
+bool GenomeComparison::renderCompareTable() {
+    //---- Reset Table
+    ui->compareTableWidget->hide();
+    ui->compareTableWidget->clear();
+    ui->compareTableWidget->setRowCount(0);
+    ui->compareTableWidget->setColumnWidth(0,20);
+    ui->compareTableWidget->setColumnWidth(67,30);
+    ui->compareTableWidget->setColumnWidth(68,30);
+    ui->compareTableWidget->setColumnWidth(69,30);
+    ui->compareTableWidget->setColumnWidth(70,30);
+
+    //---- Setup
+    if (!compareList.empty()) {
+        QMap<QString,QString> genomeListMapA = compareList[0];
+        QMap<QString,QString> genomeListMapB = compareList[1];
+        QString compareMask;
+
+        //---- Create Masks
+        for (int i=0; i<64; i++)
+        {
+            if (genomeListMapA["genome"].at(i) == genomeListMapB["genome"].at(i)) {
+                //---- Same bit
+                compareMask.append("0");
+            } else {
+                compareMask.append("1");
+            }
+        }
+
+        //---- Insert Rows
+        insertRow(
+                    0,
+                    genomeListMapA["name"],
+                    genomeListMapA["genome"],
+                    genomeListMapA["envColorR"].toInt(),
+                    genomeListMapA["envColorG"].toInt(),
+                    genomeListMapA["envColorB"].toInt(),
+                    genomeListMapA["genomeColorR"].toInt(),
+                    genomeListMapA["genomeColorG"].toInt(),
+                    genomeListMapA["genomeColorB"].toInt(),
+                    genomeListMapA["nonCodeColorR"].toInt(),
+                    genomeListMapA["nonCodeColorG"].toInt(),
+                    genomeListMapA["nonCodeColorB"].toInt(),
+                    genomeListMapA["fitness"].toInt(),
+                    ui->compareTableWidget);
+
+        insertRow(
+                    1,
+                    genomeListMapB["name"],
+                    genomeListMapB["genome"],
+                    genomeListMapB["envColorR"].toInt(),
+                    genomeListMapB["envColorG"].toInt(),
+                    genomeListMapB["envColorB"].toInt(),
+                    genomeListMapB["genomeColorR"].toInt(),
+                    genomeListMapB["genomeColorG"].toInt(),
+                    genomeListMapB["genomeColorB"].toInt(),
+                    genomeListMapB["nonCodeColorR"].toInt(),
+                    genomeListMapB["nonCodeColorG"].toInt(),
+                    genomeListMapB["nonCodeColorB"].toInt(),
+                    genomeListMapB["fitness"].toInt(),
+                    ui->compareTableWidget,
+                    compareMask);
+    }
+    ui->compareTableWidget->show();
+
+    return true;
+}
+
 /*---------------------------------------------------------------------------//
     Table Actions
 //---------------------------------------------------------------------------*/
@@ -473,73 +539,6 @@ bool GenomeComparison::addGenomeCritter(Critter critter, quint8 *environment)
     return true;
 }
 
-bool GenomeComparison::renderCompareTable() {
-    //---- Reset Table
-    ui->compareTableWidget->hide();
-    ui->compareTableWidget->clear();
-    ui->compareTableWidget->setRowCount(0);
-    ui->compareTableWidget->setColumnWidth(0,20);
-    ui->compareTableWidget->setColumnWidth(67,30);
-    ui->compareTableWidget->setColumnWidth(68,30);
-    ui->compareTableWidget->setColumnWidth(69,30);
-    ui->compareTableWidget->setColumnWidth(70,30);
-
-    //---- Setup
-    QMap<QString,QString> genomeListMapA = compareList[0];
-    QMap<QString,QString> genomeListMapB = compareList[1];
-    QString compareMask;
-
-    //---- Create Masks
-    for (int i=0; i<64; i++)
-    {
-        if (genomeListMapA["genome"].at(i) == genomeListMapB["genome"].at(i)) {
-            //---- Same bit
-            compareMask.append("0");
-        } else {
-            compareMask.append("1");
-        }
-    }
-
-    //---- Insert Rows
-    insertRow(
-                0,
-                genomeListMapA["name"],
-                genomeListMapA["genome"],
-                genomeListMapA["envColorR"].toInt(),
-                genomeListMapA["envColorG"].toInt(),
-                genomeListMapA["envColorB"].toInt(),
-                genomeListMapA["genomeColorR"].toInt(),
-                genomeListMapA["genomeColorG"].toInt(),
-                genomeListMapA["genomeColorB"].toInt(),
-                genomeListMapA["nonCodeColorR"].toInt(),
-                genomeListMapA["nonCodeColorG"].toInt(),
-                genomeListMapA["nonCodeColorB"].toInt(),
-                genomeListMapA["fitness"].toInt(),
-                ui->compareTableWidget);
-
-    insertRow(
-                1,
-                genomeListMapB["name"],
-                genomeListMapB["genome"],
-                genomeListMapB["envColorR"].toInt(),
-                genomeListMapB["envColorG"].toInt(),
-                genomeListMapB["envColorB"].toInt(),
-                genomeListMapB["genomeColorR"].toInt(),
-                genomeListMapB["genomeColorG"].toInt(),
-                genomeListMapB["genomeColorB"].toInt(),
-                genomeListMapB["nonCodeColorR"].toInt(),
-                genomeListMapB["nonCodeColorG"].toInt(),
-                genomeListMapB["nonCodeColorB"].toInt(),
-                genomeListMapB["fitness"].toInt(),
-                ui->compareTableWidget,
-                compareMask);
-
-    ui->compareTableWidget->show();
-
-    return true;
-}
-
-
 QByteArray GenomeComparison::saveComparison()
 {
     QByteArray outData;
@@ -568,7 +567,6 @@ bool GenomeComparison::loadComparison(QByteArray inData)
     resetTables();
 
     //---- Get Manual Comparison Table Genome List
-    compareList.clear();
     in>>compareList;
     if (!compareList.empty()) {
         renderCompareTable();
