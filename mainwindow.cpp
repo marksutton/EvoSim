@@ -1068,6 +1068,9 @@ void MainWindow::on_actionSave_triggered()
         out<<xormasks[i][j];
     }
 
+    //---- ARTS Genome Comparison Saving
+    out<<genoneComparison->saveComparison();
+
     outfile.close();
 }
 
@@ -1200,6 +1203,11 @@ void MainWindow::on_actionLoad_triggered()
     {
         in>>xormasks[i][j];
     }
+
+    //---- ARTS Genome Comparison Loading
+    QByteArray gcTemp;
+    in>>gcTemp;
+    genoneComparison->loadComparison(gcTemp);
 
     infile.close();
     NextRefresh=0;
