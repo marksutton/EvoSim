@@ -56,6 +56,7 @@ private:
     QGraphicsPixmapItem *pop_item, *env_item;
     Ui::MainWindow *ui;
     void ResetSquare(int n, int m);
+    void ResizeImageObjects();
 
     QAction *startButton, *pauseButton, *runForButton, *resetButton;
 

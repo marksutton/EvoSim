@@ -778,6 +778,20 @@ void MainWindow::ResetSquare(int n, int m)
 }
 
 
+void MainWindow::ResizeImageObjects()
+{
+    delete pop_image;
+    delete env_image;
+    delete pop_image_colour;
+    pop_image =new QImage(gridX, gridY, QImage::Format_Indexed8);
+    QVector <QRgb> clut(256);
+    for (int ic=0; ic<256; ic++) clut[ic]=qRgb(ic,ic,ic);
+    pop_image->setColorTable(clut);
+
+    env_image=new QImage(gridX, gridY, QImage::Format_RGB32);
+
+    pop_image_colour=new QImage(gridX, gridY, QImage::Format_RGB32);
+}
 void MainWindow::on_actionSettings_triggered()
 {
     //AutoMarkers options tab
@@ -809,22 +823,11 @@ void MainWindow::on_actionSettings_triggered()
                 ResetSquare(n,m);
         }
 
-        delete pop_image;
-        delete env_image;
-        delete pop_image_colour;
-        pop_image =new QImage(gridX, gridY, QImage::Format_Indexed8);
-        QVector <QRgb> clut(256);
-        for (int ic=0; ic<256; ic++) clut[ic]=qRgb(ic,ic,ic);
-        pop_image->setColorTable(clut);
-
-        env_image=new QImage(gridX, gridY, QImage::Format_RGB32);
-
-        pop_image_colour=new QImage(gridX, gridY, QImage::Format_RGB32);
+        ResizeImageObjects();
 
         RefreshPopulations();
         RefreshEnvironment();
-        ui->GV_Population->fitInView(pop_item,Qt::KeepAspectRatio);
-        ui->GV_Environment->fitInView(env_item,Qt::KeepAspectRatio);
+        Resize();
     }
 }
 
@@ -1260,7 +1263,9 @@ void MainWindow::on_actionLoad_triggered()
 
     infile.close();
     NextRefresh=0;
+    ResizeImageObjects();
     Report();
+    Resize();
 }
 
 //---- ARTS: Genome Comparison UI
