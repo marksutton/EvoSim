@@ -16,7 +16,7 @@ class EnvironmentScene : public QGraphicsScene
 public:
         EnvironmentScene();
         MainWindow *mw;
-        void DrawLocations(QList <FossilRecord *> frlist, QList <bool> selecteds);
+        void DrawLocations(QList <FossilRecord *> frlist, bool show);
         int button;
         int grabbed;
 

@@ -139,11 +139,16 @@ void FossRecWidget::on_NewButton_pressed()
     MainWin->RefreshEnvironment();
 }
 
+void FossRecWidget::on_SelectAllButton_pressed()
+{
+    ui->treeWidget->selectAll();
+}
+
 void FossRecWidget::NewItem(int x, int y, int s)
 {
     QString String;
     String.sprintf("Record %d",NextItem++);
-    FossilRecords.append(new FossilRecord(50,50,10,String));
+    FossilRecords.append(new FossilRecord(x,y,s,String));
     RefreshMe();
 }
 
@@ -242,4 +247,76 @@ QList<bool> FossRecWidget::GetSelections()
 
     while (sl.count()<FossilRecords.count()) sl.append(false);  //this is a safety feature - ensure list is right length
     return sl;
+}
+
+QByteArray FossRecWidget::SaveState()
+{
+    QByteArray OutArray;
+    QDataStream out(&OutArray,QIODevice::WriteOnly);
+
+
+    out<<LogDirectory;
+    out<<LogDirectoryChosen;
+
+    out<<NextItem;
+    out<<FossilRecords.count();
+    for (int i=0; i<FossilRecords.count(); i++)
+    {
+        out<<FossilRecords[i]->name;
+        out<<FossilRecords[i]->xpos;
+        out<<FossilRecords[i]->ypos;
+        out<<FossilRecords[i]->sparsity;
+        out<<FossilRecords[i]->startage;
+        out<<FossilRecords[i]->recording;
+        out<<FossilRecords[i]->writtenonce;
+        out<<FossilRecords[i]->recorded;
+    }
+    return OutArray;
+}
+
+void FossRecWidget::RestoreState(QByteArray InArray)
+{
+    QDataStream in(&InArray,QIODevice::ReadOnly);
+
+    in>>LogDirectory;
+    in>>LogDirectoryChosen;
+    in>>NextItem;
+
+    int itemcount;
+    in>>itemcount;
+
+    //remove any old data
+    qDeleteAll(FossilRecords);
+    FossilRecords.clear();
+
+    for (int i=0; i<itemcount; i++)
+    {
+        FossilRecord *newfr =  new FossilRecord(0,0,0,"");
+        in>>newfr->name;
+        in>>newfr->xpos;
+        in>>newfr->ypos;
+        in>>newfr->sparsity;
+        in>>newfr->startage;
+        in>>newfr->recording;
+        in>>newfr->writtenonce;
+        in>>newfr->recorded;
+        FossilRecords.append(newfr);
+    }
+    RefreshMe();
+}
+
+void FossRecWidget::SelectedActive(bool s)
+{
+    QList<bool> selections = GetSelections();
+    for (int i=0; i<FossilRecords.count(); i++)
+        if (selections[i]) FossilRecords[i]->recording=s;
+    RefreshMe();
+}
+
+void FossRecWidget::SelectedSparse(int s)
+{
+    QList<bool> selections = GetSelections();
+    for (int i=0; i<FossilRecords.count(); i++)
+        if (selections[i]) FossilRecords[i]->sparsity=s;
+    RefreshMe();
 }

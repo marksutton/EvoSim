@@ -736,15 +736,8 @@ void MainWindow::RefreshEnvironment()
 
     env_item->setPixmap(QPixmap::fromImage(*env_image));
 
-    if (ui->actionShow_positions->isChecked())
-    {
-        //Show all selected fossil record items
-        QList<bool> selectedlist = FRW->GetSelections();
-
-        //get list of which is selected
-        envscene->DrawLocations(FRW->FossilRecords,selectedlist);
-    }
-
+    //Draw on fossil records
+    envscene->DrawLocations(FRW->FossilRecords,ui->actionShow_positions->isChecked());
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)
@@ -1071,6 +1064,32 @@ void MainWindow::on_actionSave_triggered()
     //---- ARTS Genome Comparison Saving
     out<<genoneComparison->saveComparison();
 
+    //and fossil record stuff
+    FRW->WriteFiles(); //make sure all is flushed
+    out<<FRW->SaveState();
+
+    //New Year Per Iteration variable
+    out<<yearsPerIteration;
+
+    //Some more stuff that was missing from first version
+    out<<ui->actionShow_positions->isChecked();
+
+    for (int i=0; i<gridX; i++)
+    for (int j=0; j<gridY; j++)
+    {
+        out<<breedattempts[i][j];
+        out<<breedfails[i][j];
+        out<<settles[i][j];
+        out<<settlefails[i][j];
+        out<<maxused[i][j];
+    }
+
+    //And finally some window state stuff
+    out<<saveState(); //window state
+    out<<ui->actionFossil_Record->isChecked();
+    out<<ui->actionReport_Viewer->isChecked();
+    out<<ui->actionGenomeComparison->isChecked();
+
     outfile.close();
 }
 
@@ -1205,9 +1224,39 @@ void MainWindow::on_actionLoad_triggered()
     }
 
     //---- ARTS Genome Comparison Loading
-    QByteArray gcTemp;
-    in>>gcTemp;
-    genoneComparison->loadComparison(gcTemp);
+    QByteArray Temp;
+    in>>Temp;
+    genoneComparison->loadComparison(Temp);
+
+    //and fossil record stuff
+    in>>Temp;
+    FRW->RestoreState(Temp);
+
+    //New Year Per Iteration variable
+    in>>yearsPerIteration;
+
+    //Some more stuff that was missing from first version
+    bool btemp;
+    in>>btemp;
+    ui->actionShow_positions->setChecked(btemp);
+
+    for (int i=0; i<gridX; i++)
+    for (int j=0; j<gridY; j++)
+    {
+        in>>breedattempts[i][j];
+        in>>breedfails[i][j];
+        in>>settles[i][j];
+        in>>settlefails[i][j];
+        in>>maxused[i][j];
+    }
+
+    in>>Temp;
+    restoreState(Temp); //window state
+
+    in>>btemp; ui->actionFossil_Record->setChecked(btemp);
+    in>>btemp; ui->actionReport_Viewer->setChecked(btemp);
+    in>>btemp; ui->actionGenomeComparison->setChecked(btemp);
+
 
     infile.close();
     NextRefresh=0;
@@ -1231,4 +1280,61 @@ bool MainWindow::genomeComparisonAdd()
         }       
     }
     return false;
+}
+
+void MainWindow::on_actionAdd_Regular_triggered()
+{
+    int count;
+    bool ok;
+    count=QInputDialog::getInteger(this,"","Grid Density?",2,2,10,1,&ok);
+    if (!ok) return;
+
+    for (int x=0; x<count; x++)
+    for (int y=0; y<count; y++)
+    {
+        int rx=(int)((((float)gridX/(float)count)/(float)2 + (float)gridX/(float)count * (float)x)+.5);
+        int ry=(int)((((float)gridY/(float)count)/(float)2 + (float)gridY/(float)count * (float)y)+.5);
+        FRW->NewItem(rx,ry,10);
+    }
+}
+
+void MainWindow::on_actionAdd_Random_triggered()
+{
+    int count;
+    bool ok;
+    count=QInputDialog::getInteger(this,"","Number of records to add?",1,1,100,1,&ok);
+    if (!ok) return;
+    for (int i=0; i<count; i++)
+    {
+        int rx=qrand() % gridX;
+        int ry=qrand() % gridY;
+        FRW->NewItem(rx,ry,10);
+    }
+}
+
+void MainWindow::on_actionSet_Active_triggered()
+{
+    FRW->SelectedActive(true);
+}
+
+void MainWindow::on_actionSet_Inactive_triggered()
+{
+    FRW->SelectedActive(false);
+}
+
+void MainWindow::on_actionSet_Sparsity_triggered()
+{
+
+    bool ok;
+
+    int value=QInputDialog::getInt(this,"","Sparsity",10,1,100000,1,&ok);
+    if (!ok) return;
+
+    FRW->SelectedSparse(value);
+
+}
+
+void MainWindow::on_actionShow_positions_triggered()
+{
+    RefreshEnvironment();
 }

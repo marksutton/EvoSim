@@ -74,6 +74,12 @@ private slots:
     void on_actionSave_triggered();
     void on_actionLoad_triggered();
     void on_actionChoose_Log_Directory_triggered();
+    void on_actionAdd_Regular_triggered();
+    void on_actionAdd_Random_triggered();
+    void on_actionSet_Active_triggered();
+    void on_actionSet_Inactive_triggered();
+    void on_actionSet_Sparsity_triggered();
+    void on_actionShow_positions_triggered();
 
 };
 

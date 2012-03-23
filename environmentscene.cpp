@@ -91,66 +91,74 @@ void EnvironmentScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event )
     return;
 }
 
-void EnvironmentScene::DrawLocations(QList <FossilRecord *> frlist, QList <bool> selecteds)
+void EnvironmentScene::DrawLocations(QList <FossilRecord *> frlist, bool show)
 {
-    //add any new items needed
-    while (frlist.count()>HorizontalLineList.count())
+    if (show)
     {
-        HorizontalLineList.append(new QGraphicsLineItem(0,this));
-        VerticalLineList.append(new QGraphicsLineItem(0,this));
-        LabelsList.append(new QGraphicsSimpleTextItem(0,this));
-    }
-    //now remove any spurious ones
-    while (frlist.count()<HorizontalLineList.count())
-    {
-        QGraphicsLineItem *r1=HorizontalLineList.takeLast();
-        QGraphicsLineItem *r2=VerticalLineList.takeLast();
-        QGraphicsSimpleTextItem *t=LabelsList.takeLast();
-        removeItem(r1);
-        removeItem(r2);
-        removeItem(t);
-    }
-
-    //now set them up
-    for (int i=0; i<frlist.count(); i++)
-    {
-        //qDebug()<<frlist[i]->xpos-5<<frlist[i]->ypos<<frlist[i]->xpos+5<<frlist[i]->ypos;
-        HorizontalLineList[i]->setLine(frlist[i]->xpos-.5,frlist[i]->ypos+.5, frlist[i]->xpos+1.5,frlist[i]->ypos+.5);
-        VerticalLineList[i]->setLine(frlist[i]->xpos+.5,frlist[i]->ypos-.5, frlist[i]->xpos+.5,frlist[i]->ypos+1.5);
-        HorizontalLineList[i]->setVisible(selecteds[i]);
-        VerticalLineList[i]->setVisible(selecteds[i]);
-        VerticalLineList[i]->setZValue(i+1);
-        HorizontalLineList[i]->setZValue(i+1);
-
-        LabelsList[i]->setText(frlist[i]->name);
-        LabelsList[i]->setX(frlist[i]->xpos+1);
-        LabelsList[i]->setY(frlist[i]->ypos-2);
-        LabelsList[i]->setFont(QFont("Arial",12));
-        LabelsList[i]->setScale(.15);
-        LabelsList[i]->setVisible(selecteds[i]);
-        LabelsList[i]->setZValue(i+1);
-
-        //sort out colours
-        int bright = (int)(environment[frlist[i]->xpos][frlist[i]->ypos][0])
-                + (int)(environment[frlist[i]->xpos][frlist[i]->ypos][1])
-                + (int)(environment[frlist[i]->xpos][frlist[i]->ypos][2]);
-
-        qDebug()<<"Bright:"<<bright;
-
-        if (bright>250)
+        QList <bool> selecteds = MainWin->FRW->GetSelections();
+        //add any new items needed
+        while (frlist.count()>HorizontalLineList.count())
         {
-            VerticalLineList[i]->setPen(QPen(Qt::black));
-            HorizontalLineList[i]->setPen(QPen(Qt::black));
-            LabelsList[i]->setBrush(QBrush(Qt::black));
+            HorizontalLineList.append(new QGraphicsLineItem(0,this));
+            VerticalLineList.append(new QGraphicsLineItem(0,this));
+            LabelsList.append(new QGraphicsSimpleTextItem(0,this));
         }
-        else
+        //now remove any spurious ones
+        while (frlist.count()<HorizontalLineList.count())
         {
-            VerticalLineList[i]->setPen(QPen(Qt::white));
-            HorizontalLineList[i]->setPen(QPen(Qt::white));
-            LabelsList[i]->setBrush(QBrush(Qt::white));
+            QGraphicsLineItem *r1=HorizontalLineList.takeLast();
+            QGraphicsLineItem *r2=VerticalLineList.takeLast();
+            QGraphicsSimpleTextItem *t=LabelsList.takeLast();
+            removeItem(r1);
+            removeItem(r2);
+            removeItem(t);
         }
 
+        //now set them up
+        for (int i=0; i<frlist.count(); i++)
+        {
+            //qDebug()<<frlist[i]->xpos-5<<frlist[i]->ypos<<frlist[i]->xpos+5<<frlist[i]->ypos;
+            HorizontalLineList[i]->setLine(frlist[i]->xpos-.5,frlist[i]->ypos+.5, frlist[i]->xpos+1.5,frlist[i]->ypos+.5);
+            VerticalLineList[i]->setLine(frlist[i]->xpos+.5,frlist[i]->ypos-.5, frlist[i]->xpos+.5,frlist[i]->ypos+1.5);
+            HorizontalLineList[i]->setVisible(selecteds[i]);
+            VerticalLineList[i]->setVisible(selecteds[i]);
+            VerticalLineList[i]->setZValue(i+1);
+            HorizontalLineList[i]->setZValue(i+1);
 
+            LabelsList[i]->setText(frlist[i]->name);
+            LabelsList[i]->setX(frlist[i]->xpos+1);
+            LabelsList[i]->setY(frlist[i]->ypos-2);
+            LabelsList[i]->setFont(QFont("Arial",12));
+            LabelsList[i]->setScale(.15);
+            LabelsList[i]->setVisible(selecteds[i]);
+            LabelsList[i]->setZValue(i+1);
 
+            //sort out colours
+            int bright = (int)(environment[frlist[i]->xpos][frlist[i]->ypos][0])
+                    + (int)(environment[frlist[i]->xpos][frlist[i]->ypos][1])
+                    + (int)(environment[frlist[i]->xpos][frlist[i]->ypos][2]);
+
+            qDebug()<<"Bright:"<<bright;
+
+            if (bright>250)
+            {
+                VerticalLineList[i]->setPen(QPen(Qt::black));
+                HorizontalLineList[i]->setPen(QPen(Qt::black));
+                LabelsList[i]->setBrush(QBrush(Qt::black));
+            }
+            else
+            {
+                VerticalLineList[i]->setPen(QPen(Qt::white));
+                HorizontalLineList[i]->setPen(QPen(Qt::white));
+                LabelsList[i]->setBrush(QBrush(Qt::white));
+            }
+        }
+    }
+    else
+    for (int i=0; i<VerticalLineList.count(); i++)
+    {
+            HorizontalLineList[i]->setVisible(false);
+            VerticalLineList[i]->setVisible(false);
+            LabelsList[i]->setVisible(false);
     }
 }

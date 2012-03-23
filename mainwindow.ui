@@ -513,6 +513,7 @@
     <property name="title">
      <string>Commands</string>
     </property>
+    <addaction name="actionEnvironment_Files"/>
     <addaction name="actionStart_Sim"/>
     <addaction name="actionRun_for"/>
     <addaction name="actionPause_Sim"/>
@@ -523,10 +524,13 @@
     <addaction name="separator"/>
     <addaction name="actionSettings"/>
     <addaction name="actionRefresh_Rate"/>
+    <addaction name="separator"/>
+    <addaction name="actionCount_Peaks"/>
+    <addaction name="actionMisc"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
-     <string>Population</string>
+     <string>Population View</string>
     </property>
     <addaction name="actionPopulation_Count"/>
     <addaction name="actionMean_fitness"/>
@@ -539,17 +543,12 @@
     <addaction name="actionSettle_Fails"/>
     <addaction name="separator"/>
    </widget>
-   <widget class="QMenu" name="menuTest_Commands">
-    <property name="title">
-     <string>Test Commands</string>
-    </property>
-    <addaction name="actionCount_Peaks"/>
-    <addaction name="actionMisc"/>
-   </widget>
    <widget class="QMenu" name="menuReports">
     <property name="title">
      <string>Reports</string>
     </property>
+    <addaction name="actionReport_Viewer"/>
+    <addaction name="separator"/>
     <addaction name="actionNone"/>
     <addaction name="actionSimple_List"/>
     <addaction name="actionSorted_Summary"/>
@@ -558,37 +557,40 @@
    </widget>
    <widget class="QMenu" name="menuEnvironment">
     <property name="title">
-     <string>Environment</string>
+     <string>Environment Mode</string>
     </property>
     <addaction name="actionStatic"/>
     <addaction name="actionOnce"/>
     <addaction name="actionLoop"/>
     <addaction name="actionBounce"/>
-    <addaction name="separator"/>
-    <addaction name="actionEnvironment_Files"/>
    </widget>
    <widget class="QMenu" name="menuDocks">
     <property name="title">
-     <string>Docks</string>
+     <string>Genome Comparison</string>
     </property>
-    <addaction name="actionReport_Viewer"/>
     <addaction name="actionGenomeComparison"/>
-    <addaction name="actionFossil_Record"/>
    </widget>
    <widget class="QMenu" name="menuFossil_Record">
     <property name="title">
      <string>Fossil Record</string>
     </property>
+    <addaction name="actionFossil_Record"/>
+    <addaction name="separator"/>
     <addaction name="actionChoose_Log_Directory"/>
     <addaction name="actionShow_positions"/>
+    <addaction name="separator"/>
+    <addaction name="actionAdd_Random"/>
+    <addaction name="actionAdd_Regular"/>
+    <addaction name="actionSet_Sparsity"/>
+    <addaction name="actionSet_Active"/>
+    <addaction name="actionSet_Inactive"/>
    </widget>
    <addaction name="menuCommands"/>
-   <addaction name="menuView"/>
    <addaction name="menuEnvironment"/>
+   <addaction name="menuView"/>
+   <addaction name="menuFossil_Record"/>
    <addaction name="menuReports"/>
    <addaction name="menuDocks"/>
-   <addaction name="menuFossil_Record"/>
-   <addaction name="menuTest_Commands"/>
   </widget>
   <action name="actionReseed">
    <property name="text">
@@ -891,7 +893,7 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>Genome Comparison</string>
+    <string>Genome Comparison Dock</string>
    </property>
   </action>
   <action name="actionFossil_Record">
@@ -899,7 +901,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Fossil Record</string>
+    <string>Fossil Record Dock</string>
    </property>
   </action>
   <action name="actionReport_Viewer">
@@ -907,7 +909,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Report Viewer</string>
+    <string>Report Dock</string>
    </property>
   </action>
   <action name="actionChoose_Log_Directory">
@@ -951,6 +953,31 @@
    </property>
    <property name="text">
     <string>Fossil Record</string>
+   </property>
+  </action>
+  <action name="actionAdd_Random">
+   <property name="text">
+    <string>Add Random...</string>
+   </property>
+  </action>
+  <action name="actionAdd_Regular">
+   <property name="text">
+    <string>Add Regular...</string>
+   </property>
+  </action>
+  <action name="actionSet_Sparsity">
+   <property name="text">
+    <string>Set Sparsity...</string>
+   </property>
+  </action>
+  <action name="actionSet_Active">
+   <property name="text">
+    <string>Set Active</string>
+   </property>
+  </action>
+  <action name="actionSet_Inactive">
+   <property name="text">
+    <string>Set Inactive</string>
    </property>
   </action>
  </widget>
