@@ -305,7 +305,7 @@ void MainWindow::Report()
     out.sprintf("%d",out.toInt()/yearsPerIteration);
     ui->LabelYears->setText(out);
 
-    out.sprintf("%.2f",((atime*1000000)/3600000)/yearsPerIteration);
+    out.sprintf("%.3f",(3600000/(atime*yearsPerIteration))/1000000);
     ui->LabelMyPerHour->setText(out);
 
     //now back to sprintf for convenience
