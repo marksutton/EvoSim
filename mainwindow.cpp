@@ -305,6 +305,9 @@ void MainWindow::Report()
     out.sprintf("%d",out.toInt()/yearsPerIteration);
     ui->LabelYears->setText(out);
 
+    out.sprintf("%.3f",(3600000/(atime*yearsPerIteration))/1000000);
+    ui->LabelMyPerHour->setText(out);
+
     //now back to sprintf for convenience
     if (CurrentEnvFile>=EnvFiles.count())
     out.sprintf("Finished (%d)",EnvFiles.count());
