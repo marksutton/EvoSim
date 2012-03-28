@@ -113,17 +113,27 @@ QString Analyser::Groups()
 {
     if (genomes.count()==0) return "Nothing to analyse";
 
+    //Sort the genomes. There are 10000 of these - might be slow
     qSort(genomes.begin(),genomes.end());
+
+    //make sure the 'unused' list is empty - this list is going to contain indices of lists that have been amalgamated and are no longer needed
     unusedgroups.clear();
-    //start flood-fill style spread algorithm on position 0, for group 1
-    int group=1;
+
+    //start flood-fill style spread algorithm on position 0, for group 1. Basically go through all genomes that are unplaced and place them
+    int group=1; //first group to use (0 means ungrouped).
     bool done=false;
-    while (done==false)
+    while (done==false) //keep going until all are placed
     {
         done=true;
         for (int i=0; i<genomes.count(); i++)
-            if (genomes[i].group==0) {group=Spread(i,group); done=false; break;}
+            if (genomes[i].group==0)
+            {
+                group=Spread(i,group); //return next group number (current one +1). This is the recursive algorithm that assigns all genomes it can to the group
+                done=false; break;
+            }
     }
+
+    //Sort out the list. Might be simpler to use a linked list and delete items as we go!
 
     qSort(unusedgroups.begin(), unusedgroups.end());
     unusedgroups.append(-1); //to avoid check failing
@@ -165,6 +175,8 @@ QString Analyser::Groups()
 
     sout<<"Group count"<<group;
 */
+
+    //Stuff from now on is about the output... not necessarily critical
 
     //OK, now we want to find the modal occurrence for each group - as they are sorted this is FIRST occurence
     QVector <int> modal(group+1);
