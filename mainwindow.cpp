@@ -184,7 +184,7 @@ void MainWindow::on_actionStart_Sim_triggered()
         if (ui->actionOnce->isChecked()) emode=1;
         if (ui->actionBounce->isChecked()) emode=3;
         if (ui->actionLoop->isChecked()) emode=2;
-        if (TheSimManager->iterate(emode)) pauseflag=true; //returns true if reached end
+        if (TheSimManager->iterate(emode,ui->actionInterpolate->isChecked())) pauseflag=true; //returns true if reached end
         FRW->MakeRecords();
     }
     FinishRun();
@@ -211,7 +211,7 @@ void MainWindow::on_actionRun_for_triggered()
         if (ui->actionOnce->isChecked()) emode=1;
         if (ui->actionBounce->isChecked()) emode=3;
         if (ui->actionLoop->isChecked()) emode=2;
-        if (TheSimManager->iterate(emode)) pauseflag=true;
+        if (TheSimManager->iterate(emode,ui->actionInterpolate->isChecked())) pauseflag=true;
         FRW->MakeRecords();
         i--;
     }
@@ -455,7 +455,6 @@ void MainWindow::RefreshPopulations()
             {
                 if (critters[n][m][c].age) count++;
             }
-            //if (count>0) qDebug()<<count;
             bigcount+=count;
             count*=2;
             if (count>255) count=255;
@@ -475,7 +474,6 @@ void MainWindow::RefreshPopulations()
             {
                 if (critters[n][m][c].age) count++;
             }
-            //if (count>0) qDebug()<<count;
             if (count==0)
             pop_image->setPixel(n,m,0);
                 else
@@ -692,16 +690,23 @@ void MainWindow::RefreshPopulations()
     if (ui->actionSettle_Fails->isChecked())
     //this now combines breed fails (red) and settle fails (green)
     {
-        //Popcount
+        //work out max and ratios
+        int maxbf=1;
+        int maxsf=1;
         for (int n=0; n<gridX; n++)
         for (int m=0; m<gridY; m++)
         {
-            int r,g;
-            r=breedfails[n][m]; if (r>255) r=255;
-            int d=settles[n][m] + settlefails[n][m];
-            if (d==0) g=0;
-            else g=(settlefails[n][m]*2550)/(settles[n][m] + settlefails[n][m]);
-            if (g>255) g=255;
+            if (settlefails[n][m]>maxsf) maxsf=settlefails[n][m];
+            if (breedfails[n][m]>maxsf) maxbf=breedfails[n][m];
+        }
+        float bf_mult=255.0 / (float)maxbf;
+        float sf_mult=255.0 / (float)maxsf;
+         //Popcount
+        for (int n=0; n<gridX; n++)
+        for (int m=0; m<gridY; m++)
+        {
+            int r=(int)((float)(breedfails[n][m])*bf_mult); if (r>255) r=255;
+            int g=(int)((float)(settlefails[n][m])*sf_mult); if (g>255) g=255;
             pop_image_colour->setPixel(n,m,qRgb(r, g, 0));
         }
         pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
@@ -935,7 +940,11 @@ void  MainWindow::on_actionEnvironment_Files_triggered()
     if (files.length()==0) return;
     EnvFiles = files;
     CurrentEnvFile=0;
-    TheSimManager->loadEnvironmentFromFile();
+    int emode=0;
+    if (ui->actionOnce->isChecked()) emode=1;
+    if (ui->actionBounce->isChecked()) emode=3;
+    if (ui->actionLoop->isChecked()) emode=2;
+    TheSimManager->loadEnvironmentFromFile(emode);
     RefreshEnvironment();
 }
 
@@ -1087,11 +1096,28 @@ void MainWindow::on_actionSave_triggered()
         out<<maxused[i][j];
     }
 
-    //And finally some window state stuff
+    //And some window state stuff
     out<<saveState(); //window state
     out<<ui->actionFossil_Record->isChecked();
     out<<ui->actionReport_Viewer->isChecked();
     out<<ui->actionGenomeComparison->isChecked();
+
+    //interpolate environment stuff
+    out<<ui->actionInterpolate->isChecked();
+    for (int i=0; i<gridX; i++)
+    for (int j=0; j<gridY; j++)
+    {
+        out<<environmentlast[i][j][0];
+        out<<environmentlast[i][j][1];
+        out<<environmentlast[i][j][2];
+    }
+    for (int i=0; i<gridX; i++)
+    for (int j=0; j<gridY; j++)
+    {
+        out<<environmentnext[i][j][0];
+        out<<environmentnext[i][j][1];
+        out<<environmentnext[i][j][2];
+    }
 
     outfile.close();
 }
@@ -1260,6 +1286,25 @@ void MainWindow::on_actionLoad_triggered()
     in>>btemp; ui->actionReport_Viewer->setChecked(btemp);
     in>>btemp; ui->actionGenomeComparison->setChecked(btemp);
 
+    //interpolate environment stuff
+    in>>btemp;
+    ui->actionInterpolate->setChecked(btemp);
+
+    for (int i=0; i<gridX; i++)
+    for (int j=0; j<gridY; j++)
+    {
+        in>>environmentlast[i][j][0];
+        in>>environmentlast[i][j][1];
+        in>>environmentlast[i][j][2];
+    }
+
+    for (int i=0; i<gridX; i++)
+    for (int j=0; j<gridY; j++)
+    {
+        in>>environmentnext[i][j][0];
+        in>>environmentnext[i][j][1];
+        in>>environmentnext[i][j][2];
+    }
 
     infile.close();
     NextRefresh=0;

@@ -563,6 +563,8 @@
     <addaction name="actionOnce"/>
     <addaction name="actionLoop"/>
     <addaction name="actionBounce"/>
+    <addaction name="separator"/>
+    <addaction name="actionInterpolate"/>
    </widget>
    <widget class="QMenu" name="menuDocks">
     <property name="title">
@@ -978,6 +980,17 @@
   <action name="actionSet_Inactive">
    <property name="text">
     <string>Set Inactive</string>
+   </property>
+  </action>
+  <action name="actionInterpolate">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Interpolate</string>
    </property>
   </action>
  </widget>

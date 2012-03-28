@@ -32,7 +32,6 @@ void EnvironmentScene::DoMouse(int x, int y)
                 //grab one
                 grabbed=closestFR;
             }
-            //else qDebug()<<"Failed grab";
         }
 
         if (grabbed!=-1)
@@ -40,7 +39,6 @@ void EnvironmentScene::DoMouse(int x, int y)
             MainWin->FRW->FossilRecords[grabbed]->xpos=x;
             MainWin->FRW->FossilRecords[grabbed]->ypos=y;
             MainWin->FRW->RefreshMe();
-            //qDebug()<<"Moved - Mouse "<<x<<y<<button;
         }
     }
 
@@ -117,7 +115,6 @@ void EnvironmentScene::DrawLocations(QList <FossilRecord *> frlist, bool show)
         //now set them up
         for (int i=0; i<frlist.count(); i++)
         {
-            //qDebug()<<frlist[i]->xpos-5<<frlist[i]->ypos<<frlist[i]->xpos+5<<frlist[i]->ypos;
             HorizontalLineList[i]->setLine(frlist[i]->xpos-.5,frlist[i]->ypos+.5, frlist[i]->xpos+1.5,frlist[i]->ypos+.5);
             VerticalLineList[i]->setLine(frlist[i]->xpos+.5,frlist[i]->ypos-.5, frlist[i]->xpos+.5,frlist[i]->ypos+1.5);
             HorizontalLineList[i]->setVisible(selecteds[i]);
@@ -138,7 +135,6 @@ void EnvironmentScene::DrawLocations(QList <FossilRecord *> frlist, bool show)
                     + (int)(environment[frlist[i]->xpos][frlist[i]->ypos][1])
                     + (int)(environment[frlist[i]->xpos][frlist[i]->ypos][2]);
 
-            qDebug()<<"Bright:"<<bright;
 
             if (bright>250)
             {

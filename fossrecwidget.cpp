@@ -44,7 +44,6 @@ int FossRecWidget::findclosest(int x, int y, int min)
         if (selections[i])
         {
             int dist=(FossilRecords[i]->xpos-x)*(FossilRecords[i]->xpos-x) + (FossilRecords[i]->ypos-y)*(FossilRecords[i]->ypos-y);
-            qDebug()<<"dist:"<<dist<<"  root is "<<sqrt((double)dist);
             if (dist<dist2)
             {
                 dist2=dist;
@@ -224,9 +223,7 @@ void FossRecWidget::WriteFiles()
     if (!LogDirectoryChosen) return;
     for (int i=0; i<FossilRecords.count(); i++)
     {
-        qDebug()<<LogDirectory + "/" + FossilRecords[i]->name + ".csv";
         FossilRecords[i]->WriteRecord(LogDirectory + "/" + FossilRecords[i]->name + ".csv");
-        qDebug()<<"Written";
     }
 }
 

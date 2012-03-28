@@ -60,6 +60,8 @@ extern quint16 nextrandom;
 //Globabl data
 extern Critter critters[GRID_X][GRID_Y][SLOTS_PER_GRID_SQUARE]; //main array - static for speed
 extern quint8 environment[GRID_X][GRID_Y][3];  //0 = red, 1 = green, 2 = blue
+extern quint8 environmentlast[GRID_X][GRID_Y][3];  //Used for interpolation
+extern quint8 environmentnext[GRID_X][GRID_Y][3];  //Used for interpolation
 extern quint32 totalfit[GRID_X][GRID_Y];
 extern quint64 generation;
 
@@ -91,15 +93,15 @@ public:
     SimManager();
 
     void SetupRun();
-    bool iterate(int emode);
+    bool iterate(int emode, bool interpolate);
     int iterate_parallel(int firstx, int lastx, int newgenomes_local, int *KillCount_local);
     int settle_parallel(int newgenomecounts_start, int newgenomecounts_end,int *trycount_local, int *settlecount_local, int *birthcounts_local);
 
     quint8 Rand8();
 
-    bool regenerateEnvironment(int emode);
+    bool regenerateEnvironment(int emode, bool interpolate);
     void testcode();
-    void loadEnvironmentFromFile();
+    void loadEnvironmentFromFile(int emode);
     //Public data (keep public for speed)
 
 private:

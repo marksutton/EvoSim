@@ -174,7 +174,6 @@ QString Analyser::Groups()
               if (genomes[j].group==i) {modal[i]=j; break;}
 
 
-    //qDebug()<<modal;
     //For each group work out and output some stats
     for (int i=group-1; i>=1; i--)
     {

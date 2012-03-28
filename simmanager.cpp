@@ -39,6 +39,8 @@ bool EnvChangeForward;
 //Globabl data
 Critter critters[GRID_X][GRID_Y][SLOTS_PER_GRID_SQUARE]; //main array - static for speed
 quint8 environment[GRID_X][GRID_Y][3];  //0 = red, 1 = green, 2 = blue
+quint8 environmentlast[GRID_X][GRID_Y][3];  //Used for interpolation
+quint8 environmentnext[GRID_X][GRID_Y][3];  //Used for interpolation
 quint32 totalfit[GRID_X][GRID_Y];
 quint64 generation;
 
@@ -148,19 +150,17 @@ void SimManager::MakeLookups()
                 {
                     xdisp[n][m]=(int)(d * sin((double)(m)/40.5845));
                     ydisp[n][m]=(int)(d * cos((double)(m)/40.5845));
-                   //qDebug()<<"pos:"<<n<<m<<"y"<<ydisp[n][m]<<"x"<<xdisp[n][m];
                 }
         }
 
 }
 
 
-void SimManager::loadEnvironmentFromFile()
+void SimManager::loadEnvironmentFromFile(int emode)
 // Load current envirnonment from file
 {
     //Use make qimage from file method
 
-    //qDebug()<<"LoadEnvFiles - CurrentEnvFile is "<<CurrentEnvFile<<" Gen:"<<generation;
 
     //Load the image
     if (CurrentEnvFile>=EnvFiles.count())
@@ -190,17 +190,77 @@ void SimManager::loadEnvironmentFromFile()
         environment[i][j][1]=qGreen(colour);
         environment[i][j][2]=qBlue(colour);
     }
+
+    //set up environmentlast - same as environment
+    for (int i=0; i<gridX; i++)
+    for (int j=0; j<gridY; j++)
+    {
+        QRgb colour = LoadImage.pixel(i,j);
+        environmentlast[i][j][0]=qRed(colour);
+        environmentlast[i][j][1]=qGreen(colour);
+        environmentlast[i][j][2]=qBlue(colour);
+    }
+    //set up environment next - depends on emode
+
+    if (emode==0 || EnvFiles.count()==1) //static environment
+    {
+        for (int i=0; i<gridX; i++)
+        for (int j=0; j<gridY; j++)
+        {
+            QRgb colour = LoadImage.pixel(i,j);
+            environmentnext[i][j][0]=qRed(colour);
+            environmentnext[i][j][1]=qGreen(colour);
+            environmentnext[i][j][2]=qBlue(colour);
+        }
+    }
+    else
+    {
+        //work out next file
+        int nextfile;
+        if (EnvChangeForward)
+        {
+            if ((CurrentEnvFile+1)<EnvFiles.count()) //not yet at end
+                nextfile=CurrentEnvFile+1;
+            else
+            {
+                //depends on emode
+                if (emode==1) nextfile=CurrentEnvFile;//won't matter
+                if (emode==2) nextfile=0; //loop mode
+                if (emode==3) nextfile=CurrentEnvFile-1; //bounce mode
+            }
+        }
+        else //backwards - simpler, must be emode 3
+        {
+            if (CurrentEnvFile>0) //not yet at end
+                nextfile=CurrentEnvFile-1;
+            else
+                nextfile=1; //bounce mode
+        }
+
+        QImage LoadImage2(EnvFiles[nextfile]);
+        if (xsize<gridX || ysize<gridY) //rescale if necessary - only if too small
+            LoadImage2 = LoadImage2.scaled(QSize(gridX,gridY),Qt::IgnoreAspectRatio);
+        //get it
+        for (int i=0; i<gridX; i++)
+        for (int j=0; j<gridY; j++)
+        {
+            QRgb colour = LoadImage2.pixel(i,j);
+            environmentnext[i][j][0]=qRed(colour);
+            environmentnext[i][j][1]=qGreen(colour);
+            environmentnext[i][j][2]=qBlue(colour);
+        }
+    }
 }
 
-bool SimManager::regenerateEnvironment(int emode)
+bool SimManager::regenerateEnvironment(int emode, bool interpolate)
 //returns true if finished sim
 {
-    if (envchangerate==0 || emode==0) return false; //constant environment - either static in menu, or 0 envchangerate
+    if (envchangerate==0 || emode==0 || EnvFiles.count()==1) return false; //constant environment - either static in menu, or 0 envchangerate, or only one file
 
     --EnvChangeCounter;
-    //qDebug()<<"RegEnv: "<<EnvChangeCounter<<generation;
+
     if (EnvChangeCounter<=0)
-    //is it time to change?
+    //is it time to do a full change?
     {
         if (emode!=3 && EnvChangeForward==false) //should not be going backwards!
             EnvChangeForward=true;
@@ -228,7 +288,25 @@ bool SimManager::regenerateEnvironment(int emode)
             }
         }
         EnvChangeCounter=envchangerate; //reset counter
-        loadEnvironmentFromFile(); //and load it from the file
+        loadEnvironmentFromFile(emode); //and load it from the file
+
+    }
+    else
+    {
+        if (interpolate)
+        {
+            float progress, invprogress;
+            invprogress=((float)(EnvChangeCounter+1)/((float)envchangerate));
+            progress=1-invprogress;
+            //not getting new, doing an interpolate
+            for (int i=0; i<gridX; i++)
+            for (int j=0; j<gridY; j++)
+            {
+                environment[i][j][0]= qint8(0.5+((float)environmentlast[i][j][0]) * invprogress + ((float)environmentnext[i][j][0]) * progress);
+                environment[i][j][1]= qint8(0.5+((float)environmentlast[i][j][1]) * invprogress + ((float)environmentnext[i][j][1]) * progress);
+                environment[i][j][2]= qint8(0.5+((float)environmentlast[i][j][2]) * invprogress + ((float)environmentnext[i][j][2]) * progress);
+            }
+        }
 
     }
     return false;
@@ -387,12 +465,12 @@ int SimManager::settle_parallel(int newgenomecounts_start, int newgenomecounts_e
 }
 
 
-bool SimManager::iterate(int emode)
+bool SimManager::iterate(int emode, bool interpolate)
 {
     generation++;
 
-    //qDebug()<<"Iterate"<<generation;
-    if (regenerateEnvironment(emode)==true) return true;
+    if (regenerateEnvironment(emode, interpolate)==true) return true;
+
     //New parallelised version
 
     int newgenomecounts_starts[256]; //allow for up to 256 threads
