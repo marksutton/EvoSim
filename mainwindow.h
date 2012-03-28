@@ -71,7 +71,7 @@ private slots:
     void on_actionMisc_triggered();
     void view_mode_changed(QAction *);
     void report_mode_changed(QAction *);
-    void on_actionEnvironment_Files_triggered();
+    bool on_actionEnvironment_Files_triggered();
     void on_actionSave_triggered();
     void on_actionLoad_triggered();
     void on_actionChoose_Log_Directory_triggered();

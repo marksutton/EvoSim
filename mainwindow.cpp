@@ -173,7 +173,9 @@ void MainWindow::on_actionStart_Sim_triggered()
     if (CurrentEnvFile==-1)
     {
         QMessageBox::critical(0,"","Cannot start simulation without environment");
-        return;
+        if (on_actionEnvironment_Files_triggered() == false) {
+            return;
+        }
     }
     RunSetUp();
     while (pauseflag==false)
@@ -197,6 +199,14 @@ void MainWindow::on_actionPause_Sim_triggered()
 
 void MainWindow::on_actionRun_for_triggered()
 {
+    if (CurrentEnvFile==-1)
+    {
+        QMessageBox::critical(0,"","Cannot start simulation without environment");
+        if (on_actionEnvironment_Files_triggered() == false) {
+            return;
+        }
+    }
+
     bool ok;
     int i = QInputDialog::getInt(this, "",
                                  tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
@@ -928,16 +938,16 @@ void MainWindow::on_actionCount_Peaks_triggered()
     ui->plainTextEdit->appendPlainText(s);
 }
 
-void  MainWindow::on_actionEnvironment_Files_triggered()
+bool  MainWindow::on_actionEnvironment_Files_triggered()
 {
     //Select files
     QStringList files = QFileDialog::getOpenFileNames(
                             this,
-                            "Select one or more image files to open",
+                            "Select one or more image files to load in simulation environment...",
                             "",
                             "Images (*.png *.bmp)");
 
-    if (files.length()==0) return;
+    if (files.length()==0) return false;
     EnvFiles = files;
     CurrentEnvFile=0;
     int emode=0;
@@ -946,6 +956,7 @@ void  MainWindow::on_actionEnvironment_Files_triggered()
     if (ui->actionLoop->isChecked()) emode=2;
     TheSimManager->loadEnvironmentFromFile(emode);
     RefreshEnvironment();
+    return true;
 }
 
 void MainWindow::on_actionChoose_Log_Directory_triggered()
