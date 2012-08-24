@@ -27,6 +27,9 @@ SettingsImpl::SettingsImpl( QWidget * parent, Qt::WFlags f)
         SpinBoxFitnessTarget->setValue(target);
         SpinBoxEnvChangeRate->setValue(envchangerate);
         SpinBoxYearsPerIteration->setValue(yearsPerIteration);
+        SpinBoxSpeciesConnect->setValue(speciesSensitivity);
+        SpinBoxSpeciesSamples->setValue(speciesSamples);
+        SpinBoxTimeSliceConnect->setValue(timeSliceConnect);
 
         RedoImages=false;        
 }
@@ -49,6 +52,9 @@ void SettingsImpl::on_buttonBox_accepted()
         target= SpinBoxFitnessTarget->value();
         EnvChangeCounter=envchangerate=SpinBoxEnvChangeRate->value();
         yearsPerIteration=SpinBoxYearsPerIteration->value();
+        speciesSamples=SpinBoxSpeciesSamples->value();
+        speciesSensitivity=SpinBoxSpeciesConnect->value();
+        timeSliceConnect=SpinBoxTimeSliceConnect->value();
 }
 
 

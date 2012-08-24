@@ -31,6 +31,8 @@ public:
     bool genomeComparisonAdd();
     void Resize();
     void RefreshEnvironment();
+    Ui::MainWindow *ui;
+
 protected:
     void changeEvent(QEvent *e);
     void resizeEvent(QResizeEvent *event);
@@ -54,9 +56,13 @@ private:
     QTime timer;
     QImage *pop_image, *env_image, *pop_image_colour;
     QGraphicsPixmapItem *pop_item, *env_item;
-    Ui::MainWindow *ui;
+
     void ResetSquare(int n, int m);
     void ResizeImageObjects();
+    void LogSpecies();
+    void CalcSpecies();
+
+    Analyser *a;
 
     QAction *startButton, *pauseButton, *runForButton, *resetButton;
 
@@ -81,6 +87,9 @@ private slots:
     void on_actionSet_Inactive_triggered();
     void on_actionSet_Sparsity_triggered();
     void on_actionShow_positions_triggered();
+    void on_actionTracking_triggered();
+    void on_actionLogging_triggered();
+    void on_actionSet_Logging_File_triggered();
 
 };
 

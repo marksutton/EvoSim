@@ -26,6 +26,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+
+    a = new Analyser; // so can delete next time!
     ui->setupUi(this);
     MainWin=this;
 
@@ -73,7 +75,7 @@ MainWindow::MainWindow(QWidget *parent) :
     viewgroup->addAction(ui->actionGenome_as_colour);
     viewgroup->addAction(ui->actionNonCoding_genome_as_colour);
     viewgroup->addAction(ui->actionGene_Frequencies_012);
-    //viewgroup->addAction(ui->actionBreed_Attempts);
+    viewgroup->addAction(ui->actionSpecies);
     viewgroup->addAction(ui->actionBreed_Fails_2);
     viewgroup->addAction(ui->actionSettles);
     viewgroup->addAction(ui->actionSettle_Fails);
@@ -324,11 +326,30 @@ void MainWindow::Report()
     out.sprintf("%d",AliveCount);
     ui->LabelCritters->setText(out);
 
+    CalcSpecies();
+    out="-";
+    if (speciesLogging || ui->actionSpecies->isChecked())
+    {
+        int g5=0, g50=0;
+        for (int i=0; i<oldspecieslist.count(); i++)
+        {
+            if (oldspecieslist[i].size>5) g5++;
+            if (oldspecieslist[i].size>50) g50++;
+        }
+        out.sprintf("%d (>5:%d >50:%d)",oldspecieslist.count(), g5, g50);
+    }
+    ui->LabelSpecies->setText(out);
+
     RefreshReport();
+
+    //do species stuff
     RefreshPopulations();
     RefreshEnvironment();
     FRW->RefreshMe();
     FRW->WriteFiles();
+
+    LogSpecies();
+
 
     //reset the breedattempts and breedfails arrays
     for (int n2=0; n2<gridX; n2++)
@@ -356,6 +377,7 @@ void MainWindow::RefreshReport()
     int y=popscene->selectedy;
     int maxuse=maxused[x][y];
     ui->plainTextEdit->clear();
+    Analyser a;
 
     if (ui->actionSimple_List->isChecked()) //old crappy code
     {
@@ -380,14 +402,13 @@ void MainWindow::RefreshReport()
 
     if (ui->actionSorted_Summary->isChecked())
     {
-        Analyser a;
+
         for (int i=0; i<=maxuse; i++) if (critters[x][y][i].age > 0) a.AddGenome(critters[x][y][i].genome,critters[x][y][i].fitness);
         sout<<a.SortedSummary();
     }
 
     if (ui->actionGroups->isChecked())
     {
-        Analyser a;
         for (int i=0; i<=maxuse; i++) if (critters[x][y][i].age > 0) a.AddGenome(critters[x][y][i].genome,critters[x][y][i].fitness);
         sout<<a.Groups();
     }
@@ -395,7 +416,6 @@ void MainWindow::RefreshReport()
     if (ui->actionGroups2->isChecked())
     {
         //Code to sample all 10000 squares
-        Analyser a;
 
         for (int n=0; n<gridX; n++)
         for (int m=0; m<gridY; m++)
@@ -405,17 +425,21 @@ void MainWindow::RefreshReport()
             {
                 if (critters[n][m][c].age>0)
                 {
-                    a.AddGenome(critters[n][m][c].genome,critters[n][m][c].fitness);
+                    a.AddGenome_Fast(critters[n][m][c].genome);
                     break;
                 }
             }
         }
-        sout<<a.Groups();
+        //TO DO - new report
+        //sout<<a.Groups_Report();
+        sout<<"Currently no code here!";
 
     }
+
     sout<<"\n\nTime for report: "<<refreshtimer.elapsed()<<"ms";
 
     ui->plainTextEdit->appendPlainText(line);
+
 }
 
 void MainWindow::UpdateTitles()
@@ -432,6 +456,9 @@ void MainWindow::UpdateTitles()
 
     if (ui->actionNonCoding_genome_as_colour->isChecked())
         ui->LabelVis->setText("Non-Coding Genome bitcount as colour (modal critter)");
+
+    if (ui->actionSpecies->isChecked())
+        ui->LabelVis->setText("Species");
 
     if (ui->actionGene_Frequencies_012->isChecked())
         ui->LabelVis->setText("Frequences genes 0,1,2 (all critters in square)");
@@ -453,7 +480,9 @@ void MainWindow::UpdateTitles()
 }
 
 void MainWindow::RefreshPopulations()
+//Refreshes of left window - also run species ident and logging
 {
+
     //check to see what the mode is
 
     if (ui->actionPopulation_Count->isChecked())
@@ -559,6 +588,37 @@ void MainWindow::RefreshPopulations()
             }
 
        }
+        pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+    }
+
+
+    if (ui->actionSpecies->isChecked()) //do visualisation if necessary
+    {
+        for (int n=0; n<gridX; n++)
+        for (int m=0; m<gridY; m++)
+        {
+
+            if (totalfit[n][m]==0) pop_image_colour->setPixel(n,m,0); //black if square is empty
+            else
+            {
+                quint64 thisgenome;
+                for (int c=0; c<slotsPerSq; c++)
+                {
+                    if (critters[n][m][c].age>0)
+                    {
+                        thisgenome=critters[n][m][c].genome;
+                        break;
+                    }
+                }
+
+                int species = a->SpeciesIndex(thisgenome);
+
+                if (species==-1)
+                    pop_image_colour->setPixel(n,m,qRgb(255,255,255));
+                else
+                    pop_image_colour->setPixel(n,m,species_colours[species % 65536]);
+            }
+        }
         pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
     }
 
@@ -1031,6 +1091,8 @@ void MainWindow::on_actionSave_triggered()
     if (ui->actionSettles->isChecked()) vmode=7;
     if (ui->actionSettle_Fails->isChecked()) vmode=8;
     if (ui->actionBreed_Fails_2->isChecked()) vmode=9;
+    if (ui->actionSpecies->isChecked()) vmode=10;
+
     out<<vmode;
 
     int rmode=0;
@@ -1133,6 +1195,42 @@ void MainWindow::on_actionSave_triggered()
         out<<environmentnext[i][j][2];
     }
 
+    out<<speciesSamples;
+    out<<speciesSensitivity;
+    out<<timeSliceConnect;
+    out<<speciesLogging;
+    out<<speciesLoggingToFile;
+    out<<SpeciesLoggingFile;
+
+
+    //now the species archive
+    out<<oldspecieslist.count();
+    for (int j=0; j<oldspecieslist.count(); j++)
+    {
+         out<<oldspecieslist[j].ID;
+         out<<oldspecieslist[j].type;
+         out<<oldspecieslist[j].origintime;
+         out<<oldspecieslist[j].parent;
+         out<<oldspecieslist[j].size;
+         out<<oldspecieslist[j].internalID;
+    }
+
+    out<<archivedspecieslists.count();
+    for (int i=0; i<archivedspecieslists.count(); i++)
+    {
+        out<<archivedspecieslists[i].count();
+        for (int j=0; j<archivedspecieslists[i].count(); j++)
+        {
+             out<<archivedspecieslists[i][j].ID;
+             out<<archivedspecieslists[i][j].type;
+             out<<archivedspecieslists[i][j].origintime;
+             out<<archivedspecieslists[i][j].parent;
+             out<<archivedspecieslists[i][j].size;
+             out<<archivedspecieslists[i][j].internalID;
+        }
+    }
+    out<<nextspeciesid;
+    out<<lastSpeciesCalc;
     outfile.close();
 }
 
@@ -1205,6 +1303,7 @@ void MainWindow::on_actionLoad_triggered()
     if (vmode==7) ui->actionSettles->setChecked(true);
     if (vmode==8) ui->actionSettle_Fails->setChecked(true);
     if (vmode==9) ui->actionBreed_Fails_2->setChecked(true);
+    if (vmode==10) ui->actionSpecies->setChecked(true);
 
     int rmode;
     in>>rmode;
@@ -1320,6 +1419,64 @@ void MainWindow::on_actionLoad_triggered()
         in>>environmentnext[i][j][2];
     }
 
+    if (!(in.atEnd())) in>>speciesSamples;
+    if (!(in.atEnd())) in>>speciesSensitivity;
+    if (!(in.atEnd())) in>>timeSliceConnect;
+    if (!(in.atEnd())) in>>speciesLogging;
+    if (!(in.atEnd())) in>>speciesLoggingToFile;
+    if (!(in.atEnd())) in>>SpeciesLoggingFile;
+
+    if (speciesLogging) ui->actionTracking->setChecked(true); else ui->actionTracking->setChecked(false);
+    if (speciesLoggingToFile)  {ui->actionLogging->setChecked(true); ui->actionTracking->setEnabled(false);}  else {ui->actionLogging->setChecked(false); ui->actionTracking->setEnabled(true);}
+    if (SpeciesLoggingFile!="") ui->actionLogging->setEnabled(true); else ui->actionLogging->setEnabled(false);
+
+
+    //now the species archive
+    archivedspecieslists.clear();
+    oldspecieslist.clear();
+
+    if (!(in.atEnd()))
+    {
+        int temp;
+        in>>temp; //oldspecieslist.count();
+        for (int j=0; j<temp; j++)
+        {
+             species s;
+             in>>s.ID;
+             in>>s.type;
+             in>>s.origintime;
+             in>>s.parent;
+             in>>s.size;
+             in>>s.internalID;
+             oldspecieslist.append(s);
+        }
+
+        in>>temp; //archivedspecieslists.count();
+
+        for (int i=0; i<temp; i++)
+        {
+            int temp2;
+            in>>temp2; //archivedspecieslists.count();
+            QList<species> ql;
+            for (int j=0; j<temp2; j++)
+            {
+                species s;
+                in>>s.ID;
+                in>>s.type;
+                in>>s.origintime;
+                in>>s.parent;
+                in>>s.size;
+                in>>s.internalID;
+                ql.append(s);
+            }
+            archivedspecieslists.append(ql);
+        }
+        in>>nextspeciesid;
+        in>>lastSpeciesCalc; //actually no - if we import this it will assume an 'a' object exists.
+        //bodge
+        lastSpeciesCalc--;
+    }
+
     infile.close();
     NextRefresh=0;
     ResizeImageObjects();
@@ -1327,7 +1484,7 @@ void MainWindow::on_actionLoad_triggered()
     Resize();
 }
 
-//---- ARTS: Genome Comparison UI
+//---- ARTS: Genome Comparison UI ----
 bool MainWindow::genomeComparisonAdd()
 {
     int x=popscene->selectedx;
@@ -1401,4 +1558,97 @@ void MainWindow::on_actionSet_Sparsity_triggered()
 void MainWindow::on_actionShow_positions_triggered()
 {
     RefreshEnvironment();
+}
+
+void MainWindow::on_actionTracking_triggered()
+{
+    speciesLogging=ui->actionTracking->isChecked();
+}
+
+void MainWindow::on_actionLogging_triggered()
+{
+    speciesLoggingToFile=ui->actionLogging->isChecked();
+    if (speciesLoggingToFile)
+       { ui->actionTracking->setChecked(true); ui->actionTracking->setEnabled(false); speciesLogging=true; }
+    else ui->actionTracking->setEnabled(true);
+}
+
+void MainWindow::on_actionSet_Logging_File_triggered()
+{
+    QString filename = QFileDialog::getSaveFileName(this,"Select directory to log fossil record to","","*.csv");
+    if (filename.length()==0) return;
+
+    SpeciesLoggingFile=filename;
+    ui->actionLogging->setEnabled(true);
+}
+
+void MainWindow::CalcSpecies()
+{
+    if (generation!=lastSpeciesCalc)
+    {
+        delete a;  //replace old analyser object with new
+        a=new Analyser;
+
+        if (ui->actionSpecies->isChecked() || speciesLogging) //do species calcs here even if not showing species - unless turned off in settings
+        {
+            //set up species ID
+
+            for (int n=0; n<gridX; n++)
+            for (int m=0; m<gridY; m++)
+            {
+                if (totalfit[n][m]==0) continue;
+                int found=0;
+                for (int c=0; c<slotsPerSq; c++)
+                {
+                    if (critters[n][m][c].age>0)
+                    {
+                        a->AddGenome_Fast(critters[n][m][c].genome);
+                        if ((++found)>=speciesSamples) break; //limit number sampled
+                    }
+                }
+            }
+
+            a->Groups_With_History_Modal();
+            lastSpeciesCalc=generation;
+        }
+
+    }
+}
+
+void MainWindow::LogSpecies()
+{
+    if (speciesLoggingToFile==false) return;
+
+    //log em!
+    QFile outputfile(SpeciesLoggingFile);
+
+    if (!(outputfile.exists()))
+    {
+        outputfile.open(QIODevice::WriteOnly);
+        QTextStream out(&outputfile);
+
+        out<<"Time,Species_ID,Species_origin_time,Species_parent_ID,Species_current_size,Species_current_genome,";
+
+        for (int j=0; j<63; j++) out<<j<<",";
+        out<<"63\n";
+        outputfile.close();
+    }
+
+    outputfile.open(QIODevice::Append);
+    QTextStream out(&outputfile);
+
+    for (int i=0; i<oldspecieslist.count(); i++)
+    {
+        out<<generation;
+        out<<","<<(oldspecieslist[i].ID);
+        out<<","<<oldspecieslist[i].origintime;
+        out<<","<<oldspecieslist[i].parent;
+        out<<","<<oldspecieslist[i].size;
+        out<<","<<oldspecieslist[i].type<<",";
+        for (int j=0; j<63; j++)
+           if (tweakers64[63-j] & oldspecieslist[i].type) out<<"1,"; else out<<"0,";
+        if (tweakers64[0] & oldspecieslist[i].type) out<<"1\n"; else out<<"0\n";
+
+    }
+    outputfile.close();
 }

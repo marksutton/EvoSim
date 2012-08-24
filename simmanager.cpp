@@ -31,6 +31,14 @@ int maxDiff = 2;
 int mutate = 10;
 int envchangerate=100;
 int yearsPerIteration=15;
+int speciesSamples=1;
+int speciesSensitivity=100;
+int timeSliceConnect=5;
+bool speciesLogging=true;
+bool speciesLoggingToFile=false;
+quint64 lastSpeciesCalc=0;
+QString SpeciesLoggingFile="";
+
 QStringList EnvFiles;
 int CurrentEnvFile;
 int EnvChangeCounter;
@@ -59,8 +67,12 @@ int settles[GRID_X][GRID_Y]; //for analysis purposes
 int settlefails[GRID_X][GRID_Y]; //for analysis purposes
 int maxused[GRID_X][GRID_Y];
 int AliveCount;
+QList<species> oldspecieslist;
+QList< QList<species> > archivedspecieslists;
 
+quint64 nextspeciesid;
 
+QList<uint> species_colours;
 
 
 QMutex *mutexes[GRID_X][GRID_Y]; //set up array of mutexes
@@ -87,6 +99,7 @@ SimManager::SimManager()
      CurrentEnvFile=-1;
      EnvChangeCounter=0;
      EnvChangeForward=true;
+     nextspeciesid=1;
 }
 
 
@@ -153,6 +166,11 @@ void SimManager::MakeLookups()
                 }
         }
 
+        //colours
+        for (int i=0; i<65536; i++)
+        {
+            species_colours.append(qRgb(Rand8(), Rand8(), Rand8()));
+        }
 }
 
 

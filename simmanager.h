@@ -10,6 +10,7 @@
 #include <qtconcurrentrun.h>
 
 #include "critter.h"
+#include "analyser.h"
 
 // Provides globals for the simulation - lookup tables for example
 // Only one instance. Single instance - which is the only true global
@@ -73,8 +74,15 @@ extern int newgenomeDisp[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
 extern int newgenomecount;
 extern int envchangerate;
 extern int yearsPerIteration;
+extern int speciesSamples;
+extern int speciesSensitivity;
+extern int timeSliceConnect;
+extern bool speciesLogging;
+extern bool speciesLoggingToFile;
+extern QString SpeciesLoggingFile;
 extern QStringList EnvFiles;
 extern int CurrentEnvFile;
+extern quint64 lastSpeciesCalc;
 
 extern int breedattempts[GRID_X][GRID_Y]; //for analysis purposes
 extern int breedfails[GRID_X][GRID_Y]; //for analysis purposes
@@ -86,6 +94,12 @@ extern int AliveCount;
 extern int NextEnvChange;
 extern int EnvChangeCounter;
 extern bool EnvChangeForward;
+extern QList<species> oldspecieslist;
+extern QList< QList<species> > archivedspecieslists;
+extern quint64 nextspeciesid;
+
+extern QList<uint> species_colours;
+
 //This is what we are aiming for overall for total bitcount
 class SimManager
 {

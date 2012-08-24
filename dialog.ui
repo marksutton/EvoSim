@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>324</width>
-    <height>280</height>
+    <height>283</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -249,13 +249,6 @@
        </property>
       </widget>
      </item>
-     <item row="6" column="2">
-      <widget class="QLabel" name="label_14">
-       <property name="text">
-        <string>Years/Iteration</string>
-       </property>
-      </widget>
-     </item>
      <item row="6" column="3">
       <widget class="QSpinBox" name="SpinBoxYearsPerIteration">
        <property name="minimum">
@@ -266,6 +259,61 @@
        </property>
        <property name="value">
         <number>15</number>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="1">
+      <widget class="QSpinBox" name="SpinBoxSpeciesSamples">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="3">
+      <widget class="QSpinBox" name="SpinBoxSpeciesConnect">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>10000</number>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="2">
+      <widget class="QLabel" name="label_16">
+       <property name="text">
+        <string>Species Connect</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="2">
+      <widget class="QLabel" name="label_14">
+       <property name="text">
+        <string>Years/Iteration</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0">
+      <widget class="QLabel" name="label_15">
+       <property name="text">
+        <string>Species samps/sq</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="1">
+      <widget class="QSpinBox" name="SpinBoxTimeSliceConnect">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>100</number>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="0">
+      <widget class="QLabel" name="label_17">
+       <property name="text">
+        <string>Timeslice connect</string>
        </property>
       </widget>
      </item>
