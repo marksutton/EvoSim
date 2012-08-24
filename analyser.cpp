@@ -361,8 +361,12 @@ Then - do comparison with last time - not yet implemented
             //for every old species
 
             if (childcounts.contains(j))
+            {
                 newspecieslist[primarychild[j]].ID=oldspecieslist_combined[j].ID;
-//            else //apparently went extinct, currently do nothing
+                newspecieslist[primarychild[j]].parent=oldspecieslist_combined[j].parent;
+                newspecieslist[primarychild[j]].origintime=oldspecieslist_combined[j].origintime;
+          }
+//                else //apparently went extinct, currently do nothing
 //                qDebug()<<"Species ID "<<oldspecieslist_combined[j].ID<<" apparently extinct: Size was "<<oldspecieslist_combined[j].size<<"  Time alive was "<<generation-oldspecieslist_combined[j].origintime;
 
         }
@@ -372,6 +376,7 @@ Then - do comparison with last time - not yet implemented
         if (newspecieslist[i].ID==0)
         {
             newspecieslist[i].ID=nextspeciesid++;
+            newspecieslist[i].parent=oldspecieslist_combined[parents[i]].ID;
             newspecieslist[i].origintime=generation;
         }
 
@@ -394,7 +399,8 @@ Then - do comparison with last time - not yet implemented
     {
         ip.next();
         //link new to old. Key is specieslistnew indices, value is specieslistold index.
-        newspecieslist[ip.key()].parent = oldspecieslist_combined[ip.value()].parent;
+        if (newspecieslist[ip.key()].parent == 0) //not a new parent, so must be yet-to-be filled from parent - anagenetic descendent
+            newspecieslist[ip.key()].parent = oldspecieslist_combined[ip.value()].parent;
         if (newspecieslist[ip.key()].origintime == -1) //not a new time, so must be yet-to-be filled from parent
             newspecieslist[ip.key()].origintime = oldspecieslist_combined[ip.value()].origintime;
     }
