@@ -31,6 +31,7 @@ public:
     bool genomeComparisonAdd();
     void Resize();
     void RefreshEnvironment();
+    void setStatusBarText(QString text);
     Ui::MainWindow *ui;
 
 protected:
@@ -90,7 +91,10 @@ private slots:
     void on_actionTracking_triggered();
     void on_actionLogging_triggered();
     void on_actionSet_Logging_File_triggered();
+    void on_actionGenerate_Tree_from_Log_File_triggered();
 
 };
+
+
 
 #endif // MAINWINDOW_H

@@ -15,6 +15,8 @@
 #include <QMessageBox>
 #include <QActionGroup>
 #include <QDataStream>
+#include <QStringList>
+#include "analysistools.h"
 
 //define version for files
 #define VERSION 1
@@ -1575,12 +1577,32 @@ void MainWindow::on_actionLogging_triggered()
 
 void MainWindow::on_actionSet_Logging_File_triggered()
 {
-    QString filename = QFileDialog::getSaveFileName(this,"Select directory to log fossil record to","","*.csv");
+    QString filename = QFileDialog::getSaveFileName(this,"Select file to log fossil record to","","*.csv");
     if (filename.length()==0) return;
 
     SpeciesLoggingFile=filename;
     ui->actionLogging->setEnabled(true);
 }
+
+
+logged_species::logged_species()
+{
+    lastgenome=0;
+}
+
+void MainWindow::on_actionGenerate_Tree_from_Log_File_triggered()
+{
+    //processes a log file and works out species first, last, max size, min size, parent
+    QString filename = QFileDialog::getOpenFileName(this,"Select log file","","*.csv");
+    if (filename.length()==0) return;
+
+    AnalysisTools a;
+    QString OutputString = a.GenerateTree(filename);
+
+    ui->plainTextEdit->clear();
+    ui->plainTextEdit->appendPlainText(OutputString);
+}
+
 
 void MainWindow::CalcSpecies()
 {
@@ -1627,10 +1649,10 @@ void MainWindow::LogSpecies()
         outputfile.open(QIODevice::WriteOnly);
         QTextStream out(&outputfile);
 
-        out<<"Time,Species_ID,Species_origin_time,Species_parent_ID,Species_current_size,Species_current_genome,";
+        out<<"Time,Species_ID,Species_origin_time,Species_parent_ID,Species_current_size,Species_current_genom,";
 
-        for (int j=0; j<63; j++) out<<j<<",";
-        out<<"63\n";
+        //for (int j=0; j<63; j++) out<<j<<",";
+        //out<<"63\n";
         outputfile.close();
     }
 
@@ -1644,11 +1666,18 @@ void MainWindow::LogSpecies()
         out<<","<<oldspecieslist[i].origintime;
         out<<","<<oldspecieslist[i].parent;
         out<<","<<oldspecieslist[i].size;
-        out<<","<<oldspecieslist[i].type<<",";
+        out<<","<<oldspecieslist[i].type<<"\n";
+        /*
+             ",";
         for (int j=0; j<63; j++)
            if (tweakers64[63-j] & oldspecieslist[i].type) out<<"1,"; else out<<"0,";
         if (tweakers64[0] & oldspecieslist[i].type) out<<"1\n"; else out<<"0\n";
-
+        */
     }
     outputfile.close();
+}
+
+void MainWindow::setStatusBarText(QString text)
+{
+    ui->statusBar->showMessage(text);
 }

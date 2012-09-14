@@ -638,6 +638,12 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionLogging"/>
     <addaction name="actionSet_Logging_File"/>
    </widget>
+   <widget class="QMenu" name="menuAnalysis_Tools">
+    <property name="title">
+     <string>Analysis Tools</string>
+    </property>
+    <addaction name="actionGenerate_Tree_from_Log_File"/>
+   </widget>
    <addaction name="menuCommands"/>
    <addaction name="menuEnvironment"/>
    <addaction name="menuSpecies"/>
@@ -645,6 +651,7 @@ p, li { white-space: pre-wrap; }
    <addaction name="menuFossil_Record"/>
    <addaction name="menuReports"/>
    <addaction name="menuDocks"/>
+   <addaction name="menuAnalysis_Tools"/>
   </widget>
   <action name="actionReseed">
    <property name="text">
@@ -1086,6 +1093,11 @@ p, li { white-space: pre-wrap; }
   <action name="actionSet_Logging_File">
    <property name="text">
     <string>Set Logging File...</string>
+   </property>
+  </action>
+  <action name="actionGenerate_Tree_from_Log_File">
+   <property name="text">
+    <string>Generate Tree from Log File...</string>
    </property>
   </action>
  </widget>
