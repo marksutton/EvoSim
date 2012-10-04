@@ -183,14 +183,16 @@ QString AnalysisTools::SpeciesRatesOfChange(QString filename)
          out << "Species: "<<ID << ": " << spe.start << "-"<<spe.end<<" Parent "<<spe.parent<<"  maxsize "<<spe.maxsize<<"  Av size "<<(spe.totalsize/spe.occurrences)<< "  %missing "<<100-pval<<endl;
      }
 
-     //now do my reordering magic - magiclist ends up as a list of species IDs in culled list, but in a sensible order for tree output
+     //Tree version reordered here, I just create magiclist as a copy of culled list
      QList<quint64> magiclist;
 
-     MainWin->setStatusBarText("Starting list reordering");
-     qApp->processEvents();
-
-     MakeListRecursive(&magiclist,&species_list, 1, 0); //Recursively sorts culled species_list into magiclist. args are list pointer, ID
-
+     i.toFront();
+      while (i.hasNext())
+      {
+          i.next();
+          quint64 ID=i.key();
+          magiclist.append(ID);
+      }
 
      //output the tree
      out<<endl<<"============================================================="<<endl;
@@ -224,7 +226,8 @@ QString AnalysisTools::SpeciesRatesOfChange(QString filename)
              int local_tot_size=0;
              int local_tot_change=0;
 
-
+             if (magiclist[j]==1969)
+                 qDebug()<<"Here";
 
              for (int k=1; k<SCALE; k++)
              {
