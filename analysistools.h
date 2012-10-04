@@ -19,6 +19,8 @@ public:
     quint64 lastgenome;
     quint64 genomes[SCALE];
     int sizes[SCALE];
+    QList <float> avsizes;
+    QList <float> avchanges;
 };
 
 class AnalysisTools
@@ -26,6 +28,8 @@ class AnalysisTools
 public:
     AnalysisTools();
     QString GenerateTree(QString filename);
+    QString ExtinctOrigin(QString filename);
+    QString SpeciesRatesOfChange(QString filename);
 private:
     void MakeListRecursive(QList<quint64> *magiclist, QMap <quint64, logged_species> *species_list, quint64 ID, int insertpos);
     QString ReturnBinary(quint64 genome);

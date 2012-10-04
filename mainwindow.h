@@ -12,6 +12,7 @@
 #include "genomecomparison.h"
 #include <QActionGroup>
 #include "fossrecwidget.h"
+
 extern MainWindow *MainWin;
 
 namespace Ui {
@@ -92,7 +93,8 @@ private slots:
     void on_actionLogging_triggered();
     void on_actionSet_Logging_File_triggered();
     void on_actionGenerate_Tree_from_Log_File_triggered();
-
+    void on_actionExtinction_and_Origination_Data_triggered();
+    void on_actionRates_of_Change_triggered();
 };
 
 

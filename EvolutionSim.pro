@@ -30,7 +30,8 @@ HEADERS += mainwindow.h \
     fossilrecord.h \
     fossrecwidget.h \
     resizecatcher.h \
-    analysistools.h
+    analysistools.h \
+    version.h
 FORMS += mainwindow.ui \
     dialog.ui \
     fossrecwidget.ui \

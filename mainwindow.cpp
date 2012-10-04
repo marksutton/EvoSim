@@ -17,9 +17,9 @@
 #include <QDataStream>
 #include <QStringList>
 #include "analysistools.h"
+#include "version.h"
 
 //define version for files
-#define VERSION 1
 
 SimManager *TheSimManager;
 MainWindow *MainWin;
@@ -142,6 +142,10 @@ MainWindow::MainWindow(QWidget *parent) :
     Report();
 
     showMaximized();
+
+    QString vstring;
+    vstring.sprintf("%d.%03d",MAJORVERSION,MINORVERSION);
+    this->setWindowTitle("EVOSIM v"+vstring);
     //Now set all the defaults
 
 
@@ -1585,10 +1589,7 @@ void MainWindow::on_actionSet_Logging_File_triggered()
 }
 
 
-logged_species::logged_species()
-{
-    lastgenome=0;
-}
+
 
 void MainWindow::on_actionGenerate_Tree_from_Log_File_triggered()
 {
@@ -1603,6 +1604,30 @@ void MainWindow::on_actionGenerate_Tree_from_Log_File_triggered()
     ui->plainTextEdit->appendPlainText(OutputString);
 }
 
+
+void MainWindow::on_actionRates_of_Change_triggered()
+{
+    QString filename = QFileDialog::getOpenFileName(this,"Select log file","","*.csv");
+    if (filename.length()==0) return;
+
+    AnalysisTools a;
+    QString OutputString = a.SpeciesRatesOfChange(filename);
+
+    ui->plainTextEdit->clear();
+    ui->plainTextEdit->appendPlainText(OutputString);
+}
+
+void MainWindow::on_actionExtinction_and_Origination_Data_triggered()
+{
+    QString filename = QFileDialog::getOpenFileName(this,"Select log file","","*.csv");
+    if (filename.length()==0) return;
+
+    AnalysisTools a;
+    QString OutputString = a.ExtinctOrigin(filename);
+
+    ui->plainTextEdit->clear();
+    ui->plainTextEdit->appendPlainText(OutputString);
+}
 
 void MainWindow::CalcSpecies()
 {
