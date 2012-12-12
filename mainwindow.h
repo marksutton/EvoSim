@@ -63,7 +63,7 @@ private:
     void ResizeImageObjects();
     void LogSpecies();
     void CalcSpecies();
-
+    void HandleAnalysisTool(int code);
     Analyser *a;
 
     QAction *startButton, *pauseButton, *runForButton, *resetButton;
@@ -95,6 +95,10 @@ private slots:
     void on_actionGenerate_Tree_from_Log_File_triggered();
     void on_actionExtinction_and_Origination_Data_triggered();
     void on_actionRates_of_Change_triggered();
+    void on_actionStasis_triggered();
+    void on_actionLoad_Random_Numbers_triggered();
+    void on_SelectLogFile_pressed();
+    void on_SelectOutputFile_pressed();
 };
 
 

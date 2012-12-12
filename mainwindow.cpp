@@ -16,6 +16,7 @@
 #include <QActionGroup>
 #include <QDataStream>
 #include <QStringList>
+#include <QFile>
 #include "analysistools.h"
 #include "version.h"
 
@@ -23,6 +24,18 @@
 
 SimManager *TheSimManager;
 MainWindow *MainWin;
+
+
+#include <QThread>
+
+class Sleeper : public QThread
+{
+public:
+    static void usleep(unsigned long usecs){QThread::usleep(usecs);}
+    static void msleep(unsigned long msecs){QThread::msleep(msecs);}
+    static void sleep(unsigned long secs){QThread::sleep(secs);}
+};
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -190,6 +203,7 @@ void MainWindow::on_actionStart_Sim_triggered()
     {       
         Report();
         qApp->processEvents();
+        if (ui->actionGo_Slow->isChecked()) Sleeper::msleep(30);
         int emode=0;
         if (ui->actionOnce->isChecked()) emode=1;
         if (ui->actionBounce->isChecked()) emode=3;
@@ -607,7 +621,7 @@ void MainWindow::RefreshPopulations()
             if (totalfit[n][m]==0) pop_image_colour->setPixel(n,m,0); //black if square is empty
             else
             {
-                quint64 thisgenome;
+                quint64 thisgenome=0;
                 for (int c=0; c<slotsPerSq; c++)
                 {
                     if (critters[n][m][c].age>0)
@@ -923,88 +937,7 @@ void MainWindow::on_actionMisc_triggered()
 
 void MainWindow::on_actionCount_Peaks_triggered()
 {
-    // for a selection of colours - go through ALL genomes, work out fitness.
-    quint8 env[3];
-    quint32 fits[96];
-
-    for (int i=0; i<96; i++) fits[i]=0;
-
-    env[0]=100;
-    env[1]=100;
-    env[2]=100;
-    quint64 max = (qint64)65536 * (qint64)65536;
-
-    QList<quint32> fit15;
-    QList<quint32> fit14;
-    QList<quint32> fit13;
-    //quint64 max = 1000000;
-    for (quint64 genome=0; genome<max; genome++)
-    {
-        Critter c;
-        c.initialise((quint32)genome, env, 0,0,0);
-        fits[c.fitness]++;
-        /*if (c.fitness>12)
-        {
-            if (c.fitness==13) fit13.append((quint32)genome);
-            if (c.fitness==14) fit14.append((quint32)genome);
-            if (c.fitness==15) fit15.append((quint32)genome);
-        }*/
-        if (!(genome%6553600))
-        {
-            QString s;
-            QTextStream out(&s);
-            ui->plainTextEdit->clear();
-            out<<(double)genome*(double)100/(double)max<<"% done...";
-            ui->plainTextEdit->appendPlainText(s);
-            for (int i=0; i<=settleTolerance; i++)
-            {
-                QString s2;
-                QTextStream out2(&s2);
-
-                out2<<i<<" found: "<<fits[i];
-                ui->plainTextEdit->appendPlainText(s2);
-                qApp->processEvents();
-            }
-        }
-    }
-    //done - write out
-    ui->plainTextEdit->clear();
-    for (int i=0; i<=settleTolerance; i++)
-    {
-        QString s;
-        QTextStream out(&s);
-
-        out<<i<<" found: "<<fits[i];
-        ui->plainTextEdit->appendPlainText(s);
-    }
-
-    QString s;
-    QTextStream out(&s);
-    out<<"\nFit13:\n";
-    //now output the winning genomes
-    foreach(quint32 gen, fit13)
-    {
-        for (int j=0; j<32; j++) if (tweakers[j] & gen) out<<"1"; else out<<"0";
-        out<<"\n";
-    }
-
-
-    out<<"\nFit14:\n";
-    //now output the winning genomes
-    foreach(quint32 gen, fit14)
-    {
-        for (int j=0; j<32; j++) if (tweakers[j] & gen) out<<"1"; else out<<"0";
-        out<<"\n";
-    }
-
-    out<<"\nFit15:\n";
-    //now output the winning genomes
-    foreach(quint32 gen, fit15)
-    {
-        for (int j=0; j<32; j++) if (tweakers[j] & gen) out<<"1"; else out<<"0";
-        out<<"\n";
-    }
-    ui->plainTextEdit->appendPlainText(s);
+    HandleAnalysisTool(4);
 }
 
 bool  MainWindow::on_actionEnvironment_Files_triggered()
@@ -1237,6 +1170,10 @@ void MainWindow::on_actionSave_triggered()
     }
     out<<nextspeciesid;
     out<<lastSpeciesCalc;
+
+    //now random number array
+    for (int i=0; i<65536; i++)
+        out<<randoms[i];
     outfile.close();
 }
 
@@ -1483,6 +1420,11 @@ void MainWindow::on_actionLoad_triggered()
         lastSpeciesCalc--;
     }
 
+    //now random array
+    if (!(in.atEnd()))
+        for (int i=0; i<65536; i++)
+            in>>randoms[i];
+
     infile.close();
     NextRefresh=0;
     ResizeImageObjects();
@@ -1593,40 +1535,23 @@ void MainWindow::on_actionSet_Logging_File_triggered()
 
 void MainWindow::on_actionGenerate_Tree_from_Log_File_triggered()
 {
-    //processes a log file and works out species first, last, max size, min size, parent
-    QString filename = QFileDialog::getOpenFileName(this,"Select log file","","*.csv");
-    if (filename.length()==0) return;
-
-    AnalysisTools a;
-    QString OutputString = a.GenerateTree(filename);
-
-    ui->plainTextEdit->clear();
-    ui->plainTextEdit->appendPlainText(OutputString);
+    HandleAnalysisTool(0);
 }
 
 
 void MainWindow::on_actionRates_of_Change_triggered()
 {
-    QString filename = QFileDialog::getOpenFileName(this,"Select log file","","*.csv");
-    if (filename.length()==0) return;
+    HandleAnalysisTool(1);
+}
 
-    AnalysisTools a;
-    QString OutputString = a.SpeciesRatesOfChange(filename);
-
-    ui->plainTextEdit->clear();
-    ui->plainTextEdit->appendPlainText(OutputString);
+void MainWindow::on_actionStasis_triggered()
+{
+    HandleAnalysisTool(3);
 }
 
 void MainWindow::on_actionExtinction_and_Origination_Data_triggered()
 {
-    QString filename = QFileDialog::getOpenFileName(this,"Select log file","","*.csv");
-    if (filename.length()==0) return;
-
-    AnalysisTools a;
-    QString OutputString = a.ExtinctOrigin(filename);
-
-    ui->plainTextEdit->clear();
-    ui->plainTextEdit->appendPlainText(OutputString);
+    HandleAnalysisTool(2);
 }
 
 void MainWindow::CalcSpecies()
@@ -1705,4 +1630,90 @@ void MainWindow::LogSpecies()
 void MainWindow::setStatusBarText(QString text)
 {
     ui->statusBar->showMessage(text);
+}
+
+void MainWindow::on_actionLoad_Random_Numbers_triggered()
+{
+    //Select files
+    QString file = QFileDialog::getOpenFileName(
+                            this,
+                            "Select random number file",
+                            "",
+                            "*.*");
+
+    if (file.length()==0) return;
+
+    int seedoffset;
+    seedoffset=QInputDialog::getInt(this,"Seed value","Byte offset to start reading from (will read 65536 bytes)");
+
+    //now read in values to array
+    QFile rfile(file);
+    rfile.open(QIODevice::ReadOnly);
+
+    rfile.seek(seedoffset);
+
+    int i=rfile.read((char *)randoms,65536);
+    if (i!=65536) QMessageBox::warning(this,"Oops","Failed to read 65536 bytes from file - random numbers may be compromised - try again or restart program");
+    else QMessageBox::information(this,"Success","New random numbers read successfully");
+}
+
+void MainWindow::on_SelectLogFile_pressed()
+{
+    QString filename = QFileDialog::getOpenFileName(this,"Select log file","","*.csv");
+    if (filename.length()==0) return;
+
+    ui->LogFile->setText(filename);
+}
+
+void MainWindow::on_SelectOutputFile_pressed()
+{
+    QString filename = QFileDialog::getSaveFileName(this,"Select log file","","*.*");
+    if (filename.length()==0) return;
+
+    ui->OutputFile->setText(filename);
+}
+
+void MainWindow::HandleAnalysisTool(int code)
+{
+    //do filenames
+    //Is there a valid input file?
+
+    AnalysisTools a;
+    QString OutputString;
+
+    if (code==4)
+        OutputString = a.CountPeaks(ui->PeaksRed->value(),ui->PeaksGreen->value(),ui->PeaksBlue->value());
+    else
+    {
+        QFile f(ui->LogFile->text());
+        if (!(f.exists()))
+        {
+            QMessageBox::warning(this,"Error","No valid input file set");
+            return;
+        }
+
+        if (code==0)  OutputString = a.GenerateTree(ui->LogFile->text());
+        if (code==1)  OutputString = a.SpeciesRatesOfChange(ui->LogFile->text());
+        if (code==2)  OutputString = a.ExtinctOrigin(ui->LogFile->text());
+        if (code==3)  OutputString = a.Stasis(ui->LogFile->text(),ui->StasisBins->value(),((float)ui->StasisPercentile->value())/100.0,ui->StasisQualify->value());
+    }
+
+    //write result to screen
+    ui->plainTextEdit->clear();
+    ui->plainTextEdit->appendPlainText(OutputString);
+
+    //and attempt to write to file
+    if (ui->OutputFile->text().length()>1) //i.e. if not blank
+    {
+        QFile o(ui->OutputFile->text());
+        if (!o.open(QIODevice::WriteOnly | QIODevice::Text))
+        {
+            QMessageBox::warning(this,"Error","Could not open output file for writing");
+            return;
+        }
+
+        QTextStream out(&o);
+        out<<OutputString;
+        o.close();
+    }
 }

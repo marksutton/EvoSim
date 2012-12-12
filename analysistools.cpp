@@ -7,6 +7,7 @@
 #include <QTime>
 #include <QList>
 #include <QApplication>
+#include <QMessageBox>
 #include "simmanager.h"
 #include "analysistools.h"
 #include "mainwindow.h"
@@ -16,6 +17,13 @@ logged_species::logged_species()
 {
     lastgenome=0;
     for (int i=0; i<SCALE; i++) sizes[i]=0; //means no data
+}
+
+stasis_species::stasis_species()
+{
+    start=-1;
+    end=-1;
+    return;
 }
 
 /* Text-generating tools to analyse files */
@@ -226,8 +234,6 @@ QString AnalysisTools::SpeciesRatesOfChange(QString filename)
              int local_tot_size=0;
              int local_tot_change=0;
 
-             if (magiclist[j]==1969)
-                 qDebug()<<"Here";
 
              for (int k=1; k<SCALE; k++)
              {
@@ -326,6 +332,378 @@ QString AnalysisTools::SpeciesRatesOfChange(QString filename)
      MainWin->setStatusBarText("Done");
      qApp->processEvents();
 
+      return OutputString;
+    }
+    else
+    {
+        return "Can't open file";
+    }
+
+}
+
+int AnalysisTools::find_closest_index(QList <quint64>time_list, float look_for, float slot_width)
+{
+    quint64 look_for_int = (quint64)(look_for+.5);
+    //check the before and after possibilities first
+    if (look_for_int<=time_list[0]) //before start - should be impossible to be so
+        return 0;
+
+    //off end?
+    if (look_for_int>=time_list.last())
+    {
+        if ((float)(time_list.last()-look_for_int)>slot_width) //off end, and more than one slot width away - so genuinely off end
+            return -1;
+        else return time_list.count()-1;
+    }
+
+    //somewhere in middle!
+    for (int ii=0; ii<time_list.count()-1; ii++)
+    {
+        if (time_list[ii]<=look_for_int && time_list[ii+1]>look_for_int)
+            //must be between ii and ii+1
+        {
+            if ((look_for_int-time_list[ii])>(time_list[ii+1]-look_for_int))
+                //distance to ii more than distance to ii+1 - use ii+1
+                return ii+1;
+            else
+                return ii;
+        }
+    }
+    return -2; //error code - shouldn't ever get here
+}
+
+QString AnalysisTools::Stasis(QString filename, int slot_count, float percentilecut, int qualifyingslotcount)
+{
+    //Much of this copied from other tools - does loads I don't need, but does no harm. Will generate culled list
+    qint64 maxspeciesID=-1;
+
+    QString OutputString;
+    QTextStream out(&OutputString);
+
+    QMap <quint64, logged_species> species_list;  //main list of species list, filed by Species ID
+
+
+    QFile f(filename);
+    if (f.open(QIODevice::ReadOnly))
+    {
+     //file opened successfully
+
+     quint64 lasttime=0;
+
+     //Need finish time to get scaling recorded correctly
+
+     //read last line to find last time
+        qint64 size=f.size(); //get file length
+        f.seek(size-500); // start 500 from end
+        QTextStream in1(&f);
+        QString s1;
+        s1=in1.readLine(); //header line
+        s1=in1.readLine(); //header line
+        qDebug()<<s1;
+        while (!(s1.isNull()))
+        {
+             QStringList split_up;
+             split_up = s1.split(',');
+             lasttime=(quint64) (split_up[0].toULongLong());
+             qDebug()<<s1<<lasttime;
+             s1=in1.readLine();
+        }
+
+        //OK, lasttime should be correct
+        float timescale = (float)lasttime/(float)SCALE;  //scale factor for working out the timeslice for diagram
+
+
+    f.seek(0); //reset to start of file
+    QTextStream in(&f);
+    QString s;
+    s=in.readLine(); //header
+    s=in.readLine(); //first data line
+
+    quint64 count=0;
+     while (!(s.isNull())) //reads from first to last - which will be in date order
+     {
+         QStringList split_up;
+         split_up = s.split(',');
+         //0 Time,1 Species_ID,2 Species_origin_time,3 Species_parent_ID,4 Species_current_size,5 Species_current_genome
+         quint64 species_ID = (quint64) (split_up[1].toULongLong());
+
+         if (((qint64)species_ID)>maxspeciesID)
+             maxspeciesID=(qint64)species_ID;
+         //work out slot in 0-(SCALE-1)
+         int xpos=(int)(((float)(split_up[0].toInt()))/timescale);  if (xpos>(SCALE-1)) xpos=SCALE-1;
+
+
+         if (species_list.contains(species_ID)) //if ID species already recorded, update details
+         {
+             species_list[species_ID].end=(split_up[0].toULongLong());
+             int ssize = split_up[4].toInt();
+             species_list[species_ID].sizes[xpos]=ssize; //record last size in each slot, will be fine
+             if (species_list[species_ID].maxsize<ssize) species_list[species_ID].maxsize=ssize;
+             species_list[species_ID].totalsize+=(quint64) (split_up[4].toULongLong());
+             species_list[species_ID].occurrences++;
+             species_list[species_ID].genomes[xpos]=species_list[species_ID].lastgenome=(quint64) (split_up[5].toULongLong());  //record all genomes - as yet do nothing with them except last
+         }
+         else  //not yet recorded
+         {
+             logged_species spe;
+             spe.start=(quint64) (split_up[2].toULongLong());
+             species_list[species_ID].sizes[xpos]=spe.end=(quint64) (split_up[0].toULongLong());
+             spe.parent=(quint64) (split_up[3].toULongLong());
+             spe.maxsize=split_up[4].toInt();
+             spe.totalsize=(quint64) (split_up[4].toULongLong());
+             spe.occurrences=1;
+             species_list[species_ID].genomes[xpos]=spe.lastgenome=(quint64) (split_up[5].toULongLong());
+             species_list.insert(species_ID,spe);
+         }
+
+         count++;
+         if (count%1000==0)
+         //do some display in status bar every 1000 iterations to show user that algorithm didn't die
+         {
+             quint64 thistime=(quint64) (split_up[0].toULongLong()); //record latest timestamp
+             QString outstring;
+             QTextStream out(&outstring);
+             out<<"Read to iteration "<<thistime<<" ("<<((thistime*100)/lasttime)<<"%)";
+             MainWin->setStatusBarText(outstring);
+             qApp->processEvents();
+         }
+         s=in.readLine(); //next line
+     }
+     //f.close();
+
+     QMutableMapIterator<quint64, logged_species> i(species_list);  //doesn't need to be mutable here, but reused later
+      while (i.hasNext())
+      {
+          i.next();
+          //quint64 ID=i.key();
+          logged_species spe = i.value();
+          int pval;
+          if (spe.end!=spe.start) pval=(100*((spe.end-spe.start)-spe.occurrences))/(spe.end-spe.start);
+          else pval=100;
+//          out << "Species: "<<ID << ": " << spe.start << "-"<<spe.end<<" Parent "<<spe.parent<<"  maxsize "<<spe.maxsize<<"  Av size "<<(spe.totalsize/spe.occurrences)<< "  %missing "<<100-pval<< endl;
+      }
+
+      //Now cull  extinct species without issue
+
+      count=0;
+      int speccount=species_list.count();
+
+      QSet <quint64> parents; //make a parents set - timesaving
+      i.toFront();
+      while (i.hasNext())
+      {
+         i.next();
+         parents.insert(i.value().parent);
+      }
+
+      i.toFront();
+     while (i.hasNext())
+     {
+         i.next();
+         bool issue=false; if (parents.contains(i.key())) issue=true;  //if it is in parents list it should survive cull
+         //does it have issue?
+
+         if (i.value().end != lasttime  && issue==false)  //used to also have a term here to exlude short-lived species: && (i.value().end - i.value().start) < 400
+            i.remove();
+
+         count++;
+         if (count%100==0)
+         //reporting to status bar
+         {
+             QString outstring;
+             QTextStream out(&outstring);
+             out<<"Doing cull: done "<<count<<" species of "<<speccount;
+             MainWin->setStatusBarText(outstring);
+             qApp->processEvents();
+         }
+     }
+
+     //Output it
+
+     i.toFront();
+     while (i.hasNext())
+     {
+         i.next();
+         //quint64 ID=i.key();
+         logged_species spe = i.value();
+         int pval;
+         if (spe.end!=spe.start) pval=(100*((spe.end-spe.start)-spe.occurrences))/(spe.end-spe.start);
+         else pval=100;
+//         out << "Species: "<<ID << ": " << spe.start << "-"<<spe.end<<" Parent "<<spe.parent<<"  maxsize "<<spe.maxsize<<"  Av size "<<(spe.totalsize/spe.occurrences)<< "  %missing "<<100-pval<<endl;
+     }
+
+     //Tree version reordered here, I just create magiclist as a copy of culled list
+     QList <stasis_species *> stasis_species_list;
+
+     //also need quick lookup table for stasis_species_list ID from species_ID
+     QList <int> species_lookup;
+     for (qint64 ii=0; ii<=maxspeciesID; ii++) species_lookup.append(-1);
+
+     int apos=0;
+     i.toFront();
+      while (i.hasNext())
+      {
+          i.next();
+          quint64 ID=i.key();
+          stasis_species* newspecies = new stasis_species;
+          newspecies->ID=ID;
+          stasis_species_list.append(newspecies);
+          species_lookup[(int)ID]=apos;
+          apos++;
+      }
+
+      //End copied code. stasis_species_list is list of culled species IDs in new datastructure
+
+      //go back over data. For all useful species, start building my new strucure
+      f.seek(0);
+      s=in.readLine(); //header
+      s=in.readLine(); //first data line
+
+      count=0;
+       while (!(s.isNull())) //reads from first to last - which will be in date order
+       {
+           QStringList split_up;
+           split_up = s.split(',');
+           //0 Time,1 Species_ID,2 Species_origin_time,3 Species_parent_ID,4 Species_current_size,5 Species_current_genome
+           quint64 species_ID = (quint64) (split_up[1].toULongLong());
+
+           if(species_lookup[(int)species_ID]!=-1)
+           {
+                //it's a real one
+               stasis_species *this_species = stasis_species_list[species_lookup[(int)species_ID]];
+
+               this_species->end = (qint64) (split_up[0].toLongLong());  //always update end
+
+               if (this_species->start==-1) this_species->start=(qint64) (split_up[0].toLongLong());
+               this_species->genomes.append(((quint64) (split_up[5].toULongLong())));
+               this_species->genome_sample_times.append(this_species->end);
+           }
+         s=in.readLine(); //next line
+       }
+
+       //calculate length of my slots
+       //1. build list of all lengths
+       //2. sort it
+       //3. use percentile to find correct length.
+
+       QList<qint64> sortable_lengths;
+       for (int ii=0; ii<stasis_species_list.count(); ii++)
+           sortable_lengths.append(stasis_species_list[ii]->end-stasis_species_list[ii]->start);
+
+       qSort(sortable_lengths);
+
+       int percentilepos=(int)((float)sortable_lengths.count() * percentilecut);
+       qint64 length_species=sortable_lengths[percentilepos];
+       float slot_length=(float)length_species/(float)slot_count;
+
+
+       int nan_cull=0;
+       //Now second pass. For each species, from start_time on, work out average change in each slot.
+       //do this by finding the samples closest to start and end time. Compare them, work out actual time between samples,
+       //so work out average change
+       for (int ii=0; ii<stasis_species_list.count(); ii++)
+       {
+           if (ii%10==0)
+           //do some display in status bar every 10 iterations to show user that algorithm didn't die
+           {
+               QString outstring;
+               QTextStream out(&outstring);
+               out<<"Second pass "<<ii<<" (out of "<<stasis_species_list.count()<<")";
+               MainWin->setStatusBarText(outstring);
+               qApp->processEvents();
+           }
+
+           stasis_species *this_species = stasis_species_list[ii];
+
+            float slot_start_pos=(float) this_species->start;
+
+            for (int ii=0; ii<slot_count; ii++)
+            {
+                float slot_end_pos=slot_start_pos+slot_length;
+
+                //find closest start point
+                int closestindexend=find_closest_index(this_species->genome_sample_times,slot_end_pos, slot_length);
+
+                if (closestindexend==-2)
+                {
+                    qDebug()<<"Something that should never have returned a -2 has returned a -2. Bugger. Read the source code!";
+                    break;
+                }
+
+                if (closestindexend==-1)
+                    break;
+
+                quint64 genome2=this_species->genomes[closestindexend];
+
+                int closestindexstart=find_closest_index(this_species->genome_sample_times,slot_start_pos, slot_length);
+
+                if (closestindexstart==-2)
+                {
+                    qDebug()<<"Something that should never have returned a -2 has returned a -2. Arse. Read the source code!";
+                    break;
+                }
+
+                if (closestindexstart==-1)
+                {
+                    qDebug()<<"Something that should never have returned a -1 has returned a -1. Ooops. Read the source code!";
+                    break;
+                }
+
+                if (closestindexend==closestindexstart) //gaps mean going to get a div/0
+                {
+                    this_species->resampled_average_genome_changes.clear();
+                    nan_cull++;
+                    break;
+                }
+                quint64 genome1=this_species->genomes[closestindexstart];
+
+                quint64 cg1x = genome1 ^ genome2; //XOR the two to compare
+
+                quint32 g1xl = quint32(cg1x & ((quint64)65536*(quint64)65536-(quint64)1)); //lower 32 bits
+                int t1 = bitcounts[g1xl/(quint32)65536] +  bitcounts[g1xl & (quint32)65535];
+                quint32 g1xu = quint32(cg1x / ((quint64)65536*(quint64)65536)); //upper 32 bits
+                t1 += bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
+
+                float avdiff = ((float)t1)/((float)this_species->genome_sample_times[closestindexend]-this_species->genome_sample_times[closestindexstart]);
+
+                this_species->resampled_average_genome_changes.append(avdiff);
+
+                slot_start_pos=slot_end_pos; // for next iteration
+            }
+
+       }
+
+     //csv headers
+     out<<"ID,start,end,";
+     for (int k=0; k<slot_count-1; k++)
+         out<<"change"<<k<<",";
+
+     out<<"change"<<slot_count-1<<endl;
+
+     //csv data
+     int countall=stasis_species_list.count();
+     int countshown=0;
+     for (int k=0; k<stasis_species_list.count(); k++)
+     {
+            stasis_species *this_species = stasis_species_list[k];
+            if (this_species->resampled_average_genome_changes.count()>=qualifyingslotcount)
+            {
+                countshown++;
+                out<<this_species->ID<<","<<this_species->start<<","<<this_species->end;
+                for (int ii=0; ii<this_species->resampled_average_genome_changes.count(); ii++)
+                {
+                    out<<","<<this_species->resampled_average_genome_changes[ii];
+                }
+                out<<endl;
+            }
+     }
+     out<<endl<<endl;
+     out<<"Of "<<countall<<" post-cull species, showing "<<countshown<<", removed "<<(countall-countshown)<<" of which "<<nan_cull<<" were divide by zero errors - data too gappy";
+
+     MainWin->setStatusBarText("Done");
+     qApp->processEvents();
+
+     qDeleteAll(stasis_species_list);
       return OutputString;
     }
     else
@@ -840,4 +1218,60 @@ void AnalysisTools::MakeListRecursive(QList<quint64> *magiclist, QMap <quint64, 
             before=!before;
         }
     }
+}
+
+QString AnalysisTools::CountPeaks(int r, int g, int b)
+{
+    // for a particular colours - go through ALL genomes, work out fitness.
+    quint8 env[3];
+    quint32 fits[96];
+
+    for (int i=0; i<96; i++) fits[i]=0;
+
+    env[0]=(quint8)r;
+    env[1]=(quint8)g;
+    env[2]=(quint8)b;
+
+    QString s;
+    QTextStream out(&s);
+
+    out<<"Fitness counts for red="<<r<<" green="<<g<<" blue="<<b<<endl<<endl;
+
+    quint64 max = (qint64)65536 * (qint64)65536;
+
+    //quint64 max = 1000000;
+    for (quint64 genome=0; genome<max; genome++)
+    {
+        Critter c;
+        c.initialise((quint32)genome, env, 0,0,0);
+        fits[c.fitness]++;
+
+        if (!(genome%6553600))
+        {
+            QString s2;
+            QTextStream out2(&s2);
+            out2<<(double)genome*(double)100/(double)max<<"% done...";
+
+            MainWin->setStatusBarText(s2);
+            qApp->processEvents();
+            /*for (int i=0; i<=settleTolerance; i++)
+            {
+                QString s2;
+                QTextStream out2(&s2);
+
+                out2<<i<<" found: "<<fits[i];
+                ui->plainTextEdit->appendPlainText(s2);
+                qApp->processEvents();
+            }*/
+        }
+    }
+    //done - write out
+
+    for (int i=0; i<=settleTolerance; i++)
+    {
+        out<<i<<","<<fits[i]<<endl;
+    }
+
+
+    return s;
 }

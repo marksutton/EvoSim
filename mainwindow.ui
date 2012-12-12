@@ -485,13 +485,177 @@ p, li { white-space: pre-wrap; }
     <set>Qt::AllDockWidgetAreas</set>
    </property>
    <property name="windowTitle">
-    <string>Report Viewer</string>
+    <string>Analysis Tools</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
    <widget class="QWidget" name="repViewContents">
     <layout class="QVBoxLayout" name="verticalLayout_3">
+     <item>
+      <widget class="QPushButton" name="SelectLogFile">
+       <property name="text">
+        <string>Select Log File...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="LogFile"/>
+     </item>
+     <item>
+      <widget class="QPushButton" name="SelectOutputFile">
+       <property name="text">
+        <string>Select Output File...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="OutputFile"/>
+     </item>
+     <item>
+      <widget class="QTabWidget" name="AnalysisToolsSettingsTabWidget">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="currentIndex">
+        <number>1</number>
+       </property>
+       <widget class="QWidget" name="tab">
+        <attribute name="title">
+         <string>Stasis</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="0" column="3">
+          <widget class="QSpinBox" name="StasisBins">
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>1000</number>
+           </property>
+           <property name="value">
+            <number>20</number>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0" colspan="3">
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>percentile max species length for all bins</string>
+           </property>
+           <property name="wordWrap">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="3">
+          <widget class="QSpinBox" name="StasisPercentile">
+           <property name="suffix">
+            <string>%</string>
+           </property>
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>100</number>
+           </property>
+           <property name="value">
+            <number>95</number>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>Bins to qualify</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="3">
+          <widget class="QSpinBox" name="StasisQualify">
+           <property name="minimum">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <number>1000</number>
+           </property>
+           <property name="value">
+            <number>2</number>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Total Bins</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="tab_2">
+        <attribute name="title">
+         <string>Count Peaks</string>
+        </attribute>
+        <layout class="QGridLayout" name="gridLayout_2">
+         <item row="0" column="1">
+          <widget class="QSpinBox" name="PeaksRed">
+           <property name="maximum">
+            <number>255</number>
+           </property>
+           <property name="value">
+            <number>128</number>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QSpinBox" name="PeaksBlue">
+           <property name="maximum">
+            <number>255</number>
+           </property>
+           <property name="value">
+            <number>128</number>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QSpinBox" name="PeaksGreen">
+           <property name="maximum">
+            <number>255</number>
+           </property>
+           <property name="value">
+            <number>128</number>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_6">
+           <property name="text">
+            <string>Red</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_5">
+           <property name="text">
+            <string>Green</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_8">
+           <property name="text">
+            <string>Blue</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+     </item>
      <item>
       <widget class="QPlainTextEdit" name="plainTextEdit">
        <property name="font">
@@ -556,19 +720,18 @@ p, li { white-space: pre-wrap; }
      <string>Commands</string>
     </property>
     <addaction name="actionEnvironment_Files"/>
+    <addaction name="actionLoad_Random_Numbers"/>
     <addaction name="actionStart_Sim"/>
     <addaction name="actionRun_for"/>
     <addaction name="actionPause_Sim"/>
     <addaction name="actionReseed"/>
+    <addaction name="actionGo_Slow"/>
     <addaction name="separator"/>
     <addaction name="actionSave"/>
     <addaction name="actionLoad"/>
     <addaction name="separator"/>
     <addaction name="actionSettings"/>
     <addaction name="actionRefresh_Rate"/>
-    <addaction name="separator"/>
-    <addaction name="actionCount_Peaks"/>
-    <addaction name="actionMisc"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -585,18 +748,6 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionSettle_Fails"/>
     <addaction name="actionSpecies"/>
     <addaction name="separator"/>
-   </widget>
-   <widget class="QMenu" name="menuReports">
-    <property name="title">
-     <string>Reports</string>
-    </property>
-    <addaction name="actionReport_Viewer"/>
-    <addaction name="separator"/>
-    <addaction name="actionNone"/>
-    <addaction name="actionSimple_List"/>
-    <addaction name="actionSorted_Summary"/>
-    <addaction name="actionGroups"/>
-    <addaction name="actionGroups2"/>
    </widget>
    <widget class="QMenu" name="menuEnvironment">
     <property name="title">
@@ -642,16 +793,19 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>Analysis Tools</string>
     </property>
+    <addaction name="actionReport_Viewer"/>
+    <addaction name="separator"/>
+    <addaction name="actionCount_Peaks"/>
     <addaction name="actionGenerate_Tree_from_Log_File"/>
     <addaction name="actionExtinction_and_Origination_Data"/>
     <addaction name="actionRates_of_Change"/>
+    <addaction name="actionStasis"/>
    </widget>
    <addaction name="menuCommands"/>
    <addaction name="menuEnvironment"/>
    <addaction name="menuSpecies"/>
    <addaction name="menuView"/>
    <addaction name="menuFossil_Record"/>
-   <addaction name="menuReports"/>
    <addaction name="menuDocks"/>
    <addaction name="menuAnalysis_Tools"/>
   </widget>
@@ -972,7 +1126,7 @@ p, li { white-space: pre-wrap; }
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Report Dock</string>
+    <string>Analysis Tools Dock</string>
    </property>
   </action>
   <action name="actionChoose_Log_Directory">
@@ -1110,6 +1264,24 @@ p, li { white-space: pre-wrap; }
   <action name="actionRates_of_Change">
    <property name="text">
     <string>Rates of Change...</string>
+   </property>
+  </action>
+  <action name="actionGo_Slow">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Go Slow</string>
+   </property>
+  </action>
+  <action name="actionLoad_Random_Numbers">
+   <property name="text">
+    <string>Load Random Numbers...</string>
+   </property>
+  </action>
+  <action name="actionStasis">
+   <property name="text">
+    <string>Stasis...</string>
    </property>
   </action>
  </widget>
