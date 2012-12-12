@@ -20,8 +20,6 @@
 #include "analysistools.h"
 #include "version.h"
 
-//define version for files
-
 SimManager *TheSimManager;
 MainWindow *MainWin;
 
