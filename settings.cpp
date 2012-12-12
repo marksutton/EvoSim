@@ -6,8 +6,6 @@
 #include <QImage>
 #include <QVector>
 
-
-
 SettingsImpl::SettingsImpl( QWidget * parent, Qt::WFlags f)
         : QDialog(parent, f)
 {

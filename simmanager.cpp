@@ -6,7 +6,6 @@
 #include <QImage>
 #include <QMessageBox>
 
-
 quint32 tweakers[32]; // the 32 single bit XOR values (many uses!)
 quint64 tweakers64[64]; // the 64 bit version
 quint32 bitcounts[65536]; // the bytes representing bit count of each number 0-635535
