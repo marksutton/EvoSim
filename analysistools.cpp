@@ -748,16 +748,41 @@ QString AnalysisTools::ExtinctOrigin(QString filename)
        s=in.readLine(); //header
        s=in.readLine(); //first data line
 
+       QList<int> RealSpeciesCounts; //for counting the actual species/look data
+       QList<int> RealSpeciesTimeSlots;
+
+       int LastTime=-1;
+       int RealCount=0;
+
        quint64 count=0;
         while (!(s.isNull())) //reads from first to last - which will be in date order
         {
             QStringList split_up;
             split_up = s.split(',');
             //0 Time,1 Species_ID,2 Species_origin_time,3 Species_parent_ID,4 Species_current_size,5 Species_current_genome
+
+            if (split_up[0].toInt()==LastTime) //same timeslot, keep counting
+            {
+                RealCount++;
+            }
+            else
+            {
+                if (LastTime!=-1)
+                {
+                    //record old if not first time
+                    RealSpeciesCounts.append(RealCount);
+                    RealSpeciesTimeSlots.append(LastTime);
+                }
+                LastTime=split_up[0].toInt(); //record timeslot
+                RealCount=1;
+            }
+
+
             quint64 species_ID = (quint64) (split_up[1].toULongLong());
 
             //work out slot in 0-(SCALE-1)
             int xpos=(int)(((float)(split_up[0].toInt()))/timescale);  if (xpos>(SCALE-1)) xpos=SCALE-1;
+
 
 
             if (species_list.contains(species_ID)) //if ID species already recorded, update details
@@ -830,32 +855,43 @@ QString AnalysisTools::ExtinctOrigin(QString filename)
             alive_big_counts.append(bcount);
         }
 
+//calc av species alive
+        for (int i=0; i<RealSpeciesTimeSlots.count(); i++)
+        {
+            int xpos=(int)(((float)(RealSpeciesTimeSlots[i]))/timescale);
+                if (xpos>(SCALE-1)) xpos=SCALE-1;
+            RealSpeciesTimeSlots[i]=xpos;
+        }
+
+        float avspeciescounts[SCALE];
+        for (int i=0; i<SCALE; i++) avspeciescounts[i]=-1.0;
+
+        int countspecies=1;
+        int total=RealSpeciesCounts[0];
+        int last=RealSpeciesTimeSlots[0];
+        for (int i=1; i<RealSpeciesTimeSlots.count(); i++)
+        {
+            if (RealSpeciesTimeSlots[i]==last) {countspecies++; total+=RealSpeciesCounts[i];}
+            else
+            {
+                //next slot
+                avspeciescounts[last]=(float)total/(float)countspecies;
+                qDebug()<<total<<countspecies;
+                countspecies=1;
+                last=RealSpeciesTimeSlots[i];
+                total=RealSpeciesCounts[i];
+            }
+        }
+
+
         QString outstring;
         QTextStream out(&outstring);
 
-        out<<"Extinctions:"<<endl;
+        out<<"Extinctions,Originations,SpeciesCount,AvSpeciesCount,BigSpeciesCount"<<endl;
         //output
         for (int i=0; i<SCALE; i++)
         {
-            out<<extinctcounts[i]<<endl;
-        }
-        out<<"Originations:"<<endl;
-        //output
-        for (int i=0; i<SCALE; i++)
-        {
-            out<<origincounts[i]<<endl;
-        }
-        out<<"Species Count:"<<endl;
-        //output
-        for (int i=0; i<SCALE; i++)
-        {
-            out<<alivecounts[i]<<endl;
-        }
-        out<<"Big (>20) Species Count:"<<endl;
-        //output
-        for (int i=0; i<SCALE; i++)
-        {
-            out<<alive_big_counts[i]<<endl;
+            out<<extinctcounts[i]<<","<<origincounts[i]<<","<<alivecounts[i]<<","<<avspeciescounts[i]<<","<<alive_big_counts[i]<<endl;
         }
 
         return outstring;
@@ -1222,6 +1258,7 @@ void AnalysisTools::MakeListRecursive(QList<quint64> *magiclist, QMap <quint64, 
 
 QString AnalysisTools::CountPeaks(int r, int g, int b)
 {
+    //return "CP";
     // for a particular colours - go through ALL genomes, work out fitness.
     quint8 env[3];
     quint32 fits[96];

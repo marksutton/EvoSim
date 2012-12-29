@@ -3,6 +3,7 @@
 #include <simmanager.h>
 #include <QDebug>
 #include <QHash>
+
 #include "mainwindow.h"
 #include <QSet>
 
@@ -118,6 +119,8 @@ void Analyser::AddGenome_Fast(quint64 genome)
 done:
     return;
 }
+
+
 
 void Analyser::Groups_With_History_Modal()
 //Implementation of new search mechanism based around using modal genome as core of species
@@ -365,7 +368,8 @@ Then - do comparison with last time - not yet implemented
                 newspecieslist[primarychild[j]].ID=oldspecieslist_combined[j].ID;
                 newspecieslist[primarychild[j]].parent=oldspecieslist_combined[j].parent;
                 newspecieslist[primarychild[j]].origintime=oldspecieslist_combined[j].origintime;
-          }
+
+            }
 //                else //apparently went extinct, currently do nothing
 //                qDebug()<<"Species ID "<<oldspecieslist_combined[j].ID<<" apparently extinct: Size was "<<oldspecieslist_combined[j].size<<"  Time alive was "<<generation-oldspecieslist_combined[j].origintime;
 
@@ -378,6 +382,8 @@ Then - do comparison with last time - not yet implemented
             newspecieslist[i].ID=nextspeciesid++;
             newspecieslist[i].parent=oldspecieslist_combined[parents[i]].ID;
             newspecieslist[i].origintime=generation;
+
+
         }
 
     }
@@ -406,12 +412,14 @@ Then - do comparison with last time - not yet implemented
     }
 
     //finally go through newspecieslist and look at internalID - this is ID in the species_ID array
+    //do same for colour array
     lookup_persistent_species_ID.clear();
 
     for (int i=0; i<=species_id.count(); i++) lookup_persistent_species_ID.append(0);
 
-    for (int i=0; i<newspecieslist.count(); i++)
-        lookup_persistent_species_ID[newspecieslist[i].internalID]=newspecieslist[i].ID;
+
+    for (int i=0; i<newspecieslist.count(); i++) lookup_persistent_species_ID[newspecieslist[i].internalID]=newspecieslist[i].ID;
+
 
     //handle archive of old species lists (prior to last time slice)
     if (oldspecieslist.count()>0 && timeSliceConnect>1)  //if there IS an old species list, and if we are storing them
@@ -435,9 +443,6 @@ int Analyser::SpeciesIndex(quint64 genome)
     else
         return lookup_persistent_species_ID[species_id[i - genome_list.begin()]]; // this is QT bodgy way to get index apparentlty
 }
-
-
-
 
 
 

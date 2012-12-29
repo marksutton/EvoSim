@@ -4,6 +4,7 @@
 #include <QList>
 #include <sortablegenome.h>
 #include <QHash>
+#include <QColor>
 
 class species
 {
@@ -38,6 +39,7 @@ public:
     int type_genome_groups[256*256];
     int next_type_genome;
 private:
+    quint8 randtweak(quint8 oldval);
     //Old
     QList <sortablegenome> genomes;
     QList <int>unusedgroups;
