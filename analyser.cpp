@@ -1,6 +1,6 @@
 #include "analyser.h"
 #include <QTextStream>
-#include <simmanager.h>
+#include "simmanager.h"
 #include <QDebug>
 #include <QHash>
 

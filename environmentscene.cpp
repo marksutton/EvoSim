@@ -97,9 +97,15 @@ void EnvironmentScene::DrawLocations(QList <FossilRecord *> frlist, bool show)
         //add any new items needed
         while (frlist.count()>HorizontalLineList.count())
         {
-            HorizontalLineList.append(new QGraphicsLineItem(0,this));
-            VerticalLineList.append(new QGraphicsLineItem(0,this));
-            LabelsList.append(new QGraphicsSimpleTextItem(0,this));
+            QGraphicsLineItem *temp1=new QGraphicsLineItem;
+            HorizontalLineList.append(temp1);
+            QGraphicsLineItem *temp2=new QGraphicsLineItem;
+            VerticalLineList.append(temp2);
+            QGraphicsSimpleTextItem *temp3=new QGraphicsSimpleTextItem;
+            LabelsList.append(temp3);
+            addItem(temp1);
+            addItem(temp2);
+            addItem(temp3);
         }
         //now remove any spurious ones
         while (frlist.count()<HorizontalLineList.count())

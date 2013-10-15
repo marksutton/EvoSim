@@ -29,7 +29,7 @@ void Critter::initialise(quint64 gen, quint8 *env, int x, int y, int z)
     ugenecombo = (gen2>>16) ^ (gen2 & 65535); //for breed testing - work out in advance for speed
 }
 
-void Critter::recalc_fitness(quint8 *env)
+int Critter::recalc_fitness(quint8 *env)
 {
     quint32 lowergenome=(quint32)(genome & ((quint64)65536*(quint64)65536-(quint64)1));
 
@@ -51,12 +51,13 @@ void Critter::recalc_fitness(quint8 *env)
     finalanswer+=bitcounts[answer];
     finalanswer+=bitcounts[a2];
 
-    if (finalanswer>=target+settleTolerance) {fitness=0; age=0; return;} // no use
-    if (finalanswer<=target-settleTolerance) {fitness=0; age=0; return;} // no use
+    if (finalanswer>=target+settleTolerance) {fitness=0; age=0; return 0;} // no use
+    if (finalanswer<=target-settleTolerance) {fitness=0; age=0; return 0;} // no use
 
     //These next two SHOULD do reverse of the abs of finalanswer (i.e 0=20, 20=0)
     if (finalanswer<target) fitness = settleTolerance - (target - finalanswer);
     else fitness = settleTolerance + target - finalanswer;
+    return fitness;
 }
 
 
@@ -116,7 +117,7 @@ int Critter::breed_with_parallel(int xpos, int ypos, Critter *partner, int *newg
     {
         //breeders get their energy back - this is an 'abort'
         energy+=breedCost;
-        partner->energy+=breedCost;
+        //partner->energy+=breedCost;
         return 1;
     }
 

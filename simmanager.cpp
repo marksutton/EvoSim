@@ -33,6 +33,7 @@ int yearsPerIteration=1;
 int speciesSamples=1;
 int speciesSensitivity=100;
 int timeSliceConnect=5;
+bool recalcFitness=false;
 bool speciesLogging=true;
 bool speciesLoggingToFile=false;
 quint64 lastSpeciesCalc=0;
@@ -158,10 +159,13 @@ void SimManager::MakeLookups()
         for (int n=0; n<256; n++)
         {
                 double d=sqrt(65536/(double)(n+1))-16;
+                if (d<0) d=0;
                 for (int m=0; m<256; m++)
                 {
                     xdisp[n][m]=(int)(d * sin((double)(m)/40.5845));
                     ydisp[n][m]=(int)(d * cos((double)(m)/40.5845));
+                    if (m==0)
+                        qDebug()<<n<<xdisp[n][m]<<ydisp[n][m];
                 }
         }
 
@@ -395,14 +399,43 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
 //returns number of new genomes
 {
     int breedlist[SLOTS_PER_GRID_SQUARE];
+    int maxalive;
+    int deathcount;
     for (int n=firstx; n<=lastx; n++)
     for (int m=0; m<gridY; m++)
     {
+        int maxv=maxused[n][m];
+        Critter *crit = critters[n][m];
+
+        if (recalcFitness)
+        {
+            //Check it works
+
+            //int oldtf=totalfit[n][m];
+            totalfit[n][m]=0;
+            maxalive=0;
+            deathcount=0;
+            for (int c=0; c<=maxv; c++)
+            {
+                if (crit[c].age)
+                {
+                    int f=(int)(crit[c].recalc_fitness(environment[n][m]));
+                    totalfit[n][m]+=f;
+                    if (f>0) maxalive=c; else deathcount++;
+                }
+            }
+            maxused[n][m]=maxalive;
+            maxv=maxalive;
+            KillCount_local+=deathcount;
+            //if (n==50 && m==50 && deathcount)
+            //{
+            //    qDebug()<<"Before"<<oldtf<<"  After"<<totalfit[n][m]<<" Deaths:"<<deathcount;
+            //}
+        }
+
         if (totalfit[n][m]) //skip whole square if needbe
         {
             int addfood = 1+(food / totalfit[n][m]);
-            int maxv=maxused[n][m];
-            Critter *crit = critters[n][m];
 
             int breedlistentries=0;
 
@@ -411,17 +444,19 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
 
             if (breedlistentries>0)
             {
-                quint8 divider=255/(breedlistentries+5);
+                quint8 divider=255/breedlistentries; //originally had breedlistentries+5, no idea why
                 for (int c=0; c<breedlistentries; c++)
                 {
 
-                    int partner=Rand8()/divider;  //divide needs to be settable
+                    int partner=Rand8()/divider;
 
                     if (partner<breedlistentries)
                     {
                         if (crit[breedlist[c]].breed_with_parallel(n,m,&(crit[breedlist[partner]]),&newgenomecount_local))
                             breedfails[n][m]++; //for analysis purposes
                     }
+                    else //didn't find a partner, refund breed cost
+                        crit[breedlist[c]].energy+=breedCost;
                 }
             }
         }
@@ -561,3 +596,5 @@ void SimManager::testcode()
     qDebug()<<"Test code";
 
 }
+
+

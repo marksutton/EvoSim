@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>981</width>
+    <width>988</width>
     <height>791</height>
    </rect>
   </property>
@@ -705,7 +705,7 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>981</width>
+     <width>988</width>
      <height>21</height>
     </rect>
    </property>
@@ -1282,6 +1282,14 @@ p, li { white-space: pre-wrap; }
   <action name="actionStasis">
    <property name="text">
     <string>Stasis...</string>
+   </property>
+  </action>
+  <action name="actionNon_static_fitness">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Non-static fitness</string>
    </property>
   </action>
  </widget>

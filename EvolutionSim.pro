@@ -1,7 +1,7 @@
 # -------------------------------------------------
 # Project created by QtCreator 2010-02-10T13:30:03
 # -------------------------------------------------
-QT += multimedia
+QT += widgets concurrent
 TARGET = EvolutionSim
 TEMPLATE = app
 SOURCES += main.cpp \

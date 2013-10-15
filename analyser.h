@@ -2,7 +2,7 @@
 #define ANALYSER_H
 #include <QString>
 #include <QList>
-#include <sortablegenome.h>
+#include "sortablegenome.h"
 #include <QHash>
 #include <QColor>
 

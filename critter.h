@@ -8,7 +8,7 @@ class Critter
 public:
     Critter();
     void initialise(quint64 gen, quint8 *env, int x, int y, int z);
-    void recalc_fitness(quint8 *env);
+    int recalc_fitness(quint8 *env);
     int breed_with_parallel(int xpos, int ypos, Critter *partner, int *newgenomecount_local);
     bool iterate_parallel(int *KillCount_local, int addfood);
 

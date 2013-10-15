@@ -7,7 +7,7 @@
 #include <QMutex>
 #include <QFuture>
 #include <QStringList>
-#include <qtconcurrentrun.h>
+#include <QtConcurrent>
 
 #include "critter.h"
 #include "analyser.h"
@@ -29,6 +29,7 @@ extern int startAge;
 #define GRID_Y 256
 #define SLOTS_PER_GRID_SQUARE 256
 
+extern bool recalcFitness;
 extern int target;
 extern int settleTolerance;
 extern int dispersal;

@@ -8,7 +8,7 @@ class SettingsImpl : public QDialog, public Ui::Settings
 {
 Q_OBJECT
 public:
-        SettingsImpl( QWidget * parent = 0, Qt::WFlags f = 0 );
+        SettingsImpl( QWidget * parent = 0);
         bool RedoImages;
 private slots:
         void on_buttonBox_accepted();

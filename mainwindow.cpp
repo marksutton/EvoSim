@@ -893,8 +893,8 @@ void MainWindow::on_actionSettings_triggered()
     //AutoMarkers options tab
     //Something like:
 
-    int oldrows, oldcols, oldslots;
-    oldrows=gridX; oldcols=gridY; oldslots=slotsPerSq;
+    int oldrows, oldcols;
+    oldrows=gridX; oldcols=gridY;
     SettingsImpl Dialog;
     Dialog.exec();
 
@@ -1172,6 +1172,9 @@ void MainWindow::on_actionSave_triggered()
     //now random number array
     for (int i=0; i<65536; i++)
         out<<randoms[i];
+
+    out<<recalcFitness; //extra new parameter
+
     outfile.close();
 }
 
@@ -1423,6 +1426,9 @@ void MainWindow::on_actionLoad_triggered()
         for (int i=0; i<65536; i++)
             in>>randoms[i];
 
+    if (!(in.atEnd()))
+        in>>recalcFitness;
+
     infile.close();
     NextRefresh=0;
     ResizeImageObjects();
@@ -1453,7 +1459,7 @@ void MainWindow::on_actionAdd_Regular_triggered()
 {
     int count;
     bool ok;
-    count=QInputDialog::getInteger(this,"","Grid Density?",2,2,10,1,&ok);
+    count=QInputDialog::getInt(this,"","Grid Density?",2,2,10,1,&ok);
     if (!ok) return;
 
     for (int x=0; x<count; x++)
@@ -1469,7 +1475,7 @@ void MainWindow::on_actionAdd_Random_triggered()
 {
     int count;
     bool ok;
-    count=QInputDialog::getInteger(this,"","Number of records to add?",1,1,100,1,&ok);
+    count=QInputDialog::getInt(this,"","Number of records to add?",1,1,100,1,&ok);
     if (!ok) return;
     for (int i=0; i<count; i++)
     {

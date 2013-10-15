@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>324</width>
-    <height>283</height>
+    <height>301</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,63 +16,27 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="0" column="0">
-      <widget class="QLabel" name="label">
+     <item row="8" column="3" alignment="Qt::AlignHCenter">
+      <widget class="QCheckBox" name="CheckBoxRecalcFitness">
+       <property name="layoutDirection">
+        <enum>Qt::RightToLeft</enum>
+       </property>
        <property name="text">
-        <string>Grid X</string>
+        <string/>
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QSpinBox" name="SpinBoxGridX">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>256</number>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="2">
-      <widget class="QLabel" name="label_2">
+     <item row="8" column="2">
+      <widget class="QLabel" name="lableRF">
        <property name="text">
-        <string>Grid Y</string>
+        <string>Recalc Fitnesses</string>
        </property>
       </widget>
      </item>
-     <item row="0" column="3">
-      <widget class="QSpinBox" name="SpinBoxGridY">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>256</number>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_3">
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_5">
        <property name="text">
-        <string>Slots</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QSpinBox" name="SpinBoxSlots">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>256</number>
+        <string>Settle tolerance</string>
        </property>
       </widget>
      </item>
@@ -96,10 +60,10 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="label_5">
+     <item row="2" column="2">
+      <widget class="QLabel" name="label_8">
        <property name="text">
-        <string>Settle tolerance</string>
+        <string>Breed Threshold</string>
        </property>
       </widget>
      </item>
@@ -113,10 +77,63 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="2">
-      <widget class="QLabel" name="label_8">
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_3">
        <property name="text">
-        <string>Breed Threshold</string>
+        <string>Slots</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QSpinBox" name="SpinBoxSlots">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>256</number>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="3">
+      <widget class="QSpinBox" name="SpinBoxGridY">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>256</number>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Grid Y</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QSpinBox" name="SpinBoxGridX">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>256</number>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Grid X</string>
        </property>
       </widget>
      </item>
@@ -173,7 +190,7 @@
      <item row="4" column="0">
       <widget class="QLabel" name="label_7">
        <property name="text">
-        <string>Food</string>
+        <string>Energy Input</string>
        </property>
       </widget>
      </item>
@@ -279,13 +296,6 @@
        </property>
       </widget>
      </item>
-     <item row="7" column="2">
-      <widget class="QLabel" name="label_16">
-       <property name="text">
-        <string>Species Connect</string>
-       </property>
-      </widget>
-     </item>
      <item row="6" column="2">
       <widget class="QLabel" name="label_14">
        <property name="text">
@@ -314,6 +324,13 @@
       <widget class="QLabel" name="label_17">
        <property name="text">
         <string>Timeslice connect</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="2">
+      <widget class="QLabel" name="label_16">
+       <property name="text">
+        <string>Species Connect</string>
        </property>
       </widget>
      </item>

@@ -2,12 +2,12 @@
 #include "settings.h"
 #include "simmanager.h"
 #include <QDebug>
-#include <mainwindow.h>
+#include "mainwindow.h"
 #include <QImage>
 #include <QVector>
 
-SettingsImpl::SettingsImpl( QWidget * parent, Qt::WFlags f)
-        : QDialog(parent, f)
+SettingsImpl::SettingsImpl( QWidget * parent)
+        : QDialog(parent)
 {
         setupUi(this);
 
@@ -28,6 +28,7 @@ SettingsImpl::SettingsImpl( QWidget * parent, Qt::WFlags f)
         SpinBoxSpeciesConnect->setValue(speciesSensitivity);
         SpinBoxSpeciesSamples->setValue(speciesSamples);
         SpinBoxTimeSliceConnect->setValue(timeSliceConnect);
+        CheckBoxRecalcFitness->setChecked(recalcFitness);
 
         RedoImages=false;        
 }
@@ -53,6 +54,7 @@ void SettingsImpl::on_buttonBox_accepted()
         speciesSamples=SpinBoxSpeciesSamples->value();
         speciesSensitivity=SpinBoxSpeciesConnect->value();
         timeSliceConnect=SpinBoxTimeSliceConnect->value();
+        recalcFitness=CheckBoxRecalcFitness->isChecked();
 }
 
 
