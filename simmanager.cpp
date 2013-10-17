@@ -31,11 +31,14 @@ int mutate = 10;
 int envchangerate=100;
 int yearsPerIteration=1;
 int speciesSamples=1;
-int speciesSensitivity=100;
+int speciesSensitivity=2;
 int timeSliceConnect=5;
 bool recalcFitness=false;
 bool speciesLogging=true;
 bool speciesLoggingToFile=false;
+
+int lastReport=0;
+
 quint64 lastSpeciesCalc=0;
 QString SpeciesLoggingFile="";
 
@@ -164,8 +167,6 @@ void SimManager::MakeLookups()
                 {
                     xdisp[n][m]=(int)(d * sin((double)(m)/40.5845));
                     ydisp[n][m]=(int)(d * cos((double)(m)/40.5845));
-                    if (m==0)
-                        qDebug()<<n<<xdisp[n][m]<<ydisp[n][m];
                 }
         }
 
@@ -405,6 +406,7 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
     for (int m=0; m<gridY; m++)
     {
         int maxv=maxused[n][m];
+
         Critter *crit = critters[n][m];
 
         if (recalcFitness)
@@ -419,14 +421,14 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             {
                 if (crit[c].age)
                 {
-                    int f=(int)(crit[c].recalc_fitness(environment[n][m]));
+                    quint32 f=crit[c].recalc_fitness(environment[n][m]);
                     totalfit[n][m]+=f;
                     if (f>0) maxalive=c; else deathcount++;
                 }
             }
             maxused[n][m]=maxalive;
             maxv=maxalive;
-            KillCount_local+=deathcount;
+            (*KillCount_local)+=deathcount;
             //if (n==50 && m==50 && deathcount)
             //{
             //    qDebug()<<"Before"<<oldtf<<"  After"<<totalfit[n][m]<<" Deaths:"<<deathcount;

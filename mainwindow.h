@@ -35,11 +35,13 @@ public:
     void setStatusBarText(QString text);
     Ui::MainWindow *ui;
 
+
 protected:
     void changeEvent(QEvent *e);
     void resizeEvent(QResizeEvent *event);
 
 private:
+    int ScaleFails(int fails, float gens);
     void closeEvent(QCloseEvent *event);
     void Report();
     void RunSetUp();

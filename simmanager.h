@@ -84,6 +84,7 @@ extern QString SpeciesLoggingFile;
 extern QStringList EnvFiles;
 extern int CurrentEnvFile;
 extern quint64 lastSpeciesCalc;
+extern int lastReport;
 
 extern int breedattempts[GRID_X][GRID_Y]; //for analysis purposes
 extern int breedfails[GRID_X][GRID_Y]; //for analysis purposes

@@ -192,7 +192,7 @@ Then - do comparison with last time - not yet implemented
 
         if (largest==-1) break; // if all assigned - break out of do-while
 
-//        qDebug()<<"Species "<<next_id<<" size is "<<largest;
+        //qDebug()<<"Species "<<next_id<<" size is "<<largest;
         //4. Compare this to ALL other genomes, whether assigned to a species or not.
         //If they are close enough, mark them down as species N (will include self),
         //or if they are already assigned to a species, note somewhere that those two species are equivalent
@@ -239,12 +239,14 @@ Then - do comparison with last time - not yet implemented
         {
             j.next();
             int tomerge=j.key();
-            int senscalc= ((j.value())*100) / this_species_size; //work out percentage of link size to species size
-//            qDebug()<<"senscalc "<<senscalc<<"  size is "<<j.value()<<"  "<< " size of this species is "<<this_species_size;
+            //OLD int senscalc= ((j.value())*100) / this_species_size; //work out percentage of link size to species size
+            int usesize = qMin(this_species_size,species_sizes[tomerge]); //use ratio of links to SMALLEST of the two populations
+            int senscalc= ((j.value())*100) / usesize;
+            //qDebug()<<"senscalc "<<senscalc<<"  size of link is "<<j.value()<<"  "<< " size of this species is "<<this_species_size<< " size of other species is "<<species_sizes[tomerge];
             if (senscalc >= speciesSensitivity)
            {
 
-//                qDebug()<<"Merging "<<tomerge<<" ...";
+                //qDebug()<<"Merging "<<tomerge<<" ...";
 
                 if (genome_count[species_type[tomerge]]>highestcount)
                 {
@@ -299,6 +301,7 @@ Then - do comparison with last time - not yet implemented
     QHash <int,int> childdists; //just record distance to new - if find better, replace it. Key is specieslistold indices
     QHash <int,int> childcounts; //Number of children
     QHash <int,int> primarychild; //link old to new
+    QHash <int,int> primarychildsizediff; //used for new tiebreaking code. Key is specieslistold indices, value is size difference to new
 
     QList<species> oldspecieslist_combined=oldspecieslist;
 
@@ -329,6 +332,7 @@ Then - do comparison with last time - not yet implemented
 
             int bestdist=999;
             int closestold=-1;
+            int bestsize=-1;
 
             //look at each old species, find closest
             for (int j=0; j<oldspecieslist_combined.count(); j++)
@@ -339,15 +343,35 @@ Then - do comparison with last time - not yet implemented
                 quint32 g1xu = quint32(g1x / ((quint64)65536*(quint64)65536)); //upper 32 bits
                 t1+= bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
 
-                if (t1<bestdist) {bestdist=t1; closestold=j;}
+                if (t1==bestdist)
+                {
+                    //found two same distance. Parent most likely to be the one with the bigger population, so tiebreak on this!
+                    if (oldspecieslist_combined[j].size>bestsize)
+                     {bestdist=t1; closestold=j; bestsize=oldspecieslist_combined[j].size;}
+                }
+                if (t1<bestdist) {bestdist=t1; closestold=j; bestsize=oldspecieslist_combined[j].size;}
             }
 
             parents[i]=closestold; //record parent
+            int thissizediff=qAbs(bestsize - newspecieslist[i].size);
+
             if (childdists.contains(closestold))  //already has a child
             {
 
-                if (childdists[closestold]>bestdist) {childdists[closestold]=bestdist; primarychild[closestold]=i;}
-                    childcounts[closestold]=childcounts[closestold]+1;
+                if (thissizediff<primarychildsizediff[closestold]) //one closest in size is to be treated as primary
+
+                  {childdists[closestold]=bestdist; primarychild[closestold]=i; primarychildsizediff[closestold]=thissizediff;}
+/*
+                //if (childdists[closestold]>bestdist) {childdists[closestold]=bestdist; primarychild[closestold]=i;}
+                if (childdists[closestold]==bestdist)
+                {
+                    //tie-break on size again - primary child should be the child closest in size to original I think
+
+                    if (thissizediff<primarychildsizediff[closestold])
+                      {childdists[closestold]=bestdist; primarychild[closestold]=i; primarychildsizediff[closestold]=thissizediff;}
+                }
+*/
+                childcounts[closestold]=childcounts[closestold]+1;
             }
             else //new
             {
@@ -355,6 +379,7 @@ Then - do comparison with last time - not yet implemented
                 childdists[closestold]=bestdist;
                 childcounts[closestold]=1;
                 primarychild[closestold]=i;
+                primarychildsizediff[closestold]=thissizediff;
             }
         }
 

@@ -19,6 +19,7 @@
 #include <QFile>
 #include "analysistools.h"
 #include "version.h"
+#include "math.h"
 
 SimManager *TheSimManager;
 MainWindow *MainWin;
@@ -497,6 +498,18 @@ void MainWindow::UpdateTitles()
         ui->LabelVis->setText("Breed Fails 2 (unused?)");
 }
 
+int MainWindow::ScaleFails(int fails, float gens)
+{
+    //scale colour of fail count, correcting for generations, and scaling high values to something saner
+    float ffails=((float)fails)/gens;
+
+    ffails*=100.0; // a fudge factor no less! Well it's only visualization...
+    ffails=pow(ffails,0.8);
+
+    if (ffails>255.0) ffails=255.0;
+    return (int)ffails;
+}
+
 void MainWindow::RefreshPopulations()
 //Refreshes of left window - also run species ident and logging
 {
@@ -526,6 +539,7 @@ void MainWindow::RefreshPopulations()
     if (ui->actionMean_fitness->isChecked())
     {
         //Popcount
+        int multiplier=255/settleTolerance;
         for (int n=0; n<gridX; n++)
         for (int m=0; m<gridY; m++)
         {
@@ -537,7 +551,7 @@ void MainWindow::RefreshPopulations()
             if (count==0)
             pop_image->setPixel(n,m,0);
                 else
-            pop_image->setPixel(n,m,(totalfit[n][m] * 10) / count);
+            pop_image->setPixel(n,m,(totalfit[n][m] * multiplier) / count);
 
         }
         pop_item->setPixmap(QPixmap::fromImage(*pop_image));
@@ -595,7 +609,7 @@ void MainWindow::RefreshPopulations()
                     }
 
                 //now convert first 32 bits to a colour
-                // r,g,b each counts of 5,5,6 bits
+                // r,g,b each counts of 11,11,10 bits
                 quint32 genome= (quint32)(maxg & ((quint64)65536*(quint64)65536-(quint64)1));
                 quint32 b = bitcounts[genome & 2047] * 23;
                 genome /=2048;
@@ -691,7 +705,7 @@ void MainWindow::RefreshPopulations()
                     }
 
                 //now convert first 32 bits to a colour
-                // r,g,b each counts of 5,5,6 bits
+                // r,g,b each counts of 11,11,10 bits
                 quint32 genome= (quint32)(maxg / ((quint64)65536*(quint64)65536));
                 quint32 b = bitcounts[genome & 2047] * 23;
                 genome /=2048;
@@ -727,9 +741,9 @@ void MainWindow::RefreshPopulations()
             if (count==0) pop_image_colour->setPixel(n,m,qRgb(0, 0, 0));
             else
             {
-                quint32 r = gen0tot *256 / count;;
-                quint32 g = gen1tot *256 / count;;
-                quint32 b = gen2tot *256 / count;;
+                quint32 r = gen0tot *256 / count;
+                quint32 g = gen1tot *256 / count;
+                quint32 b = gen2tot *256 / count;
                 pop_image_colour->setPixel(n,m,qRgb(r, g, b));
             }
           }
@@ -782,7 +796,7 @@ void MainWindow::RefreshPopulations()
     //this now combines breed fails (red) and settle fails (green)
     {
         //work out max and ratios
-        int maxbf=1;
+        /*int maxbf=1;
         int maxsf=1;
         for (int n=0; n<gridX; n++)
         for (int m=0; m<gridY; m++)
@@ -792,12 +806,20 @@ void MainWindow::RefreshPopulations()
         }
         float bf_mult=255.0 / (float)maxbf;
         float sf_mult=255.0 / (float)maxsf;
-         //Popcount
+        qDebug()<<bf_mult<<sf_mult;
+        bf_mult=1.0;
+        sf_mult=1.0;
+        */
+        //work out average per generation
+        float gens=generation-lastReport;
+
+
+        //Make image
         for (int n=0; n<gridX; n++)
         for (int m=0; m<gridY; m++)
         {
-            int r=(int)((float)(breedfails[n][m])*bf_mult); if (r>255) r=255;
-            int g=(int)((float)(settlefails[n][m])*sf_mult); if (g>255) g=255;
+            int r=ScaleFails(breedfails[n][m],gens);
+            int g=ScaleFails(settlefails[n][m],gens);
             pop_image_colour->setPixel(n,m,qRgb(r, g, 0));
         }
         pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
@@ -820,6 +842,7 @@ void MainWindow::RefreshPopulations()
         pop_item->setPixmap(QPixmap::fromImage(*pop_image));
     }
 
+    lastReport=generation;
 }
 
 void MainWindow::RefreshEnvironment()
