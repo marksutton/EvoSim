@@ -129,14 +129,7 @@ int Critter::breed_with_parallel(int xpos, int ypos, Critter *partner, int *newg
      g2x &= genome;
      g1x &= partner->genome;  // cross bred genome
      g2x |= g1x;
-/*
-     if (qrand()<(mutate*128))
-     {
-            int w=qrand();
-            w &=63;
-            g2x ^= tweakers64[w];
-     }
-*/
+
      //this is technically not threadsafe, but it doesn't matter - any value for nextrand is fine
      if ((TheSimManager->Rand8())<mutate)
      {

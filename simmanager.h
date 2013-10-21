@@ -120,6 +120,7 @@ public:
     void loadEnvironmentFromFile(int emode);
     //Public data (keep public for speed)
 
+    int portable_rand();
 private:
     void MakeLookups();
     QList<QFuture<int>*> FuturesList;
@@ -130,5 +131,7 @@ private:
 };
 
 extern SimManager *TheSimManager;
+
+#define PORTABLE_RAND_MAX 32767
 
 #endif // SIMMANAGER_H

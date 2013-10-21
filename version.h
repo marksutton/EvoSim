@@ -3,7 +3,7 @@
 
 //Software Versions
 #define MAJORVERSION 1
-#define MINORVERSION 4
+#define MINORVERSION 6
 
 //File version
 #define VERSION 1

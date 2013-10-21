@@ -1502,8 +1502,8 @@ void MainWindow::on_actionAdd_Random_triggered()
     if (!ok) return;
     for (int i=0; i<count; i++)
     {
-        int rx=qrand() % gridX;
-        int ry=qrand() % gridY;
+        int rx=TheSimManager->portable_rand() % gridX;
+        int ry=TheSimManager->portable_rand() % gridY;
         FRW->NewItem(rx,ry,10);
     }
 }

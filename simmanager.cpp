@@ -106,6 +106,24 @@ SimManager::SimManager()
 }
 
 
+int SimManager::portable_rand()
+{
+    //replacement for qrand to come with RAND_MAX !=32767
+
+    if (RAND_MAX<32767)
+    {
+        qDebug()<<"RAND_MAX too low - it's "<<RAND_MAX;
+        exit(0);
+    }
+    if (RAND_MAX>32767)
+    {
+        // assume it's (2^n)-1
+        int r = qrand();
+        return r & 32767; //mask off bottom 16 bits, return those
+    }
+    else return qrand();
+}
+
 void SimManager::MakeLookups()
 {
         //These are 00000001, 000000010, 0000000100 etc
@@ -128,30 +146,28 @@ void SimManager::MakeLookups()
         //now set up xor masks for 3 variables - these are used for each of R G and B to work out fitness
 
         //Start - random bit pattern for each
-        //Assumed RAND_MAX is 32767
-        if (RAND_MAX!=32767) qDebug()<<"Error - rand max not 32767!";
 
-        xormasks[0][0]=qrand() * qrand() *2;
-        xormasks[0][1]=qrand() * qrand() *2;
-        xormasks[0][2]=qrand() * qrand() *2;
+        xormasks[0][0]=portable_rand() * portable_rand() *2;
+        xormasks[0][1]=portable_rand() * portable_rand() *2;
+        xormasks[0][2]=portable_rand() * portable_rand() *2;
 
         for (int n=1; n<256; n++) //for all the others - flip a random bit each time (^ is xor) - will slowly modify from 0 to 255
         {
-                xormasks[n][0] = xormasks[n-1][0] ^ tweakers[qrand()/(RAND_MAX/32)];
-                xormasks[n][1] = xormasks[n-1][1] ^ tweakers[qrand()/(RAND_MAX/32)];
-                xormasks[n][2] = xormasks[n-1][2] ^ tweakers[qrand()/(RAND_MAX/32)];
+                xormasks[n][0] = xormasks[n-1][0] ^ tweakers[portable_rand()/(PORTABLE_RAND_MAX/32)];
+                xormasks[n][1] = xormasks[n-1][1] ^ tweakers[portable_rand()/(PORTABLE_RAND_MAX/32)];
+                xormasks[n][2] = xormasks[n-1][2] ^ tweakers[portable_rand()/(PORTABLE_RAND_MAX/32)];
         }
 
 
         //now the randoms - pre_rolled random numbers 0-255
-        for (int n=0; n<65536; n++) randoms[n] = (quint8)((qrand() & 255));
+        for (int n=0; n<65536; n++) randoms[n] = (quint8)((portable_rand() & 255));
         nextrandom=0;
 
         // gene exchange lookup
         for (int n=0; n<65536; n++)  //random bit combs, averaging every other bit on
         {
                 quint64 value = 0;
-                for (int m=0; m<64; m++) if (qrand()>(RAND_MAX/2)) value += tweakers64[m];
+                for (int m=0; m<64; m++) if (portable_rand()>(PORTABLE_RAND_MAX/2)) value += tweakers64[m];
                 genex[n]=value;
         }
         nextgenex=0;
@@ -337,10 +353,10 @@ bool SimManager::regenerateEnvironment(int emode, bool interpolate)
 quint32 SimManager::Rand32()
 {
     //4 lots of RAND8
-    quint32 rand1=qrand() & 255;
-    quint32 rand2=(qrand() & 255) * 256;
-    quint32 rand3=(qrand() & 255) * 256 * 256;
-    quint32 rand4=(qrand() & 255) * 256 * 256 * 256;
+    quint32 rand1=portable_rand() & 255;
+    quint32 rand2=(portable_rand() & 255) * 256;
+    quint32 rand3=(portable_rand() & 255) * 256 * 256;
+    quint32 rand4=(portable_rand() & 255) * 256 * 256 * 256;
 
     return rand1 + rand2 + rand3 + rand4;
 }
