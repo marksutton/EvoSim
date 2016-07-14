@@ -34,13 +34,17 @@ int speciesSamples=1;
 int speciesSensitivity=2;
 int timeSliceConnect=5;
 bool recalcFitness=false;
+bool asexual=false;
 bool speciesLogging=true;
 bool speciesLoggingToFile=false;
+bool fitnessLoggingToFile=false;
+
 
 int lastReport=0;
 
 quint64 lastSpeciesCalc=0;
 QString SpeciesLoggingFile="";
+QString FitnessLoggingFile="";
 
 QStringList EnvFiles;
 int CurrentEnvFile;
@@ -451,6 +455,8 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             //}
         }
 
+        if(fitnessLoggingToFile)breedattempts[n][m]=0;
+
         if (totalfit[n][m]) //skip whole square if needbe
         {
             int addfood = 1+(food / totalfit[n][m]);
@@ -460,13 +466,20 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             for (int c=0; c<=maxv; c++)
             if (crit[c].iterate_parallel(KillCount_local,addfood)) breedlist[breedlistentries++]=c;
 
+
+            // ----RJG: breedattempts was no longer used - co-opting for fitness report.
+            if(fitnessLoggingToFile)breedattempts[n][m]=breedlistentries;
+
             if (breedlistentries>0)
             {
-                quint8 divider=255/breedlistentries; //originally had breedlistentries+5, no idea why
+                quint8 divider=255/breedlistentries; //originally had breedlistentries+5, no idea why. //lol - RG
                 for (int c=0; c<breedlistentries; c++)
                 {
+                    int partner;
 
-                    int partner=Rand8()/divider;
+                    //---- RJG: If asexual, recombine with self
+                    if(asexual)partner=c;
+                    else partner=Rand8()/divider;
 
                     if (partner<breedlistentries)
                     {

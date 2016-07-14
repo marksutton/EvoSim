@@ -93,6 +93,7 @@ private slots:
     void on_actionShow_positions_triggered();
     void on_actionTracking_triggered();
     void on_actionLogging_triggered();
+    void on_actionFitness_logging_to_File_triggered();
     void on_actionSet_Logging_File_triggered();
     void on_actionGenerate_Tree_from_Log_File_triggered();
     void on_actionExtinction_and_Origination_Data_triggered();

@@ -29,7 +29,7 @@ SettingsImpl::SettingsImpl( QWidget * parent)
         SpinBoxSpeciesSamples->setValue(speciesSamples);
         SpinBoxTimeSliceConnect->setValue(timeSliceConnect);
         CheckBoxRecalcFitness->setChecked(recalcFitness);
-
+        CheckBoxAsexual->setChecked(asexual);
         RedoImages=false;        
 }
 
@@ -55,6 +55,7 @@ void SettingsImpl::on_buttonBox_accepted()
         speciesSensitivity=SpinBoxSpeciesConnect->value();
         timeSliceConnect=SpinBoxTimeSliceConnect->value();
         recalcFitness=CheckBoxRecalcFitness->isChecked();
+        asexual=CheckBoxAsexual->isChecked();
 }
 
 

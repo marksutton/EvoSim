@@ -116,7 +116,9 @@ int Critter::breed_with_parallel(int xpos, int ypos, Critter *partner, int *newg
     if (t1>maxDiff)
     {
         //breeders get their energy back - this is an 'abort'
+        //---- RJG: Note that this refund is different to and exclusive from that in Simmanager, which refunds if no partner found.
         energy+=breedCost;
+        //---- RJG: Presumably removed to prevent critters getting multiple refunds
         //partner->energy+=breedCost;
         return 1;
     }
