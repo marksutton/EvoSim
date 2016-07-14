@@ -46,6 +46,10 @@ extern int breedCost;
 //---- RJG: Also allow asexual reproduction.
 extern bool  asexual;
 
+//----MDS: toroidal geography and non-spatial settling
+extern bool nonspatial, toroidal;
+
+
 extern int maxDiff;
 //chance to mutate out of 255
 extern int mutate;

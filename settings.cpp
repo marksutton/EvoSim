@@ -30,6 +30,8 @@ SettingsImpl::SettingsImpl( QWidget * parent)
         SpinBoxTimeSliceConnect->setValue(timeSliceConnect);
         CheckBoxRecalcFitness->setChecked(recalcFitness);
         CheckBoxAsexual->setChecked(asexual);
+        CheckBoxToroidal->setChecked(toroidal);
+        CheckBoxNonSpatial->setChecked(nonspatial);
         RedoImages=false;        
 }
 
@@ -56,6 +58,8 @@ void SettingsImpl::on_buttonBox_accepted()
         timeSliceConnect=SpinBoxTimeSliceConnect->value();
         recalcFitness=CheckBoxRecalcFitness->isChecked();
         asexual=CheckBoxAsexual->isChecked();
+        toroidal=CheckBoxToroidal->isChecked();
+        nonspatial=CheckBoxNonSpatial->isChecked();
 }
 
 

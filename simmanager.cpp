@@ -38,6 +38,8 @@ bool asexual=false;
 bool speciesLogging=true;
 bool speciesLoggingToFile=false;
 bool fitnessLoggingToFile=false;
+bool nonspatial=false;
+bool toroidal=false;
 
 
 int lastReport=0;
@@ -497,23 +499,77 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
 
 int SimManager::settle_parallel(int newgenomecounts_start, int newgenomecounts_end,int *trycount_local, int *settlecount_local, int *birthcounts_local)
 {
-    for (int n=newgenomecounts_start; n<newgenomecounts_end; n++)
+    if (nonspatial)
     {
-        //first handle dispersal
-
-        quint8 t1=Rand8();
-        quint8 t2=Rand8();
-
-        int xpos=(xdisp[t1][t2])/newgenomeDisp[n];
-        int ypos=(ydisp[t1][t2])/newgenomeDisp[n];
-        xpos+=newgenomeX[n];
-        ypos+=newgenomeY[n];
-
-        if (xpos>=0)
-        if (xpos<gridX)
-        if (ypos>=0)
-        if (ypos<gridY)
+        //settling with no geography - just randomly pick a cell
+        for (int n=newgenomecounts_start; n<newgenomecounts_end; n++)
         {
+            quint64 xpos=((quint64)Rand32())*(quint64)gridX;
+            xpos/=(((quint64)65536)*((quint64)65536));
+            quint64 ypos=((quint64)Rand32())*(quint64)gridY;
+            ypos/=(((quint64)65536)*((quint64)65536));
+
+            mutexes[(int)xpos][(int)ypos]->lock(); //ensure no-one else buggers with this square
+            (*trycount_local)++;
+            Critter *crit=critters[(int)xpos][(int)ypos];
+            //Now put the baby into any free slot here
+            for (int m=0; m<slotsPerSq; m++)
+            {
+                Critter *crit2=&(crit[m]);
+                if (crit2->age==0)
+                {
+                    //place it
+
+                    crit2->initialise(newgenomes[n],environment[xpos][ypos], xpos, ypos,m);
+                    if (crit2->age)
+                    {
+                        int fit=crit2->fitness;
+                        totalfit[xpos][ypos]+=fit;
+                        (*birthcounts_local)++;
+                        if (m>maxused[xpos][ypos]) maxused[xpos][ypos]=m;
+                        settles[xpos][ypos]++;
+                        (*settlecount_local)++;
+                    }
+                    else settlefails[xpos][ypos]++;
+                    break;
+                }
+            }
+            mutexes[xpos][ypos]->unlock();
+        }
+    }
+    else
+    {
+        //old code - normal settling with radiation from original point
+        //qDebug()<<"toroidal is "<<toroidal;
+        for (int n=newgenomecounts_start; n<newgenomecounts_end; n++)
+        {
+            //first handle dispersal
+
+            quint8 t1=Rand8();
+            quint8 t2=Rand8();
+
+            int xpos=(xdisp[t1][t2])/newgenomeDisp[n];
+            int ypos=(ydisp[t1][t2])/newgenomeDisp[n];
+            xpos+=newgenomeX[n];
+            ypos+=newgenomeY[n];
+
+
+            if (toroidal)
+            {
+                //NOTE - this assumes max possible settle distance is less than grid size. Otherwise it will go tits up
+                if (xpos<0) xpos+=gridX;
+                if (xpos>=gridX) xpos-=gridX;
+                if (ypos<0) ypos+=gridY;
+                if (ypos>=gridY) ypos-=gridY;
+            }
+            else
+            {
+                if (xpos<0) continue;
+                if (xpos>=gridX)  continue;
+                if (ypos<0)  continue;
+                if (ypos>=gridY)  continue;
+            }
+
             mutexes[xpos][ypos]->lock(); //ensure no-one else buggers with this square
             (*trycount_local)++;
             Critter *crit=critters[xpos][ypos];
@@ -536,12 +592,11 @@ int SimManager::settle_parallel(int newgenomecounts_start, int newgenomecounts_e
                         (*settlecount_local)++;
                     }
                     else settlefails[xpos][ypos]++;
-                    goto done;
+                    break;
                 }
             }
-        done: //break point out of loop
-            mutexes[xpos][ypos]->unlock()
-                    ;
+            mutexes[xpos][ypos]->unlock();
+
         }
     }
     return 0;

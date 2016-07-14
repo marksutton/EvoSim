@@ -19,13 +19,64 @@
      <property name="verticalSpacing">
       <number>6</number>
      </property>
-     <item row="8" column="3" alignment="Qt::AlignHCenter">
-      <widget class="QCheckBox" name="CheckBoxRecalcFitness">
-       <property name="layoutDirection">
-        <enum>Qt::RightToLeft</enum>
+     <item row="6" column="3">
+      <widget class="QSpinBox" name="SpinBoxYearsPerIteration">
+       <property name="minimum">
+        <number>1</number>
        </property>
+       <property name="maximum">
+        <number>99</number>
+       </property>
+       <property name="value">
+        <number>15</number>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="2">
+      <widget class="QLabel" name="label_14">
        <property name="text">
-        <string/>
+        <string>Years/Iteration</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QSpinBox" name="SpinBoxEnvChangeRate">
+       <property name="maximum">
+        <number>100000</number>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0">
+      <widget class="QLabel" name="label_15">
+       <property name="text">
+        <string>Species samps/sq</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="3">
+      <widget class="QSpinBox" name="SpinBoxSpeciesConnect">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>10000</number>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="0">
+      <widget class="QLabel" name="label_17">
+       <property name="text">
+        <string>Timeslice connect</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="1">
+      <widget class="QSpinBox" name="SpinBoxTimeSliceConnect">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>100</number>
        </property>
       </widget>
      </item>
@@ -36,94 +87,99 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="label_5">
+     <item row="8" column="3" alignment="Qt::AlignHCenter">
+      <widget class="QCheckBox" name="CheckBoxRecalcFitness">
+       <property name="layoutDirection">
+        <enum>Qt::RightToLeft</enum>
+       </property>
        <property name="text">
-        <string>Settle tolerance</string>
+        <string/>
        </property>
       </widget>
      </item>
-     <item row="1" column="2">
-      <widget class="QLabel" name="label_4">
+     <item row="9" column="0">
+      <widget class="QLabel" name="label_18">
        <property name="text">
-        <string>Fitness target</string>
+        <string>Asexual breeding</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="3">
-      <widget class="QSpinBox" name="SpinBoxFitnessTarget">
-       <property name="enabled">
-        <bool>true</bool>
+     <item row="9" column="1" alignment="Qt::AlignHCenter">
+      <widget class="QCheckBox" name="CheckBoxAsexual">
+       <property name="layoutDirection">
+        <enum>Qt::RightToLeft</enum>
        </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="2">
+      <widget class="QLabel" name="label_19">
+       <property name="text">
+        <string>Toroidal</string>
+       </property>
+      </widget>
+     </item>
+     <item row="9" column="3" alignment="Qt::AlignHCenter">
+      <widget class="QCheckBox" name="CheckBoxToroidal">
+       <property name="layoutDirection">
+        <enum>Qt::RightToLeft</enum>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="0">
+      <widget class="QLabel" name="label_20">
+       <property name="text">
+        <string>Nonspatial Settling</string>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="1" alignment="Qt::AlignHCenter">
+      <widget class="QCheckBox" name="CheckBoxNonSpatial">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLabel" name="label_11">
+       <property name="text">
+        <string>Chance of Mutation</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="3">
+      <widget class="QSpinBox" name="SpinBoxBreedCost">
        <property name="minimum">
         <number>1</number>
        </property>
        <property name="maximum">
-        <number>96</number>
+        <number>10000</number>
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_3">
-       <property name="text">
-        <string>Slots</string>
+     <item row="5" column="1">
+      <widget class="QSpinBox" name="SpinBoxMutationChance">
+       <property name="maximum">
+        <number>255</number>
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
-      <widget class="QSpinBox" name="SpinBoxSettleTolerance">
+     <item row="7" column="1">
+      <widget class="QSpinBox" name="SpinBoxSpeciesSamples">
        <property name="minimum">
         <number>1</number>
        </property>
-       <property name="maximum">
-        <number>30</number>
-       </property>
       </widget>
      </item>
-     <item row="2" column="2">
-      <widget class="QLabel" name="label_8">
+     <item row="7" column="2">
+      <widget class="QLabel" name="label_16">
        <property name="text">
-        <string>Breed Threshold</string>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="1">
-      <widget class="QSpinBox" name="SpinBoxSlots">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>256</number>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="3">
-      <widget class="QSpinBox" name="SpinBoxGridY">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>256</number>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="2">
-      <widget class="QLabel" name="label_2">
-       <property name="text">
-        <string>Grid Y</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="label">
-       <property name="text">
-        <string>Grid X</string>
+        <string>Species Connect</string>
        </property>
       </widget>
      </item>
@@ -143,36 +199,6 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="1">
-      <widget class="QSpinBox" name="SpinBoxGridX">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>256</number>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QSpinBox" name="SpinBoxStartAge">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>1000</number>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="label_12">
-       <property name="text">
-        <string>Start Age</string>
-       </property>
-      </widget>
-     </item>
      <item row="3" column="2">
       <widget class="QLabel" name="label_6">
        <property name="text">
@@ -180,34 +206,10 @@
        </property>
       </widget>
      </item>
-     <item row="7" column="2">
-      <widget class="QLabel" name="label_16">
+     <item row="2" column="2">
+      <widget class="QLabel" name="label_8">
        <property name="text">
-        <string>Species Connect</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="3">
-      <widget class="QSpinBox" name="SpinBoxDispersal">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>200</number>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="label_7">
-       <property name="text">
-        <string>Energy Input</string>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="2">
-      <widget class="QLabel" name="label_9">
-       <property name="text">
-        <string>Breed Cost</string>
+        <string>Breed Threshold</string>
        </property>
       </widget>
      </item>
@@ -221,34 +223,74 @@
        </property>
       </widget>
      </item>
-     <item row="5" column="0">
-      <widget class="QLabel" name="label_11">
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_7">
        <property name="text">
-        <string>Chance of Mutation</string>
+        <string>Energy Input</string>
        </property>
       </widget>
      </item>
-     <item row="5" column="1">
-      <widget class="QSpinBox" name="SpinBoxMutationChance">
-       <property name="maximum">
-        <number>255</number>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>Settle tolerance</string>
        </property>
       </widget>
      </item>
-     <item row="4" column="3">
-      <widget class="QSpinBox" name="SpinBoxBreedCost">
+     <item row="3" column="1">
+      <widget class="QSpinBox" name="SpinBoxStartAge">
        <property name="minimum">
         <number>1</number>
        </property>
        <property name="maximum">
-        <number>10000</number>
+        <number>1000</number>
        </property>
       </widget>
      </item>
-     <item row="5" column="2">
-      <widget class="QLabel" name="label_10">
+     <item row="2" column="1">
+      <widget class="QSpinBox" name="SpinBoxSettleTolerance">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>30</number>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="2">
+      <widget class="QLabel" name="label_9">
        <property name="text">
-        <string>Max Diff to Breed</string>
+        <string>Breed Cost</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="3">
+      <widget class="QSpinBox" name="SpinBoxDispersal">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>200</number>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="3">
+      <widget class="QSpinBox" name="SpinBoxFitnessTarget">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>96</number>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_12">
+       <property name="text">
+        <string>Start Age</string>
        </property>
       </widget>
      </item>
@@ -262,13 +304,6 @@
        </property>
       </widget>
      </item>
-     <item row="6" column="1">
-      <widget class="QSpinBox" name="SpinBoxEnvChangeRate">
-       <property name="maximum">
-        <number>100000</number>
-       </property>
-      </widget>
-     </item>
      <item row="6" column="0">
       <widget class="QLabel" name="label_13">
        <property name="text">
@@ -276,81 +311,77 @@
        </property>
       </widget>
      </item>
-     <item row="6" column="3">
-      <widget class="QSpinBox" name="SpinBoxYearsPerIteration">
+     <item row="5" column="2">
+      <widget class="QLabel" name="label_10">
+       <property name="text">
+        <string>Max Diff to Breed</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QSpinBox" name="SpinBoxGridX">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="minimum">
         <number>1</number>
        </property>
        <property name="maximum">
-        <number>99</number>
-       </property>
-       <property name="value">
-        <number>15</number>
+        <number>256</number>
        </property>
       </widget>
      </item>
-     <item row="7" column="1">
-      <widget class="QSpinBox" name="SpinBoxSpeciesSamples">
-       <property name="minimum">
-        <number>1</number>
+     <item row="1" column="1">
+      <widget class="QSpinBox" name="SpinBoxSlots">
+       <property name="enabled">
+        <bool>true</bool>
        </property>
-      </widget>
-     </item>
-     <item row="6" column="2">
-      <widget class="QLabel" name="label_14">
-       <property name="text">
-        <string>Years/Iteration</string>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="3">
-      <widget class="QSpinBox" name="SpinBoxSpeciesConnect">
        <property name="minimum">
         <number>1</number>
        </property>
        <property name="maximum">
-        <number>10000</number>
+        <number>256</number>
        </property>
       </widget>
      </item>
-     <item row="7" column="0">
-      <widget class="QLabel" name="label_15">
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_3">
        <property name="text">
-        <string>Species samps/sq</string>
+        <string>Slots</string>
        </property>
       </widget>
      </item>
-     <item row="8" column="1">
-      <widget class="QSpinBox" name="SpinBoxTimeSliceConnect">
+     <item row="0" column="2">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Grid Y</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="3">
+      <widget class="QSpinBox" name="SpinBoxGridY">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
        <property name="minimum">
         <number>1</number>
        </property>
        <property name="maximum">
-        <number>100</number>
+        <number>256</number>
        </property>
       </widget>
      </item>
-     <item row="8" column="0">
-      <widget class="QLabel" name="label_17">
+     <item row="0" column="0">
+      <widget class="QLabel" name="label">
        <property name="text">
-        <string>Timeslice connect</string>
+        <string>Grid X</string>
        </property>
       </widget>
      </item>
-     <item row="9" column="1" alignment="Qt::AlignHCenter">
-      <widget class="QCheckBox" name="CheckBoxAsexual">
-       <property name="layoutDirection">
-        <enum>Qt::RightToLeft</enum>
-       </property>
+     <item row="1" column="2">
+      <widget class="QLabel" name="label_4">
        <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="0">
-      <widget class="QLabel" name="label_18">
-       <property name="text">
-        <string>Asexual breeding</string>
+        <string>Fitness target</string>
        </property>
       </widget>
      </item>
