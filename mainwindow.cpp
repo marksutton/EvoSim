@@ -1735,7 +1735,8 @@ void MainWindow::LogSpecies()
             if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
             else out<<"\n";
 
-            out<<"Each generation lists, for each pixel: total fitness, number of critters,entries on breed list";
+            out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
+            //out<<"Each generation lists, for each pixel: total fitness, number of critters,entries on breed list";
 
             //----RJG - deal with Linux --> windows.
             if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
@@ -1755,13 +1756,24 @@ void MainWindow::LogSpecies()
         // Here too
             for (int i=0; i<gridX; i++)
             {
-                for (int j=0; j<gridY; j++)
+                for (int j=0; j<gridY-1; j++)
                     {
-                    out<<totalfit[i][j];
+                    float mean=0;
+                    mean = (float)totalfit[i][j]/(float)maxused[i][j]+1;
+                    //out<<totalfit[i][j];
                     //output with +1 due to c numbering, zero is one critter, etc.
-                    out<<","<<maxused[i][j]+1;
+                    //out<<","<<maxused[i][j]+1;
+                    out<< mean;
                     out<<","<<breedattempts[i][j]<<"\t";
                     }
+
+                float mean=0;
+                mean = (float)totalfit[i][gridY-1]/(float)maxused[i][gridY-1]+1;
+                //out<<totalfit[i][j];
+                //output with +1 due to c numbering, zero is one critter, etc.
+                //out<<","<<maxused[i][j]+1;
+                out<< mean;
+                out<<","<<breedattempts[i][gridY-1];
 
                  if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
                  else out<<"\n";
