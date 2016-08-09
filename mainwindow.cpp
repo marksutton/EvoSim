@@ -56,7 +56,7 @@ MainWindow::MainWindow(QWidget *parent) :
     resetButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton-Enabled.png")), QString("Reset"), this);
     startButton->setEnabled(false);
     runForButton->setEnabled(false);
-    pauseButton->setEnabled(false);    
+    pauseButton->setEnabled(false);
     ui->toolBar->addAction(startButton);
     ui->toolBar->addAction(runForButton);
     ui->toolBar->addAction(pauseButton);
@@ -122,7 +122,7 @@ MainWindow::MainWindow(QWidget *parent) :
     popscene->mw=this;
     ui->GV_Population->setScene(popscene);
 
-    //add images to the scenes    
+    //add images to the scenes
     env_item= new QGraphicsPixmapItem();
     envscene->addItem(env_item);
     env_item->setZValue(0);
@@ -230,7 +230,7 @@ void MainWindow::on_actionStart_Sim_triggered()
     }
     RunSetUp();
     while (pauseflag==false)
-    {       
+    {
         Report();
         qApp->processEvents();
         if (ui->actionGo_Slow->isChecked()) Sleeper::msleep(30);
@@ -1506,7 +1506,7 @@ bool MainWindow::genomeComparisonAdd()
                 genoneComparison->addGenomeCritter(critters[x][y][c],environment[x][y]);
                 return true;
             }
-        }       
+        }
     }
     return false;
 }
@@ -1735,8 +1735,8 @@ void MainWindow::LogSpecies()
             if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
             else out<<"\n";
 
-            out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
-            //out<<"Each generation lists, for each pixel: total fitness, number of critters,entries on breed list";
+            //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
+            out<<"Each generation lists, for each pixel: total fitness, number of critters,entries on breed list";
 
             //----RJG - deal with Linux --> windows.
             if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
@@ -1758,21 +1758,20 @@ void MainWindow::LogSpecies()
             {
                 for (int j=0; j<gridY-1; j++)
                     {
-                    float mean=0;
-                    mean = (float)totalfit[i][j]/(float)maxused[i][j]+1;
-                    //out<<totalfit[i][j];
+                    //float mean=0;
+                    //mean = (float)totalfit[i][j]/(float)maxused[i][j]+1;
+                    out<<totalfit[i][j];
                     //output with +1 due to c numbering, zero is one critter, etc.
-                    //out<<","<<maxused[i][j]+1;
-                    out<< mean;
+                    out<<","<<maxused[i][j]+1;
                     out<<","<<breedattempts[i][j]<<"\t";
                     }
 
-                float mean=0;
-                mean = (float)totalfit[i][gridY-1]/(float)maxused[i][gridY-1]+1;
-                //out<<totalfit[i][j];
+                //float mean=0;
+                //mean = (float)totalfit[i][gridY-1]/(float)maxused[i][gridY-1]+1;
+                out<<totalfit[i][gridY-1];
                 //output with +1 due to c numbering, zero is one critter, etc.
-                //out<<","<<maxused[i][j]+1;
-                out<< mean;
+                out<<","<<maxused[i][gridY-1]+1;
+                //out<< mean;
                 out<<","<<breedattempts[i][gridY-1];
 
                  if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";

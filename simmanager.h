@@ -7,7 +7,8 @@
 #include <QMutex>
 #include <QFuture>
 #include <QStringList>
-#include <QtConcurrent>
+// ---- RJG updated this from QtConcurrent Aug16 to compile on linux
+#include <QtConcurrentRun>
 
 #include "critter.h"
 #include "analyser.h"
