@@ -35,7 +35,7 @@ int speciesSensitivity=2;
 int timeSliceConnect=5;
 bool recalcFitness=false;
 bool asexual=false;
-bool speciesLogging=true;
+bool speciesLogging=false;
 bool speciesLoggingToFile=false;
 bool fitnessLoggingToFile=false;
 bool nonspatial=false;
@@ -457,6 +457,7 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             //}
         }
 
+        // RJG - reset counters for fitness logging to file
         if(fitnessLoggingToFile)breedattempts[n][m]=0;
 
         if (totalfit[n][m]) //skip whole square if needbe
@@ -466,7 +467,7 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             int breedlistentries=0;
 
             for (int c=0; c<=maxv; c++)
-            if (crit[c].iterate_parallel(KillCount_local,addfood)) breedlist[breedlistentries++]=c;
+                    if (crit[c].iterate_parallel(KillCount_local,addfood)) breedlist[breedlistentries++]=c;
 
 
             // ----RJG: breedattempts was no longer used - co-opting for fitness report.

@@ -66,6 +66,7 @@ bool Critter::iterate_parallel(int *KillCount_local, int addfood)
 
     if (age)
     {
+        //RJG - Here is where an individual dies.
         if ((--age)==0)
         {
             (*KillCount_local)++;

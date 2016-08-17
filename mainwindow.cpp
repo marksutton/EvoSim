@@ -176,10 +176,10 @@ void MainWindow::on_actionReseed_triggered()
     archivedspecieslists.clear();
     oldspecieslist.clear();
 
-qDebug()<<speciesLogging;
     if (speciesLoggingToFile==true || fitnessLoggingToFile==true)
     {
-    if(QMessageBox::question(this,"Logging","Would you like to set up a new log file?")==QMessageBox::Yes)
+ /*RJG TO DEAL*/
+    if(QMessageBox::question(this,"Logging","Would you like to set up a new log file?",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
         {
         on_actionSet_Logging_File_triggered();
         speciesLoggingToFile=true;
@@ -318,8 +318,9 @@ void MainWindow::FinishRun()
     pauseButton->setEnabled(false);
     ui->actionSettings->setEnabled(true);
     ui->actionEnvironment_Files->setEnabled(true);
-    NextRefresh=0;
-    Report();
+    //----RJG disabled this to stop getting automatic logging at end of run, thus removing variability making analysis harder.
+    //NextRefresh=0;
+    //Report();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -1605,9 +1606,9 @@ void MainWindow::on_actionSet_Logging_File_triggered()
     FitnessLoggingFile=filenamefitness;
 
     ui->actionLogging->setEnabled(true);
-    ui->actionLogging->trigger();
+    //ui->actionLogging->trigger();
     ui->actionFitness_logging_to_File->setEnabled(true);
-    ui->actionFitness_logging_to_File->trigger();
+    //ui->actionFitness_logging_to_File->trigger();
 
 }
 
@@ -1643,6 +1644,7 @@ void MainWindow::CalcSpecies()
         if (ui->actionSpecies->isChecked() || speciesLogging) //do species calcs here even if not showing species - unless turned off in settings
         {
             //set up species ID
+            qDebug()<<"calc species";
 
             for (int n=0; n<gridX; n++)
             for (int m=0; m<gridY; m++)
@@ -1753,26 +1755,22 @@ void MainWindow::LogSpecies()
         if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
         else out<<"\n";
 
-        // Here too
+        // ---- RJG: Here too
             for (int i=0; i<gridX; i++)
             {
-                for (int j=0; j<gridY-1; j++)
+                for (int j=0; j<gridY; j++)
                     {
-                    //float mean=0;
-                    //mean = (float)totalfit[i][j]/(float)maxused[i][j]+1;
+                    /*In case mean is ever required:
+                     * float mean=0;
+                     * mean = (float)totalfit[i][j]/(float)maxused[i][j]+1;*/
                     out<<totalfit[i][j];
-                    //output with +1 due to c numbering, zero is one critter, etc.
-                    out<<","<<maxused[i][j]+1;
+                    //---- RJG: output with +1 due to c numbering, zero is one critter, etc.
+                    int numberalive=0;
+                    // ---- RJG: Issue that when critters die they remain in cell list for iteration - thus account for this by removing those which are dead from alive count - rather than dealing with death system
+                    for  (int k=0; k<maxused[i][j]; k++)if(critters[i][j][k].fitness)numberalive++;
+                    out<<","<<numberalive;
                     out<<","<<breedattempts[i][j]<<"\t";
                     }
-
-                //float mean=0;
-                //mean = (float)totalfit[i][gridY-1]/(float)maxused[i][gridY-1]+1;
-                out<<totalfit[i][gridY-1];
-                //output with +1 due to c numbering, zero is one critter, etc.
-                out<<","<<maxused[i][gridY-1]+1;
-                //out<< mean;
-                out<<","<<breedattempts[i][gridY-1];
 
                  if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
                  else out<<"\n";
