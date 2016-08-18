@@ -155,11 +155,24 @@ MainWindow::MainWindow(QWidget *parent) :
 
     showMaximized();
 
+    //RJG - Output version, but also date compiled for clarity
     QString vstring;
     vstring.sprintf("%d.%03d",MAJORVERSION,MINORVERSION);
-    this->setWindowTitle("EVOSIM v"+vstring);
-    //Now set all the defaults
+    this->setWindowTitle("EVOSIM v"+vstring+" - compiled - "+__DATE__);
 
+    //RJG - seed pseudoranom numbers
+    qsrand(QTime::currentTime().msec());
+
+    //RJG - Now load randoms into program
+    int seedoffset = TheSimManager->portable_rand();
+    QFile rfile(":/randoms.dat");
+    if (!rfile.exists()) QMessageBox::warning(this,"Oops","Error loading randoms. Please do so manually.");
+    rfile.open(QIODevice::ReadOnly);
+
+    rfile.seek(seedoffset);
+
+    int i=rfile.read((char *)randoms,65536);
+    if (i!=65536) QMessageBox::warning(this,"Oops","Failed to read 65536 bytes from file - random numbers may be compromised - try again or restart program");
 
 }
 
@@ -178,7 +191,8 @@ void MainWindow::on_actionReseed_triggered()
 
     if (speciesLoggingToFile==true || fitnessLoggingToFile==true)
     {
- /*RJG TO DEAL*/
+
+    // RJG - deal with logging when reseeding
     if(QMessageBox::question(this,"Logging","Would you like to set up a new log file?",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
         {
         on_actionSet_Logging_File_triggered();
@@ -191,7 +205,7 @@ void MainWindow::on_actionReseed_triggered()
         }
     else
        {
-        //---- RJG: Risk this doesn't work quite as expected - actionsetlogging and logging to file toggle some options such as trackong setsetenabled.
+        //---- RJG: Risk this doesn't work quite as expected - actionsetlogging and logging to file toggle some options such as tracking setenabled.
         speciesLoggingToFile=false;
         fitnessLoggingToFile=false;
         ui->actionLogging->setChecked(false);
@@ -291,6 +305,10 @@ void MainWindow::on_actionRefresh_Rate_triggered()
 
 void MainWindow::RunSetUp()
 {
+    //RJG - setup run to ensure critters are refreshed for chosen environment
+    TheSimManager->SetupRun();
+
+    //RJG - Sort out GUI
     pauseflag=false;
     ui->actionStart_Sim->setEnabled(false);
     startButton->setEnabled(false);
@@ -1644,7 +1662,6 @@ void MainWindow::CalcSpecies()
         if (ui->actionSpecies->isChecked() || speciesLogging) //do species calcs here even if not showing species - unless turned off in settings
         {
             //set up species ID
-            qDebug()<<"calc species";
 
             for (int n=0; n<gridX; n++)
             for (int m=0; m<gridY; m++)
@@ -1751,9 +1768,12 @@ void MainWindow::LogSpecies()
         QTextStream out(&outputfile);
 
         // ----RJG: breedattempts was no longer in use - co-opted for this.
+
         out<<"generation:"<<generation;
         if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
         else out<<"\n";
+
+        //int gridNumberAlive=0, gridTotalFitness=0;
 
         // ---- RJG: Here too
             for (int i=0; i<gridX; i++)
@@ -1764,10 +1784,16 @@ void MainWindow::LogSpecies()
                      * float mean=0;
                      * mean = (float)totalfit[i][j]/(float)maxused[i][j]+1;*/
                     out<<totalfit[i][j];
+                    //gridTotalFitness+=totalfit[i][j];
                     //---- RJG: output with +1 due to c numbering, zero is one critter, etc.
                     int numberalive=0;
                     // ---- RJG: Issue that when critters die they remain in cell list for iteration - thus account for this by removing those which are dead from alive count - rather than dealing with death system
-                    for  (int k=0; k<maxused[i][j]; k++)if(critters[i][j][k].fitness)numberalive++;
+                    for  (int k=0; k<slotsPerSq; k++)if(critters[i][j][k].fitness){
+                                    numberalive++;
+                                    //gridNumberAlive++;
+                                    //total_fitness+=critters[i][j][k].fitness;
+                                    }
+                    //gridTotalFitness+=total_fitness;
                     out<<","<<numberalive;
                     out<<","<<breedattempts[i][j]<<"\t";
                     }
@@ -1780,7 +1806,6 @@ void MainWindow::LogSpecies()
         outputfile.close();
       }
 }
-
 void MainWindow::setStatusBarText(QString text)
 {
     ui->statusBar->showMessage(text);

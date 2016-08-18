@@ -375,7 +375,8 @@ quint8 SimManager::Rand8()
 void SimManager::SetupRun()
 {
 
-    //new simpler version - find middle square, try creatures till something lives, duplicate it [slots] times
+    //Find middle square, try creatures till something lives, duplicate it [slots] times
+    //RJG - called on initial program load and reseed, but also when run/run for are hit
 
     //Kill em all
     for (int n=0; n<gridX; n++)
@@ -397,6 +398,8 @@ void SimManager::SetupRun()
 
     AliveCount=1;
     quint64 gen=critters[n][m][0].genome;
+
+    //RJG - Fill square with successful critter
     for (int c=1; c<slotsPerSq; c++)
     {
         critters[n][m][c].initialise(gen, environment[n][m], n,m,c);

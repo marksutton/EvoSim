@@ -19,10 +19,13 @@ void Critter::initialise(quint64 gen, quint8 *env, int x, int y, int z)
 {
     //Restart a slot - set up properly
     genome=gen;
-    //age=START_AGE;
+
     age=startAge;
-    energy=0; //start with 0 energy
+    //RJG - start with 0 energy
+    energy=0;
+    //RHG - Work out fitness
     recalc_fitness(env);
+
     xpos=x; ypos=y; zpos=z;
 
     quint32 gen2 = genome>>32;

@@ -5,4 +5,7 @@
         <file alias="resetButton-Enabled.png">resources/toolbar/resetButton-Enabled.png</file>
         <file alias="runForButton-Enabled.png">resources/toolbar/runForButton-Enabled.png</file>
     </qresource>
+    <qresource>
+	<file alias="randoms.dat">resources/randoms.dat</file>
+    </qresource>
 </RCC>
