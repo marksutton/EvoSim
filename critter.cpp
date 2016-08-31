@@ -19,10 +19,13 @@ void Critter::initialise(quint64 gen, quint8 *env, int x, int y, int z)
 {
     //Restart a slot - set up properly
     genome=gen;
-    //age=START_AGE;
+
     age=startAge;
-    energy=0; //start with 0 energy
+    //RJG - start with 0 energy
+    energy=0;
+    //RHG - Work out fitness
     recalc_fitness(env);
+
     xpos=x; ypos=y; zpos=z;
 
     quint32 gen2 = genome>>32;
@@ -66,6 +69,7 @@ bool Critter::iterate_parallel(int *KillCount_local, int addfood)
 
     if (age)
     {
+        //RJG - Here is where an individual dies.
         if ((--age)==0)
         {
             (*KillCount_local)++;
@@ -116,7 +120,9 @@ int Critter::breed_with_parallel(int xpos, int ypos, Critter *partner, int *newg
     if (t1>maxDiff)
     {
         //breeders get their energy back - this is an 'abort'
+        //---- RJG: Note that this refund is different to and exclusive from that in Simmanager, which refunds if no partner found.
         energy+=breedCost;
+        //---- RJG: Presumably removed to prevent critters getting multiple refunds
         //partner->energy+=breedCost;
         return 1;
     }

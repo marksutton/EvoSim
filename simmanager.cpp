@@ -34,13 +34,19 @@ int speciesSamples=1;
 int speciesSensitivity=2;
 int timeSliceConnect=5;
 bool recalcFitness=false;
-bool speciesLogging=true;
+bool asexual=false;
+bool speciesLogging=false;
 bool speciesLoggingToFile=false;
+bool fitnessLoggingToFile=false;
+bool nonspatial=false;
+bool toroidal=false;
+
 
 int lastReport=0;
 
 quint64 lastSpeciesCalc=0;
 QString SpeciesLoggingFile="";
+QString FitnessLoggingFile="";
 
 QStringList EnvFiles;
 int CurrentEnvFile;
@@ -369,7 +375,8 @@ quint8 SimManager::Rand8()
 void SimManager::SetupRun()
 {
 
-    //new simpler version - find middle square, try creatures till something lives, duplicate it [slots] times
+    //Find middle square, try creatures till something lives, duplicate it [slots] times
+    //RJG - called on initial program load and reseed, but also when run/run for are hit
 
     //Kill em all
     for (int n=0; n<gridX; n++)
@@ -391,6 +398,8 @@ void SimManager::SetupRun()
 
     AliveCount=1;
     quint64 gen=critters[n][m][0].genome;
+
+    //RJG - Fill square with successful critter
     for (int c=1; c<slotsPerSq; c++)
     {
         critters[n][m][c].initialise(gen, environment[n][m], n,m,c);
@@ -451,6 +460,9 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             //}
         }
 
+        // RJG - reset counters for fitness logging to file
+        if(fitnessLoggingToFile)breedattempts[n][m]=0;
+
         if (totalfit[n][m]) //skip whole square if needbe
         {
             int addfood = 1+(food / totalfit[n][m]);
@@ -458,15 +470,22 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             int breedlistentries=0;
 
             for (int c=0; c<=maxv; c++)
-            if (crit[c].iterate_parallel(KillCount_local,addfood)) breedlist[breedlistentries++]=c;
+                    if (crit[c].iterate_parallel(KillCount_local,addfood)) breedlist[breedlistentries++]=c;
+
+
+            // ----RJG: breedattempts was no longer used - co-opting for fitness report.
+            if(fitnessLoggingToFile)breedattempts[n][m]=breedlistentries;
 
             if (breedlistentries>0)
             {
-                quint8 divider=255/breedlistentries; //originally had breedlistentries+5, no idea why
+                quint8 divider=255/breedlistentries; //originally had breedlistentries+5, no idea why. //lol - RG
                 for (int c=0; c<breedlistentries; c++)
                 {
+                    int partner;
 
-                    int partner=Rand8()/divider;
+                    //---- RJG: If asexual, recombine with self
+                    if(asexual)partner=c;
+                    else partner=Rand8()/divider;
 
                     if (partner<breedlistentries)
                     {
@@ -484,23 +503,77 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
 
 int SimManager::settle_parallel(int newgenomecounts_start, int newgenomecounts_end,int *trycount_local, int *settlecount_local, int *birthcounts_local)
 {
-    for (int n=newgenomecounts_start; n<newgenomecounts_end; n++)
+    if (nonspatial)
     {
-        //first handle dispersal
-
-        quint8 t1=Rand8();
-        quint8 t2=Rand8();
-
-        int xpos=(xdisp[t1][t2])/newgenomeDisp[n];
-        int ypos=(ydisp[t1][t2])/newgenomeDisp[n];
-        xpos+=newgenomeX[n];
-        ypos+=newgenomeY[n];
-
-        if (xpos>=0)
-        if (xpos<gridX)
-        if (ypos>=0)
-        if (ypos<gridY)
+        //settling with no geography - just randomly pick a cell
+        for (int n=newgenomecounts_start; n<newgenomecounts_end; n++)
         {
+            quint64 xpos=((quint64)Rand32())*(quint64)gridX;
+            xpos/=(((quint64)65536)*((quint64)65536));
+            quint64 ypos=((quint64)Rand32())*(quint64)gridY;
+            ypos/=(((quint64)65536)*((quint64)65536));
+
+            mutexes[(int)xpos][(int)ypos]->lock(); //ensure no-one else buggers with this square
+            (*trycount_local)++;
+            Critter *crit=critters[(int)xpos][(int)ypos];
+            //Now put the baby into any free slot here
+            for (int m=0; m<slotsPerSq; m++)
+            {
+                Critter *crit2=&(crit[m]);
+                if (crit2->age==0)
+                {
+                    //place it
+
+                    crit2->initialise(newgenomes[n],environment[xpos][ypos], xpos, ypos,m);
+                    if (crit2->age)
+                    {
+                        int fit=crit2->fitness;
+                        totalfit[xpos][ypos]+=fit;
+                        (*birthcounts_local)++;
+                        if (m>maxused[xpos][ypos]) maxused[xpos][ypos]=m;
+                        settles[xpos][ypos]++;
+                        (*settlecount_local)++;
+                    }
+                    else settlefails[xpos][ypos]++;
+                    break;
+                }
+            }
+            mutexes[xpos][ypos]->unlock();
+        }
+    }
+    else
+    {
+        //old code - normal settling with radiation from original point
+        //qDebug()<<"toroidal is "<<toroidal;
+        for (int n=newgenomecounts_start; n<newgenomecounts_end; n++)
+        {
+            //first handle dispersal
+
+            quint8 t1=Rand8();
+            quint8 t2=Rand8();
+
+            int xpos=(xdisp[t1][t2])/newgenomeDisp[n];
+            int ypos=(ydisp[t1][t2])/newgenomeDisp[n];
+            xpos+=newgenomeX[n];
+            ypos+=newgenomeY[n];
+
+
+            if (toroidal)
+            {
+                //NOTE - this assumes max possible settle distance is less than grid size. Otherwise it will go tits up
+                if (xpos<0) xpos+=gridX;
+                if (xpos>=gridX) xpos-=gridX;
+                if (ypos<0) ypos+=gridY;
+                if (ypos>=gridY) ypos-=gridY;
+            }
+            else
+            {
+                if (xpos<0) continue;
+                if (xpos>=gridX)  continue;
+                if (ypos<0)  continue;
+                if (ypos>=gridY)  continue;
+            }
+
             mutexes[xpos][ypos]->lock(); //ensure no-one else buggers with this square
             (*trycount_local)++;
             Critter *crit=critters[xpos][ypos];
@@ -523,12 +596,11 @@ int SimManager::settle_parallel(int newgenomecounts_start, int newgenomecounts_e
                         (*settlecount_local)++;
                     }
                     else settlefails[xpos][ypos]++;
-                    goto done;
+                    break;
                 }
             }
-        done: //break point out of loop
-            mutexes[xpos][ypos]->unlock()
-                    ;
+            mutexes[xpos][ypos]->unlock();
+
         }
     }
     return 0;

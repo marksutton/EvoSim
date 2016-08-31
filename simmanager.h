@@ -7,7 +7,8 @@
 #include <QMutex>
 #include <QFuture>
 #include <QStringList>
-#include <QtConcurrent>
+// ---- RJG updated this from QtConcurrent Aug16 to compile on linux
+#include <QtConcurrentRun>
 
 #include "critter.h"
 #include "analyser.h"
@@ -33,6 +34,7 @@ extern bool recalcFitness;
 extern int target;
 extern int settleTolerance;
 extern int dispersal;
+
 // multiplier determining how much food per square
 extern int food;
 
@@ -41,6 +43,13 @@ extern int breedThreshold;
 
 //and cost of breeding - cost applies for success or failure of course
 extern int breedCost;
+
+//---- RJG: Also allow asexual reproduction.
+extern bool  asexual;
+
+//----MDS: toroidal geography and non-spatial settling
+extern bool nonspatial, toroidal;
+
 
 extern int maxDiff;
 //chance to mutate out of 255
@@ -64,7 +73,7 @@ extern Critter critters[GRID_X][GRID_Y][SLOTS_PER_GRID_SQUARE]; //main array - s
 extern quint8 environment[GRID_X][GRID_Y][3];  //0 = red, 1 = green, 2 = blue
 extern quint8 environmentlast[GRID_X][GRID_Y][3];  //Used for interpolation
 extern quint8 environmentnext[GRID_X][GRID_Y][3];  //Used for interpolation
-extern quint32 totalfit[GRID_X][GRID_Y];
+extern quint32 totalfit[GRID_X][GRID_Y]; // ----RJG - Sum fitness critters in each square
 extern quint64 generation;
 
 //These next to hold the babies... old style arrays for max speed
@@ -81,6 +90,9 @@ extern int timeSliceConnect;
 extern bool speciesLogging;
 extern bool speciesLoggingToFile;
 extern QString SpeciesLoggingFile;
+extern bool fitnessLoggingToFile;
+extern QString FitnessLoggingFile;
+
 extern QStringList EnvFiles;
 extern int CurrentEnvFile;
 extern quint64 lastSpeciesCalc;
@@ -90,7 +102,7 @@ extern int breedattempts[GRID_X][GRID_Y]; //for analysis purposes
 extern int breedfails[GRID_X][GRID_Y]; //for analysis purposes
 extern int settles[GRID_X][GRID_Y]; //for analysis purposes
 extern int settlefails[GRID_X][GRID_Y]; //for analysis purposes
-extern int maxused[GRID_X][GRID_Y];
+extern int maxused[GRID_X][GRID_Y]; //---- RJG number of slots used within each grid square
 extern int AliveCount;
 
 extern int NextEnvChange;

@@ -56,7 +56,7 @@ MainWindow::MainWindow(QWidget *parent) :
     resetButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton-Enabled.png")), QString("Reset"), this);
     startButton->setEnabled(false);
     runForButton->setEnabled(false);
-    pauseButton->setEnabled(false);    
+    pauseButton->setEnabled(false);
     ui->toolBar->addAction(startButton);
     ui->toolBar->addAction(runForButton);
     ui->toolBar->addAction(pauseButton);
@@ -122,7 +122,7 @@ MainWindow::MainWindow(QWidget *parent) :
     popscene->mw=this;
     ui->GV_Population->setScene(popscene);
 
-    //add images to the scenes    
+    //add images to the scenes
     env_item= new QGraphicsPixmapItem();
     envscene->addItem(env_item);
     env_item->setZValue(0);
@@ -155,11 +155,24 @@ MainWindow::MainWindow(QWidget *parent) :
 
     showMaximized();
 
+    //RJG - Output version, but also date compiled for clarity
     QString vstring;
     vstring.sprintf("%d.%03d",MAJORVERSION,MINORVERSION);
-    this->setWindowTitle("EVOSIM v"+vstring);
-    //Now set all the defaults
+    this->setWindowTitle("EVOSIM v"+vstring+" - compiled - "+__DATE__);
 
+    //RJG - seed pseudoranom numbers
+    qsrand(QTime::currentTime().msec());
+
+    //RJG - Now load randoms into program
+    int seedoffset = TheSimManager->portable_rand();
+    QFile rfile(":/randoms.dat");
+    if (!rfile.exists()) QMessageBox::warning(this,"Oops","Error loading randoms. Please do so manually.");
+    rfile.open(QIODevice::ReadOnly);
+
+    rfile.seek(seedoffset);
+
+    int i=rfile.read((char *)randoms,65536);
+    if (i!=65536) QMessageBox::warning(this,"Oops","Failed to read 65536 bytes from file - random numbers may be compromised - try again or restart program");
 
 }
 
@@ -169,8 +182,40 @@ MainWindow::~MainWindow()
     delete TheSimManager;
 }
 
+// ---- RJG: Reset is here.
 void MainWindow::on_actionReseed_triggered()
 {
+    //---- RJG here we should reset the species archive to start from scratch
+    archivedspecieslists.clear();
+    oldspecieslist.clear();
+
+    if (speciesLoggingToFile==true || fitnessLoggingToFile==true)
+    {
+
+    // RJG - deal with logging when reseeding
+    if(QMessageBox::question(this,"Logging","Would you like to set up a new log file?",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
+        {
+        on_actionSet_Logging_File_triggered();
+        speciesLoggingToFile=true;
+        fitnessLoggingToFile=true;
+        ui->actionLogging->setChecked(true);
+        ui->actionLogging->setEnabled(true);
+        ui->actionFitness_logging_to_File->setChecked(true);
+        ui->actionFitness_logging_to_File->setEnabled(true);
+        }
+    else
+       {
+        //---- RJG: Risk this doesn't work quite as expected - actionsetlogging and logging to file toggle some options such as tracking setenabled.
+        speciesLoggingToFile=false;
+        fitnessLoggingToFile=false;
+        ui->actionLogging->setChecked(false);
+        ui->actionLogging->setEnabled(false);
+        ui->actionFitness_logging_to_File->setChecked(false);
+        ui->actionFitness_logging_to_File->setEnabled(false);
+        ui->actionTracking->setEnabled(true);
+        }
+    }
+
     TheSimManager->SetupRun();
     NextRefresh=0;
     Report();
@@ -199,7 +244,7 @@ void MainWindow::on_actionStart_Sim_triggered()
     }
     RunSetUp();
     while (pauseflag==false)
-    {       
+    {
         Report();
         qApp->processEvents();
         if (ui->actionGo_Slow->isChecked()) Sleeper::msleep(30);
@@ -260,6 +305,10 @@ void MainWindow::on_actionRefresh_Rate_triggered()
 
 void MainWindow::RunSetUp()
 {
+    //RJG - setup run to ensure critters are refreshed for chosen environment
+    TheSimManager->SetupRun();
+
+    //RJG - Sort out GUI
     pauseflag=false;
     ui->actionStart_Sim->setEnabled(false);
     startButton->setEnabled(false);
@@ -287,8 +336,9 @@ void MainWindow::FinishRun()
     pauseButton->setEnabled(false);
     ui->actionSettings->setEnabled(true);
     ui->actionEnvironment_Files->setEnabled(true);
-    NextRefresh=0;
-    Report();
+    //----RJG disabled this to stop getting automatic logging at end of run, thus removing variability making analysis harder.
+    //NextRefresh=0;
+    //Report();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -362,8 +412,8 @@ void MainWindow::Report()
     RefreshReport();
 
     //do species stuff
-    RefreshPopulations();
-    RefreshEnvironment();
+    if(!ui->actionDon_t_update_gui->isChecked())RefreshPopulations();
+    if(!ui->actionDon_t_update_gui->isChecked())RefreshEnvironment();
     FRW->RefreshMe();
     FRW->WriteFiles();
 
@@ -994,6 +1044,7 @@ void MainWindow::on_actionChoose_Log_Directory_triggered()
 
 }
 
+// ----RJG: Fitness logging to file not sorted on save as yet.
 void MainWindow::on_actionSave_triggered()
 {
     QString filename = QFileDialog::getSaveFileName(
@@ -1201,6 +1252,7 @@ void MainWindow::on_actionSave_triggered()
     outfile.close();
 }
 
+// ----RJG: Fitness logging to file not sorted on load as yet.
 void MainWindow::on_actionLoad_triggered()
 {
 
@@ -1473,7 +1525,7 @@ bool MainWindow::genomeComparisonAdd()
                 genoneComparison->addGenomeCritter(critters[x][y][c],environment[x][y]);
                 return true;
             }
-        }       
+        }
     }
     return false;
 }
@@ -1548,16 +1600,35 @@ void MainWindow::on_actionLogging_triggered()
     else ui->actionTracking->setEnabled(true);
 }
 
-void MainWindow::on_actionSet_Logging_File_triggered()
+void MainWindow::on_actionFitness_logging_to_File_triggered()
 {
-    QString filename = QFileDialog::getSaveFileName(this,"Select file to log fossil record to","","*.csv");
-    if (filename.length()==0) return;
-
-    SpeciesLoggingFile=filename;
-    ui->actionLogging->setEnabled(true);
+    fitnessLoggingToFile=ui->actionFitness_logging_to_File->isChecked();
 }
 
 
+void MainWindow::on_actionSet_Logging_File_triggered()
+{
+    // ----RJG: set logging to a text file for greater versatility across operating systems and analysis programs (R, Excel, etc.)
+    QString filename = QFileDialog::getSaveFileName(this,"Select file to log fossil record to","",".txt");
+    if (filename.length()==0) return;
+    QString filenamefitness(filename);
+
+    // ----RJG: Add extension as Linux does not automatically
+    if(!filename.contains(".txt"))filename.append(".txt");
+
+    // ----RJG: Fitness logging
+    if(filenamefitness.contains(".txt"))filenamefitness.insert(filenamefitness.length()-4,"_fitness");
+    else filenamefitness.append("_fitness.txt");
+
+    SpeciesLoggingFile=filename;
+    FitnessLoggingFile=filenamefitness;
+
+    ui->actionLogging->setEnabled(true);
+    //ui->actionLogging->trigger();
+    ui->actionFitness_logging_to_File->setEnabled(true);
+    //ui->actionFitness_logging_to_File->trigger();
+
+}
 
 
 void MainWindow::on_actionGenerate_Tree_from_Log_File_triggered()
@@ -1614,46 +1685,127 @@ void MainWindow::CalcSpecies()
     }
 }
 
+
 void MainWindow::LogSpecies()
 {
-    if (speciesLoggingToFile==false) return;
+    if (speciesLoggingToFile==false && fitnessLoggingToFile==false) return;
 
-    //log em!
-    QFile outputfile(SpeciesLoggingFile);
 
-    if (!(outputfile.exists()))
+    // ----RJG separated species logging from fitness logging
+    if (speciesLoggingToFile==true)
     {
-        outputfile.open(QIODevice::WriteOnly);
+        //log em!
+        QFile outputfile(SpeciesLoggingFile);
+
+
+            if (!(outputfile.exists()))
+            {
+                outputfile.open(QIODevice::WriteOnly);
+                QTextStream out(&outputfile);
+
+
+                out<<"Time,Species_ID,Species_origin_time,Species_parent_ID,Species_current_size,Species_current_genome";
+                // ---- RJG: Windows and Unix systems have different line breaks - sort that shit out.
+                if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+                else out<<"\n";
+                //for (int j=0; j<63; j++) out<<j<<",";
+                //out<<"63\n";
+                outputfile.close();
+            }
+
+        outputfile.open(QIODevice::Append);
+        QTextStream out(&outputfile);
+        if(ui->actionAnalysis_in_Linux->isChecked())
+        {
+        //Do stuff
+        }
+
+            for (int i=0; i<oldspecieslist.count(); i++)
+            {
+                out<<generation;
+                out<<","<<(oldspecieslist[i].ID);
+                out<<","<<oldspecieslist[i].origintime;
+                out<<","<<oldspecieslist[i].parent;
+                out<<","<<oldspecieslist[i].size;
+                //out<<","<<oldspecieslist[i].type;
+                //---- RJG - output binary genome if needed
+                out<<",";
+                for (int j=0; j<63; j++)
+                if (tweakers64[63-j] & oldspecieslist[i].type) out<<"1"; else out<<"0";
+                if (tweakers64[0] & oldspecieslist[i].type) out<<"1"; else out<<"0";
+                if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+                else out<<"\n";
+            }
+
+        outputfile.close();
+      }
+
+    // ----RJG log fitness to separate file
+    if (fitnessLoggingToFile==true)
+    {
+        QFile outputfile(FitnessLoggingFile);
+
+        if (!(outputfile.exists()))
+        {
+            outputfile.open(QIODevice::WriteOnly);
+            QTextStream out(&outputfile);
+
+            out<<"Slots Per square = "<<slotsPerSq;
+            if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+            else out<<"\n";
+
+            //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
+            out<<"Each generation lists, for each pixel: total fitness, number of critters,entries on breed list";
+
+            //----RJG - deal with Linux --> windows.
+            if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+            else out<<"\n";
+
+            outputfile.close();
+        }
+
+        outputfile.open(QIODevice::Append);
         QTextStream out(&outputfile);
 
-        out<<"Time,Species_ID,Species_origin_time,Species_parent_ID,Species_current_size,Species_current_genom,";
+        // ----RJG: breedattempts was no longer in use - co-opted for this.
 
-        //for (int j=0; j<63; j++) out<<j<<",";
-        //out<<"63\n";
+        out<<"generation:"<<generation;
+        if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+        else out<<"\n";
+
+        //int gridNumberAlive=0, gridTotalFitness=0;
+
+        // ---- RJG: Here too
+            for (int i=0; i<gridX; i++)
+            {
+                for (int j=0; j<gridY; j++)
+                    {
+                    /*In case mean is ever required:
+                     * float mean=0;
+                     * mean = (float)totalfit[i][j]/(float)maxused[i][j]+1;*/
+                    out<<totalfit[i][j];
+                    //gridTotalFitness+=totalfit[i][j];
+                    //---- RJG: output with +1 due to c numbering, zero is one critter, etc.
+                    int numberalive=0;
+                    // ---- RJG: Issue that when critters die they remain in cell list for iteration - thus account for this by removing those which are dead from alive count - rather than dealing with death system
+                    for  (int k=0; k<slotsPerSq; k++)if(critters[i][j][k].fitness){
+                                    numberalive++;
+                                    //gridNumberAlive++;
+                                    //total_fitness+=critters[i][j][k].fitness;
+                                    }
+                    //gridTotalFitness+=total_fitness;
+                    out<<","<<numberalive;
+                    out<<","<<breedattempts[i][j]<<"\t";
+                    }
+
+                 if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+                 else out<<"\n";
+            }
+
+        out<<"\n\n";
         outputfile.close();
-    }
-
-    outputfile.open(QIODevice::Append);
-    QTextStream out(&outputfile);
-
-    for (int i=0; i<oldspecieslist.count(); i++)
-    {
-        out<<generation;
-        out<<","<<(oldspecieslist[i].ID);
-        out<<","<<oldspecieslist[i].origintime;
-        out<<","<<oldspecieslist[i].parent;
-        out<<","<<oldspecieslist[i].size;
-        out<<","<<oldspecieslist[i].type<<"\n";
-        /*
-             ",";
-        for (int j=0; j<63; j++)
-           if (tweakers64[63-j] & oldspecieslist[i].type) out<<"1,"; else out<<"0,";
-        if (tweakers64[0] & oldspecieslist[i].type) out<<"1\n"; else out<<"0\n";
-        */
-    }
-    outputfile.close();
+      }
 }
-
 void MainWindow::setStatusBarText(QString text)
 {
     ui->statusBar->showMessage(text);
