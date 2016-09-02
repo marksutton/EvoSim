@@ -1755,7 +1755,8 @@ void MainWindow::LogSpecies()
             else out<<"\n";
 
             //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
-            out<<"Each generation lists, for each pixel: total fitness, number of critters,entries on breed list";
+            //out<<"Each generation lists, for each pixel: total fitness, number of critters,entries on breed list";
+            out<<"Each generation lists, for the grid: mean fitness, mean entries on breed list";
 
             //----RJG - deal with Linux --> windows.
             if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
@@ -1769,11 +1770,12 @@ void MainWindow::LogSpecies()
 
         // ----RJG: breedattempts was no longer in use - co-opted for this.
 
-        out<<"generation:"<<generation;
-        if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
-        else out<<"\n";
+        out<<"generation:"<<generation<<",";
 
-        //int gridNumberAlive=0, gridTotalFitness=0;
+        //if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+        //else out<<"\n";
+
+        int gridNumberAlive=0, gridTotalFitness=0, gridBreedEntries=0;
 
         // ---- RJG: Here too
             for (int i=0; i<gridX; i++)
@@ -1783,25 +1785,30 @@ void MainWindow::LogSpecies()
                     /*In case mean is ever required:
                      * float mean=0;
                      * mean = (float)totalfit[i][j]/(float)maxused[i][j]+1;*/
-                    out<<totalfit[i][j];
-                    //gridTotalFitness+=totalfit[i][j];
+
+                    //out<<totalfit[i][j];
+                    gridTotalFitness+=totalfit[i][j];
                     //---- RJG: output with +1 due to c numbering, zero is one critter, etc.
-                    int numberalive=0;
+                    //int numberalive=0;
                     // ---- RJG: Issue that when critters die they remain in cell list for iteration - thus account for this by removing those which are dead from alive count - rather than dealing with death system
                     for  (int k=0; k<slotsPerSq; k++)if(critters[i][j][k].fitness){
-                                    numberalive++;
-                                    //gridNumberAlive++;
+                                    //numberalive++;
+                                    gridNumberAlive++;
                                     //total_fitness+=critters[i][j][k].fitness;
                                     }
+                    gridBreedEntries+=breedattempts[i][j];
                     //gridTotalFitness+=total_fitness;
-                    out<<","<<numberalive;
-                    out<<","<<breedattempts[i][j]<<"\t";
+                    //out<<","<<numberalive;
+                    //out<<","<<breedattempts[i][j]<<"\t";
                     }
 
-                 if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
-                 else out<<"\n";
+                // if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+                 //else out<<"\n";
             }
-
+           // qDebug()<<(float)(gridTotalFitness/gridNumberAlive)<<","<<(float)(gridBreedEntries/gridNumberAlive);
+        float avFit=(float)gridTotalFitness/(float)gridNumberAlive;
+        float avBreed=(float)gridBreedEntries/(float)gridNumberAlive;
+        out<<avFit<<","<<avBreed;
         out<<"\n\n";
         outputfile.close();
       }
