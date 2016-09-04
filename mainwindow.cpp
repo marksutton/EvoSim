@@ -242,7 +242,6 @@ void MainWindow::on_actionStart_Sim_triggered()
             return;
         }
     }
-    RunSetUp();
     while (pauseflag==false)
     {
         Report();
@@ -274,11 +273,8 @@ void MainWindow::on_actionRun_for_triggered()
     }
 
     bool ok;
-    int i = QInputDialog::getInt(this, "",
-                                 tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
+    int i = QInputDialog::getInt(this, "",tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
     if (!ok) return;
-
-    RunSetUp();
     while (pauseflag==false && i>0)
     {
         Report();
@@ -1029,6 +1025,8 @@ bool  MainWindow::on_actionEnvironment_Files_triggered()
     if (ui->actionLoop->isChecked()) emode=2;
     TheSimManager->loadEnvironmentFromFile(emode);
     RefreshEnvironment();
+    //----RJG reseed new environment based on new files
+    TheSimManager->SetupRun();
     return true;
 }
 
@@ -1750,13 +1748,15 @@ void MainWindow::LogSpecies()
             outputfile.open(QIODevice::WriteOnly);
             QTextStream out(&outputfile);
 
+            // Info on simulation setup
             out<<"Slots Per square = "<<slotsPerSq;
             if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
             else out<<"\n";
 
+            //Different versions of output, for reuse as needed
             //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
-            //out<<"Each generation lists, for each pixel: total fitness, number of critters,entries on breed list";
-            out<<"Each generation lists, for the grid: mean fitness, mean entries on breed list";
+            //out<<"Each generation lists, for each pixel: total fitness, number of critters,entries on breed list";            
+            out<<"Each line lists generation, then the grid's: total critter number, total fitness, total entries on breed list";
 
             //----RJG - deal with Linux --> windows.
             if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
@@ -1768,48 +1768,52 @@ void MainWindow::LogSpecies()
         outputfile.open(QIODevice::Append);
         QTextStream out(&outputfile);
 
-        // ----RJG: breedattempts was no longer in use - co-opted for this.
+        // ----RJG: Breedattempts was no longer in use - but seems accurate, so can be co-opted for this.
 
-        out<<"generation:"<<generation<<",";
-
-        //if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
-        //else out<<"\n";
+        out<<generation<<"\t";
 
         int gridNumberAlive=0, gridTotalFitness=0, gridBreedEntries=0;
 
-        // ---- RJG: Here too
-            for (int i=0; i<gridX; i++)
+        for (int i=0; i<gridX; i++)
             {
                 for (int j=0; j<gridY; j++)
                     {
-                    /*In case mean is ever required:
-                     * float mean=0;
-                     * mean = (float)totalfit[i][j]/(float)maxused[i][j]+1;*/
+                     //----RJG: Total fitness per grid square.
+                     //out<<totalfit[i][j];
 
-                    //out<<totalfit[i][j];
+                    //----RJG: Number alive per square - output with +1 due to c numbering, zero is one critter, etc.
+                    //out<<maxused[i][j]+1;
+                    // ---- RJG: Note, however, there is an issue that when critters die they remain in cell list for iteration
+                    // ---- RJG: Easiest to account for this by removing those which are dead from alive count, or recounting - rather than dealing with death system
+                    // int numberalive=0;
+
+                    //----RJG: In case mean is ever required:
+                    //float mean=0;
+                    // mean = (float)totalfit[i][j]/(float)maxused[i][j]+1;
+
+                    //----RJG: Manually calculate total fitness for grid
                     gridTotalFitness+=totalfit[i][j];
-                    //---- RJG: output with +1 due to c numbering, zero is one critter, etc.
-                    //int numberalive=0;
-                    // ---- RJG: Issue that when critters die they remain in cell list for iteration - thus account for this by removing those which are dead from alive count - rather than dealing with death system
+
+                     //----RJG: Manually count number alive thanks to maxused issue
                     for  (int k=0; k<slotsPerSq; k++)if(critters[i][j][k].fitness){
                                     //numberalive++;
                                     gridNumberAlive++;
-                                    //total_fitness+=critters[i][j][k].fitness;
                                     }
+                    //----RJG: Manually count breed attempts for grid
                     gridBreedEntries+=breedattempts[i][j];
-                    //gridTotalFitness+=total_fitness;
-                    //out<<","<<numberalive;
-                    //out<<","<<breedattempts[i][j]<<"\t";
+
                     }
 
-                // if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
-                 //else out<<"\n";
             }
-           // qDebug()<<(float)(gridTotalFitness/gridNumberAlive)<<","<<(float)(gridBreedEntries/gridNumberAlive);
-        float avFit=(float)gridTotalFitness/(float)gridNumberAlive;
-        float avBreed=(float)gridBreedEntries/(float)gridNumberAlive;
-        out<<avFit<<","<<avBreed;
-        out<<"\n\n";
+
+        //---- RJG: If outputting averages to log.
+        //float avFit=(float)gridTotalFitness/(float)gridNumberAlive;
+        //float avBreed=(float)gridBreedEntries/(float)gridNumberAlive;
+        //out<<avFit<<","<<avBreed;
+
+        //---- RJG: If outputting totals
+        //critter - fitness - breeds
+        out<<gridNumberAlive<<"\t"<<gridTotalFitness<<"\t"<<gridBreedEntries<<"\n";
         outputfile.close();
       }
 }
