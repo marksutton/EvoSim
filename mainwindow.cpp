@@ -182,7 +182,7 @@ MainWindow::~MainWindow()
     delete TheSimManager;
 }
 
-// ---- RJG: Reset is here.
+// ---- RJG: Reseed is here.
 void MainWindow::on_actionReseed_triggered()
 {
     //---- RJG here we should reset the species archive to start from scratch
@@ -193,14 +193,10 @@ void MainWindow::on_actionReseed_triggered()
     {
 
     // RJG - deal with logging when reseeding
-    if(QMessageBox::question(this,"Logging","Would you like to set up a new log file?",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
+    if(QMessageBox::question(this,"Logging","Would you like to set up a new log file?\n\nNote new logging files will be based on the setup for last run - you won't have the oportunity to change which logging files are written.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
         {
         on_actionSet_Logging_File_triggered();
-        speciesLoggingToFile=true;
-        fitnessLoggingToFile=true;
-        ui->actionLogging->setChecked(true);
         ui->actionLogging->setEnabled(true);
-        ui->actionFitness_logging_to_File->setChecked(true);
         ui->actionFitness_logging_to_File->setEnabled(true);
         }
     else
@@ -242,6 +238,7 @@ void MainWindow::on_actionStart_Sim_triggered()
             return;
         }
     }
+    RunSetUp();
     while (pauseflag==false)
     {
         Report();
@@ -271,10 +268,15 @@ void MainWindow::on_actionRun_for_triggered()
             return;
         }
     }
+    else if(QMessageBox::question(this,"Reseed","Would you like to reseed the simulation?",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
+        on_actionReseed_triggered();
+
 
     bool ok;
-    int i = QInputDialog::getInt(this, "",tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
+    int i = QInputDialog::getInt(this, "",
+                                 tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
     if (!ok) return;
+    RunSetUp();
     while (pauseflag==false && i>0)
     {
         Report();
@@ -301,9 +303,6 @@ void MainWindow::on_actionRefresh_Rate_triggered()
 
 void MainWindow::RunSetUp()
 {
-    //RJG - setup run to ensure critters are refreshed for chosen environment
-    TheSimManager->SetupRun();
-
     //RJG - Sort out GUI
     pauseflag=false;
     ui->actionStart_Sim->setEnabled(false);
@@ -1025,7 +1024,7 @@ bool  MainWindow::on_actionEnvironment_Files_triggered()
     if (ui->actionLoop->isChecked()) emode=2;
     TheSimManager->loadEnvironmentFromFile(emode);
     RefreshEnvironment();
-    //----RJG reseed new environment based on new files
+    //---- RJG - Reseed for this new environment
     TheSimManager->SetupRun();
     return true;
 }
