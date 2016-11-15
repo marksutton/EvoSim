@@ -214,7 +214,15 @@ void MainWindow::on_actionReseed_triggered()
 
     TheSimManager->SetupRun();
     NextRefresh=0;
-    Report();
+    //RJG - removed this to stop duplicating the first line of log files when you create multiples using Report
+    //Report();
+
+    //Instead just update views...
+    RefreshReport();
+    UpdateTitles();
+    RefreshPopulations();
+
+
 }
 
 void MainWindow::changeEvent(QEvent *e)
@@ -268,8 +276,9 @@ void MainWindow::on_actionRun_for_triggered()
             return;
         }
     }
-    else if(QMessageBox::question(this,"Reseed","Would you like to reseed the simulation?",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
-        on_actionReseed_triggered();
+    //Option to reseed if required - This will allow people to do repeats of any given run with the same settings without closing the software!
+    else if(QMessageBox::question(this,"Reseed","Would you like to reseed the simulation? Yes allows repeat runs avoiding a restarting. Otherwise, no is a prefectly acceptable option.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
+      on_actionReseed_triggered();
 
 
     bool ok;
@@ -341,6 +350,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
     exit(0);
 }
 
+// ---- RJG: Updates reports, and does logging
 void MainWindow::Report()
 {
 
@@ -556,7 +566,7 @@ int MainWindow::ScaleFails(int fails, float gens)
 }
 
 void MainWindow::RefreshPopulations()
-//Refreshes of left window - also run species ident and logging
+//Refreshes of left window - also run species ident
 {
 
     //check to see what the mode is
@@ -1024,8 +1034,10 @@ bool  MainWindow::on_actionEnvironment_Files_triggered()
     if (ui->actionLoop->isChecked()) emode=2;
     TheSimManager->loadEnvironmentFromFile(emode);
     RefreshEnvironment();
+
     //---- RJG - Reseed for this new environment
     TheSimManager->SetupRun();
+
     return true;
 }
 
@@ -1687,7 +1699,6 @@ void MainWindow::LogSpecies()
 {
     if (speciesLoggingToFile==false && fitnessLoggingToFile==false) return;
 
-
     // ----RJG separated species logging from fitness logging
     if (speciesLoggingToFile==true)
     {
@@ -1770,6 +1781,7 @@ void MainWindow::LogSpecies()
         // ----RJG: Breedattempts was no longer in use - but seems accurate, so can be co-opted for this.
 
         out<<generation<<"\t";
+        //qDebug()<<"Log generation:"<<generation<<"\n";
 
         int gridNumberAlive=0, gridTotalFitness=0, gridBreedEntries=0;
 
