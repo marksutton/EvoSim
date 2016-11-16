@@ -385,6 +385,10 @@ void SimManager::SetupRun()
         for (int c=0; c<slotsPerSq; c++) {critters[n][m][c].age=0; critters[n][m][c].fitness=0;}
         totalfit[n][m]=0;
         maxused[n][m]=-1;
+        breedattempts[n][m]=0;
+        breedfails[n][m]=0;
+        settles[n][m]=0;
+        settlefails[n][m]=0;
     }
 
     int n=gridX/2, m=gridY/2;
