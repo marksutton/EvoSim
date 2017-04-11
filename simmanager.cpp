@@ -147,12 +147,12 @@ void SimManager::MakeLookups()
                 for (int m=0; m<16; m++) if ((n & tweakers[m])!=0) ++count;  // count the bits
                 bitcounts[n]=count;
         }
-        qsrand(RAND_SEED);
+
+        //RJG - seed random from time qsrand(RAND_SEED);
+        qsrand(QTime::currentTime().msec());
 
         //now set up xor masks for 3 variables - these are used for each of R G and B to work out fitness
-
         //Start - random bit pattern for each
-
         xormasks[0][0]=portable_rand() * portable_rand() *2;
         xormasks[0][1]=portable_rand() * portable_rand() *2;
         xormasks[0][2]=portable_rand() * portable_rand() *2;
