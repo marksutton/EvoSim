@@ -7,6 +7,7 @@
 #include <QMutex>
 #include <QFuture>
 #include <QStringList>
+
 // ---- RJG updated this from QtConcurrent Aug16 to compile on linux
 #include <QtConcurrentRun>
 

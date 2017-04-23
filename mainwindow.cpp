@@ -4,6 +4,7 @@
 #include "analyser.h"
 #include "fossrecwidget.h"
 #include "resizecatcher.h"
+
 #include <QTextStream>
 #include <QInputDialog>
 #include <QGraphicsPixmapItem>
@@ -79,7 +80,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QVBoxLayout *frwLayout = new QVBoxLayout;
     frwLayout->addWidget(FRW);
     ui->fossRecDockContents->setLayout(frwLayout);
-
     ui->reportViewerDock->hide();
 
     viewgroup = new QActionGroup(this);
@@ -192,7 +192,7 @@ void MainWindow::on_actionReseed_triggered()
     if (speciesLoggingToFile==true || fitnessLoggingToFile==true)
     {
 
-    // RJG - deal with logging when reseeding
+    // ---- RJG - deal with logging when reseeding
     if(QMessageBox::question(this,"Logging","Would you like to set up a new log file?\n\nNote new logging files will be based on the setup for last run - you won't have the oportunity to change which logging files are written.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
         {
         on_actionSet_Logging_File_triggered();
@@ -865,6 +865,7 @@ void MainWindow::RefreshPopulations()
         bf_mult=1.0;
         sf_mult=1.0;
         */
+
         //work out average per generation
         float gens=generation-lastReport;
 
@@ -1764,9 +1765,9 @@ void MainWindow::LogSpecies()
             else out<<"\n";
 
             //Different versions of output, for reuse as needed
-            //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
-            //out<<"Each generation lists, for each pixel: total fitness, number of critters,entries on breed list";            
-            out<<"Each line lists generation, then the grid's: total critter number, total fitness, total entries on breed list";
+                //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
+                 //out<<"Each line lists generation, then the grid's: total critter number, total fitness, total entries on breed list";
+            out<<"Each generation lists, for each pixel (top left to bottom right): total fitness, number of critters,entries on breed list\n\n";
 
             //----RJG - deal with Linux --> windows.
             if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
@@ -1779,11 +1780,12 @@ void MainWindow::LogSpecies()
         QTextStream out(&outputfile);
 
         // ----RJG: Breedattempts was no longer in use - but seems accurate, so can be co-opted for this.
+        out<<"Iteration: "<<generation;
 
-        out<<generation<<"\t";
-        //qDebug()<<"Log generation:"<<generation<<"\n";
+        if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+        else out<<"\n";
 
-        int gridNumberAlive=0, gridTotalFitness=0, gridBreedEntries=0;
+        //int gridNumberAlive=0, gridTotalFitness=0, gridBreedEntries=0;
 
         for (int i=0; i<gridX; i++)
             {
@@ -1803,19 +1805,33 @@ void MainWindow::LogSpecies()
                     // mean = (float)totalfit[i][j]/(float)maxused[i][j]+1;
 
                     //----RJG: Manually calculate total fitness for grid
-                    gridTotalFitness+=totalfit[i][j];
+                    //gridTotalFitness+=totalfit[i][j];
+
+                    int critters_alive=0;
 
                      //----RJG: Manually count number alive thanks to maxused issue
                     for  (int k=0; k<slotsPerSq; k++)if(critters[i][j][k].fitness){
                                     //numberalive++;
-                                    gridNumberAlive++;
+                                    //gridNumberAlive++;
+                                    critters_alive++;
                                     }
+
+                    //total fitness, number of critters,entries on breed list";
+                    out<<totalfit[i][j]<<" "<<critters_alive<<" "<<breedattempts[i][j];
+
                     //----RJG: Manually count breed attempts for grid
-                    gridBreedEntries+=breedattempts[i][j];
+                    //gridBreedEntries+=breedattempts[i][j];
+
+                    if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+                    else out<<"\n";
 
                     }
-
             }
+
+        if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+        else out<<"\n";
+        if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+        else out<<"\n";
 
         //---- RJG: If outputting averages to log.
         //float avFit=(float)gridTotalFitness/(float)gridNumberAlive;
@@ -1824,7 +1840,8 @@ void MainWindow::LogSpecies()
 
         //---- RJG: If outputting totals
         //critter - fitness - breeds
-        out<<gridNumberAlive<<"\t"<<gridTotalFitness<<"\t"<<gridBreedEntries<<"\n";
+        //out<<gridNumberAlive<<"\t"<<gridTotalFitness<<"\t"<<gridBreedEntries<<"\n";
+
         outputfile.close();
       }
 }
@@ -1835,6 +1852,7 @@ void MainWindow::setStatusBarText(QString text)
 
 void MainWindow::on_actionLoad_Random_Numbers_triggered()
 {
+    // ---- RJG - have added randoms to resources and into contructor, load on launch to ensure true randoms are loaded by default.
     //Select files
     QString file = QFileDialog::getOpenFileName(
                             this,

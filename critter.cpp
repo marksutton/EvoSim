@@ -23,7 +23,7 @@ void Critter::initialise(quint64 gen, quint8 *env, int x, int y, int z)
     age=startAge;
     //RJG - start with 0 energy
     energy=0;
-    //RHG - Work out fitness
+    //RJG - Work out fitness
     recalc_fitness(env);
 
     xpos=x; ypos=y; zpos=z;
@@ -39,6 +39,8 @@ int Critter::recalc_fitness(quint8 *env)
     quint32 answer=lowergenome ^ xormasks[env[0]][0]; //apply redmask
     quint32 a2=answer/65536;
     answer &= (quint32) 65535;
+
+    //RJG - add a counter for final bitcount
     int finalanswer=bitcounts[answer];
     finalanswer+=bitcounts[a2];
 
@@ -58,8 +60,10 @@ int Critter::recalc_fitness(quint8 *env)
     if (finalanswer<=target-settleTolerance) {fitness=0; age=0; return 0;} // no use
 
     //These next two SHOULD do reverse of the abs of finalanswer (i.e 0=20, 20=0)
+    // RJG - so if settle tolerance is, say, 15, peak fitness will be 15, min will be one.
     if (finalanswer<target) fitness = settleTolerance - (target - finalanswer);
     else fitness = settleTolerance + target - finalanswer;
+
     return fitness;
 }
 

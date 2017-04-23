@@ -164,7 +164,7 @@ void SimManager::MakeLookups()
                 xormasks[n][2] = xormasks[n-1][2] ^ tweakers[portable_rand()/(PORTABLE_RAND_MAX/32)];
         }
 
-
+//RJG - check don't overwrite true randoms here
         //now the randoms - pre_rolled random numbers 0-255
         for (int n=0; n<65536; n++) randoms[n] = (quint8)((portable_rand() & 255));
         nextrandom=0;
@@ -393,10 +393,9 @@ void SimManager::SetupRun()
 
     int n=gridX/2, m=gridY/2;
 
-    while (critters[n][m][0].fitness<7) //try till one lives
-    {
-        critters[n][m][0].initialise((quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32(), environment[n][m], n,m,0);
-    }
+    //RJG - try till one lives. If alive, fitness (in critter file) >0
+    while (critters[n][m][0].fitness<1) critters[n][m][0].initialise((quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32(), environment[n][m], n,m,0);
+
 
     totalfit[n][m]=critters[n][m][0].fitness; //may have gone wrong from above
 
