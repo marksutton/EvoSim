@@ -160,10 +160,9 @@ MainWindow::MainWindow(QWidget *parent) :
     vstring.sprintf("%d.%03d",MAJORVERSION,MINORVERSION);
     this->setWindowTitle("EVOSIM v"+vstring+" - compiled - "+__DATE__);
 
-    //RJG - seed pseudoranom numbers
+    //RJG - seed pseudorandom numbers
     qsrand(QTime::currentTime().msec());
-
-    //RJG - Now load randoms into program
+    //RJG - Now load randoms into program - portable rand is just plain pseudorandom number - initially used in makelookups (called from simmanager contructor) to write to randoms array
     int seedoffset = TheSimManager->portable_rand();
     QFile rfile(":/randoms.dat");
     if (!rfile.exists()) QMessageBox::warning(this,"Oops","Error loading randoms. Please do so manually.");
@@ -171,9 +170,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     rfile.seek(seedoffset);
 
+    //RJG - overwrite pseudorandoms with genuine randoms
     int i=rfile.read((char *)randoms,65536);
     if (i!=65536) QMessageBox::warning(this,"Oops","Failed to read 65536 bytes from file - random numbers may be compromised - try again or restart program");
-
 }
 
 MainWindow::~MainWindow()
@@ -276,7 +275,7 @@ void MainWindow::on_actionRun_for_triggered()
             return;
         }
     }
-    //Option to reseed if required - This will allow people to do repeats of any given run with the same settings without closing the software!
+    //RJG - Option to reseed if required - This will allow people to do repeats of any given run with the same settings without closing the software!
     else if(QMessageBox::question(this,"Reseed","Would you like to reseed the simulation? Yes allows repeat runs avoiding a restarting. Otherwise, no is a prefectly acceptable option.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
       on_actionReseed_triggered();
 
