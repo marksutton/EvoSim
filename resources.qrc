@@ -5,7 +5,8 @@
         <file alias="resetButton-Enabled.png">resources/toolbar/resetButton-Enabled.png</file>
         <file alias="runForButton-Enabled.png">resources/toolbar/runForButton-Enabled.png</file>
     </qresource>
-    <qresource>
-	<file alias="randoms.dat">resources/randoms.dat</file>
+    <qresource prefix="/">
+        <file alias="randoms.dat">resources/randoms.dat</file>
+        <file alias="EvoSim_default_env.png">resources/EvoSim_default_env.png</file>
     </qresource>
 </RCC>

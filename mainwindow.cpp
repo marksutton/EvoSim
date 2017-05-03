@@ -147,6 +147,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     TheSimManager = new SimManager;
 
+    //RJG - load default environment image to allow program to run out of box (quicker for testing)
+
+    EnvFiles.append(":/EvoSim_default_env.png");
+    CurrentEnvFile=0;
+    TheSimManager->loadEnvironmentFromFile(1);
+
     FinishRun();//sets up enabling
     TheSimManager->SetupRun();
     RefreshRate=50;
