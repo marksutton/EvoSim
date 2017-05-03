@@ -102,6 +102,7 @@ private slots:
     void on_actionLoad_Random_Numbers_triggered();
     void on_SelectLogFile_pressed();
     void on_SelectOutputFile_pressed();
+    void on_actionReseed_with_known_genome_toggled(bool arg1);
 };
 
 

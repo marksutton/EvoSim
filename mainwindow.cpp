@@ -184,6 +184,7 @@ MainWindow::~MainWindow()
 // ---- RJG: Reseed is here.
 void MainWindow::on_actionReseed_triggered()
 {
+
     //---- RJG here we should reset the species archive to start from scratch
     archivedspecieslists.clear();
     oldspecieslist.clear();
@@ -213,6 +214,7 @@ void MainWindow::on_actionReseed_triggered()
 
     TheSimManager->SetupRun();
     NextRefresh=0;
+
     //RJG - removed this to stop duplicating the first line of log files when you create multiples using Report
     //Report();
 
@@ -1933,5 +1935,14 @@ void MainWindow::HandleAnalysisTool(int code)
         QTextStream out(&o);
         out<<OutputString;
         o.close();
+    }
+}
+
+void MainWindow::on_actionReseed_with_known_genome_toggled(bool arg1)
+{
+    if (arg1==true)
+    {
+
+
     }
 }

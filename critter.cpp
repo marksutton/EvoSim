@@ -60,7 +60,7 @@ int Critter::recalc_fitness(quint8 *env)
     if (finalanswer<=target-settleTolerance) {fitness=0; age=0; return 0;} // no use
 
     //These next two SHOULD do reverse of the abs of finalanswer (i.e 0=20, 20=0)
-    // RJG - so if settle tolerance is, say, 15, peak fitness will be 15, min will be one.
+    // RJG - so if settle tolerance is, say, 15, peak fitness will be 15, min will be one, zero will be dead.
     if (finalanswer<target) fitness = settleTolerance - (target - finalanswer);
     else fitness = settleTolerance + target - finalanswer;
 

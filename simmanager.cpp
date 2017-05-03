@@ -164,7 +164,6 @@ void SimManager::MakeLookups()
                 xormasks[n][2] = xormasks[n-1][2] ^ tweakers[portable_rand()/(PORTABLE_RAND_MAX/32)];
         }
 
-//RJG - check don't overwrite true randoms here
         //now the randoms - pre_rolled random numbers 0-255
         for (int n=0; n<65536; n++) randoms[n] = (quint8)((portable_rand() & 255));
         nextrandom=0;
@@ -374,7 +373,6 @@ quint8 SimManager::Rand8()
 
 void SimManager::SetupRun()
 {
-
     //Find middle square, try creatures till something lives, duplicate it [slots] times
     //RJG - called on initial program load and reseed, but also when run/run for are hit
 
