@@ -52,20 +52,37 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //---- ARTS: Add Toolbar
     startButton = new QAction(QIcon(QPixmap(":/toolbar/startButton-Enabled.png")), QString("Run"), this);
-    runForButton = new QAction(QIcon(QPixmap(":/toolbar/runForButton-Enabled.png")), QString("Run For..."), this);
+    runForButton = new QAction(QIcon(QPixmap(":/toolbar/runForButton-Enabled.png")), QString("Run for..."), this);
     pauseButton = new QAction(QIcon(QPixmap(":/toolbar/pauseButton-Enabled.png")), QString("Pause"), this);
     resetButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton-Enabled.png")), QString("Reset"), this);
+    //---- RJG add further Toolbar options - May 17.
+    reseedButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton_knowngenome-Enabled.png")), QString("Reseed"), this);
+    runForBatchButton = new QAction(QIcon(QPixmap(":/toolbar/runForBatchButton-Enabled.png")), QString("Batch..."), this);
+    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled.png")), QString("Settings"), this);
+
     startButton->setEnabled(false);
     runForButton->setEnabled(false);
     pauseButton->setEnabled(false);
-    ui->toolBar->addAction(startButton);
-    ui->toolBar->addAction(runForButton);
-    ui->toolBar->addAction(pauseButton);
-    ui->toolBar->addAction(resetButton);
+    reseedButton->setEnabled(false);
+    runForBatchButton->setEnabled(false);
+    settingsButton ->setEnabled(false);
+
+    ui->toolBar->addAction(startButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(runForButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(runForBatchButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(pauseButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(resetButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(reseedButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(settingsButton);
+
     QObject::connect(startButton, SIGNAL(triggered()), this, SLOT(on_actionStart_Sim_triggered()));
     QObject::connect(runForButton, SIGNAL(triggered()), this, SLOT(on_actionRun_for_triggered()));
     QObject::connect(pauseButton, SIGNAL(triggered()), this, SLOT(on_actionPause_Sim_triggered()));
-    QObject::connect(resetButton, SIGNAL(triggered()), this, SLOT(on_actionReseed_triggered()));
+    //----RJG - note for clarity. Reset = start again with random individual. Reseed = start again with user defined genome
+    QObject::connect(resetButton, SIGNAL(triggered()), this, SLOT(on_actionReset_triggered()));
+    QObject::connect(reseedButton, SIGNAL(triggered()), this, SLOT(on_actionReseed_triggered()));
+    QObject::connect(runForBatchButton, SIGNAL(triggered()), this, SLOT(on_actionBatch_triggered()));
+    QObject::connect(settingsButton, SIGNAL(triggered()), this, SLOT(on_actionSettings_triggered()));
 
     //---- ARTS: Add Genome Comparison UI
     ui->genomeComparisonDock->hide();
@@ -109,7 +126,6 @@ MainWindow::MainWindow(QWidget *parent) :
     envgroup->addAction(ui->actionOnce);
     envgroup->addAction(ui->actionLoop);
     ui->actionLoop->setChecked(true);
-
 
     QObject::connect(viewgroup2, SIGNAL(triggered(QAction *)), this, SLOT(report_mode_changed(QAction *)));
 
@@ -187,8 +203,8 @@ MainWindow::~MainWindow()
     delete TheSimManager;
 }
 
-// ---- RJG: Reseed is here.
-void MainWindow::on_actionReseed_triggered()
+// ---- RJG: Reset is here.
+void MainWindow::on_actionReset_triggered()
 {
 
     //---- RJG here we should reset the species archive to start from scratch
@@ -229,8 +245,16 @@ void MainWindow::on_actionReseed_triggered()
     UpdateTitles();
     RefreshPopulations();
 
+}
+
+//RJG - Reseed is here
+void MainWindow::on_actionReseed_triggered()
+{
+
+    qDebug()<<"reseed triggered";
 
 }
+
 
 void MainWindow::changeEvent(QEvent *e)
 {
@@ -284,8 +308,8 @@ void MainWindow::on_actionRun_for_triggered()
         }
     }
     //RJG - Option to reseed if required - This will allow people to do repeats of any given run with the same settings without closing the software!
-    else if(QMessageBox::question(this,"Reseed","Would you like to reseed the simulation? Yes allows repeat runs avoiding a restarting. Otherwise, no is a prefectly acceptable option.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
-      on_actionReseed_triggered();
+    else if(QMessageBox::question(this,"Reset","Would you like to reset the simulation? Yes allows repeat runs avoiding a restarting. Otherwise, no is a prefectly acceptable option.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
+      on_actionReset_triggered();
 
 
     bool ok;
@@ -308,6 +332,11 @@ void MainWindow::on_actionRun_for_triggered()
     FinishRun();
 }
 
+void MainWindow::on_actionBatch_triggered()
+{
+QMessageBox::warning(this,"Woah...","Easy tiger. This hasn't quite been implemented yet. Email RJG for an update.");
+}
+
 void MainWindow::on_actionRefresh_Rate_triggered()
 {
     bool ok;
@@ -319,7 +348,7 @@ void MainWindow::on_actionRefresh_Rate_triggered()
 
 void MainWindow::RunSetUp()
 {
-    //RJG - Sort out GUI
+    //RJG - Sort out GUI at start of run
     pauseflag=false;
     ui->actionStart_Sim->setEnabled(false);
     startButton->setEnabled(false);
@@ -327,10 +356,17 @@ void MainWindow::RunSetUp()
     runForButton->setEnabled(false);
     ui->actionPause_Sim->setEnabled(true);
     pauseButton->setEnabled(true);
-    ui->actionReseed->setEnabled(false);
+    //Reseed or reset
+    ui->actionReset->setEnabled(false);
     resetButton->setEnabled(false);
     ui->actionSettings->setEnabled(false);
     ui->actionEnvironment_Files->setEnabled(false);
+
+    reseedButton->setEnabled(false);
+    runForBatchButton->setEnabled(false);
+    settingsButton->setEnabled(false);
+
+
     timer.restart();
     NextRefresh=RefreshRate;
 }
@@ -341,12 +377,20 @@ void MainWindow::FinishRun()
     startButton->setEnabled(true);
     ui->actionRun_for->setEnabled(true);
     runForButton->setEnabled(true);
-    ui->actionReseed->setEnabled(true);
+    //Reseed or reset
+    ui->actionReset->setEnabled(true);
     resetButton->setEnabled(true);
     ui->actionPause_Sim->setEnabled(false);
     pauseButton->setEnabled(false);
     ui->actionSettings->setEnabled(true);
     ui->actionEnvironment_Files->setEnabled(true);
+
+
+    reseedButton->setEnabled(true);
+    runForBatchButton->setEnabled(true);
+    settingsButton->setEnabled(true);
+
+
     //----RJG disabled this to stop getting automatic logging at end of run, thus removing variability making analysis harder.
     //NextRefresh=0;
     //Report();
@@ -1043,7 +1087,7 @@ bool  MainWindow::on_actionEnvironment_Files_triggered()
     TheSimManager->loadEnvironmentFromFile(emode);
     RefreshEnvironment();
 
-    //---- RJG - Reseed for this new environment
+    //---- RJG - Reset for this new environment
     TheSimManager->SetupRun();
 
     return true;
@@ -1941,14 +1985,5 @@ void MainWindow::HandleAnalysisTool(int code)
         QTextStream out(&o);
         out<<OutputString;
         o.close();
-    }
-}
-
-void MainWindow::on_actionReseed_with_known_genome_toggled(bool arg1)
-{
-    if (arg1==true)
-    {
-
-
     }
 }

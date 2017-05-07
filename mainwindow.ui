@@ -769,8 +769,8 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionStart_Sim"/>
     <addaction name="actionRun_for"/>
     <addaction name="actionPause_Sim"/>
+    <addaction name="actionReset"/>
     <addaction name="actionReseed"/>
-    <addaction name="actionReseed_with_known_genome"/>
     <addaction name="actionGo_Slow"/>
     <addaction name="separator"/>
     <addaction name="actionSave"/>
@@ -858,7 +858,7 @@ p, li { white-space: pre-wrap; }
    <addaction name="menuDocks"/>
    <addaction name="menuAnalysis_Tools"/>
   </widget>
-  <action name="actionReseed">
+  <action name="actionReset">
    <property name="text">
     <string>Reset</string>
    </property>
@@ -1368,9 +1368,9 @@ p, li { white-space: pre-wrap; }
     <string>Don't update GUI</string>
    </property>
   </action>
-  <action name="actionReseed_with_known_genome">
+  <action name="actionReseed">
    <property name="checkable">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="text">
     <string>Reseed with known genome</string>
