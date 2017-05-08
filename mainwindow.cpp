@@ -256,6 +256,10 @@ void MainWindow::on_actionReseed_triggered()
 
     ui->actionReseed->setChecked(reseedKnown);
 
+    on_actionReset_triggered();
+    //Need to write access function in genome comparison here, then shunt those through tpo the constructor of the dialogue
+    //genoneComparison->genomeList
+
 }
 
 

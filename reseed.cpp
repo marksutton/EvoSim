@@ -20,6 +20,10 @@ reseed::reseed(QWidget *parent) :
     ui->genomeTextEdit->setFont(font);
 
     ui->CheckBoxReseedSession->setChecked(reseedKnown);
+    //ui->genomesLayout->
+
+
+
 }
 
 void reseed::on_buttonBox_accepted()
@@ -28,20 +32,19 @@ void reseed::on_buttonBox_accepted()
     if (newGenome.length()!=64)QMessageBox::warning(this,"Oops","This doesn't look like a valid genome, and so this is not going to be set. Sorry. Please try again by relaunching reseed.");
     else
         {
-        //Need to check whether Alan's go other way, i.e. are little endian? Check when docker implemented.
+        //RJG - Need to check whether Alan's go other way, i.e. are little endian? Check when docker implemented.
         for (int i=0; i<64; i++)
             if (newGenome[i]=='1')reseedGenome|=tweakers64[i];
+                //RJG - ~ is a bitwise not operator.
                 else reseedGenome&=(~tweakers64[i]);
 
-
-        QString testGenome;
+       /* QString testGenome;
         for (int i=0; i<64; i++)
-        if (tweakers64[i] & reseedGenome) testGenome.append("1"); else testGenome.append("0");
-        qDebug()<<testGenome;
+            if (tweakers64[i] & reseedGenome) testGenome.append("1"); else testGenome.append("0");
+        qDebug()<<testGenome;*/
 
         reseedKnown=ui->CheckBoxReseedSession->isChecked();
         }
-
 }
 
 
