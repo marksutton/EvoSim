@@ -216,7 +216,7 @@ void MainWindow::on_actionReset_triggered()
     {
 
     // ---- RJG - deal with logging when reseeding
-    if(QMessageBox::question(this,"Logging","Would you like to set up a new log file?\n\nNote new logging files will be based on the setup for last run - you won't have the oportunity to change which logging files are written.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
+    if(QMessageBox::question(this,"Logging","Would you like to set up a new log file?\n\nNote new logging files will be based on the setup for last run - you won't have the opportunity to change which logging files are written.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
         {
         on_actionSet_Logging_File_triggered();
         ui->actionLogging->setEnabled(true);
@@ -253,6 +253,8 @@ void MainWindow::on_actionReseed_triggered()
 {
     reseed reseed_dialogue;
     reseed_dialogue.exec();
+
+    ui->actionReseed->setChecked(reseedKnown);
 
 }
 
