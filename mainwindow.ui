@@ -768,6 +768,7 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionEnvironment_Files"/>
     <addaction name="actionStart_Sim"/>
     <addaction name="actionRun_for"/>
+    <addaction name="actionBatch"/>
     <addaction name="actionPause_Sim"/>
     <addaction name="actionReset"/>
     <addaction name="actionReseed"/>
@@ -1370,10 +1371,15 @@ p, li { white-space: pre-wrap; }
   </action>
   <action name="actionReseed">
    <property name="checkable">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text">
     <string>Reseed with known genome</string>
+   </property>
+  </action>
+  <action name="actionBatch">
+   <property name="text">
+    <string>Batch</string>
    </property>
   </action>
  </widget>

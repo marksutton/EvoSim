@@ -17,7 +17,8 @@ SOURCES += main.cpp \
     fossilrecord.cpp \
     fossrecwidget.cpp \
     resizecatcher.cpp \
-    analysistools.cpp
+    analysistools.cpp \
+    reseed.cpp
 HEADERS += mainwindow.h \
     simmanager.h \
     critter.h \
@@ -31,11 +32,13 @@ HEADERS += mainwindow.h \
     fossrecwidget.h \
     resizecatcher.h \
     analysistools.h \
-    version.h
+    version.h \
+    reseed.h
 FORMS += mainwindow.ui \
     dialog.ui \
     fossrecwidget.ui \
-    genomecomparison.ui
+    genomecomparison.ui \
+    reseed.ui
 
 OTHER_FILES += \
     README.TXT

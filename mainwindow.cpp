@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "settings.h"
+#include "reseed.h"
 #include "analyser.h"
 #include "fossrecwidget.h"
 #include "resizecatcher.h"
@@ -250,8 +251,8 @@ void MainWindow::on_actionReset_triggered()
 //RJG - Reseed is here
 void MainWindow::on_actionReseed_triggered()
 {
-
-    qDebug()<<"reseed triggered";
+    reseed reseed_dialogue;
+    reseed_dialogue.exec();
 
 }
 

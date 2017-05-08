@@ -40,7 +40,8 @@ bool speciesLoggingToFile=false;
 bool fitnessLoggingToFile=false;
 bool nonspatial=false;
 bool toroidal=false;
-
+bool reseedKnown=false;
+quint64 reseedGenome=0;
 
 int lastReport=0;
 

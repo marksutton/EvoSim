@@ -426,7 +426,7 @@ bool GenomeComparison::renderCompareTable() {
 
 /*---------------------------------------------------------------------------//
     Table Actions
-//--------------------`-------------------------------------------------------*/
+//---------------------------------------------------------------------------*/
 
 void GenomeComparison::updateGenomeName(int row, int col) {
     if (col == 1) {
@@ -444,6 +444,7 @@ bool GenomeComparison::addGenomeCritter(Critter critter, quint8 *environment)
     //---- Genome
     QString genomeStr;
     for (int j=0; j<64; j++)
+        //---- RJG - if genome bit is 1, number is > 0; else it's zero.
         if (tweakers64[63-j] & critter.genome) genomeStr.append("1"); else genomeStr.append("0");
 
     //---- Genome Colour
