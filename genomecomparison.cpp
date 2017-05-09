@@ -693,3 +693,18 @@ QList<int> GenomeComparison::isGenomeChecked()
 
     return checkedList;
 }
+
+/*---------------------------------------------------------------------------//
+    RJG - Access Functions
+//---------------------------------------------------------------------------*/
+
+QString GenomeComparison::access_genome(int row)
+{
+return genomeList[row]["genome"];
+}
+
+int GenomeComparison::access_glist_length()
+{
+return genomeList.length();
+}
+

@@ -1,4 +1,8 @@
 #include "simmanager.h"
+
+//RJG - so can access MainWin
+#include "mainwindow.h"
+
 #include <QDebug>
 #include <stdlib.h>
 #include <math.h>
@@ -393,7 +397,11 @@ void SimManager::SetupRun()
     int n=gridX/2, m=gridY/2;
 
     //RJG - Either reseed with known genome if set
-    if(reseedKnown)critters[n][m][0].initialise(reseedGenome, environment[n][m], n,m,0);
+    if(reseedKnown){
+                    critters[n][m][0].initialise(reseedGenome, environment[n][m], n,m,0);
+                    //RJG - I think this is a good thing to flag clearly.
+                    MainWin->setStatusBarText("Started simulation with known genome");
+                    }
     //RJG - or try till one lives. If alive, fitness (in critter file) >0
     else while (critters[n][m][0].fitness<1) critters[n][m][0].initialise((quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32(), environment[n][m], n,m,0);
 

@@ -2,7 +2,13 @@
 #include "simmanager.h"
 #include "ui_reseed.h"
 
+//RJG - so can access MainWin
+#include "mainwindow.h"
+
 #include <QMessageBox>
+#include <QLabel>
+#include <QRadioButton>
+
 
 reseed::reseed(QWidget *parent) :
     QDialog(parent),
@@ -20,9 +26,21 @@ reseed::reseed(QWidget *parent) :
     ui->genomeTextEdit->setFont(font);
 
     ui->CheckBoxReseedSession->setChecked(reseedKnown);
-    //ui->genomesLayout->
 
+    int length=MainWin->genoneComparison->access_glist_length();
+    if (length>10)length=10;
 
+    if(!length)
+        {
+        QLabel *label = new QLabel("There are currently no genomes recorded in the Genome Docker.",this);
+        ui->genomesLayout->addWidget(label);
+        }
+    else for (int i=0;i<length;i++)
+        {
+        QRadioButton *radio = new QRadioButton(this);
+        radio->setText(MainWin->genoneComparison->access_genome(i));
+        ui->genomesLayout->addWidget(radio);
+        }
 
 }
 

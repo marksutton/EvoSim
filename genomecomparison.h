@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QTableWidget>
+#include <QString>
 
 #include "simmanager.h"
 
@@ -23,6 +24,8 @@ public:
     bool addGenomeCritter(Critter critter, quint8 *environment);
     QByteArray saveComparison();
     bool loadComparison(QByteArray data);
+    QString access_genome(int row);
+    int access_glist_length();
 
 private slots:
     //---- Actions

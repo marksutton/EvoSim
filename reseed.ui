@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>613</width>
-    <height>404</height>
+    <width>717</width>
+    <height>438</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>260</x>
-     <y>370</y>
+     <x>370</x>
+     <y>390</y>
      <width>341</width>
      <height>32</height>
     </rect>
@@ -47,7 +47,7 @@
     <rect>
      <x>10</x>
      <y>70</y>
-     <width>591</width>
+     <width>701</width>
      <height>51</height>
     </rect>
    </property>
@@ -70,12 +70,12 @@
     <rect>
      <x>10</x>
      <y>120</y>
-     <width>591</width>
+     <width>701</width>
      <height>41</height>
     </rect>
    </property>
    <property name="text">
-    <string>Or alternatively, choose one of those from the genome docker:</string>
+    <string>Or choose one of those from the genome comparison docker (a max  of 10 are displayed):</string>
    </property>
   </widget>
   <widget class="QWidget" name="verticalLayoutWidget">
@@ -83,8 +83,8 @@
     <rect>
      <x>10</x>
      <y>150</y>
-     <width>591</width>
-     <height>211</height>
+     <width>701</width>
+     <height>231</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="genomesLayout"/>

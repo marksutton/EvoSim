@@ -10,7 +10,6 @@
 #include "populationscene.h"
 #include "environmentscene.h"
 #include "genomecomparison.h"
-#include <QActionGroup>
 #include "fossrecwidget.h"
 
 extern MainWindow *MainWin;

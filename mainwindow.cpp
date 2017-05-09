@@ -1910,7 +1910,7 @@ void MainWindow::setStatusBarText(QString text)
 
 void MainWindow::on_actionLoad_Random_Numbers_triggered()
 {
-    // ---- RJG - have added randoms to resources and into contructor, load on launch to ensure true randoms are loaded by default.
+    // ---- RJG - have added randoms to resources and into constructor, load on launch to ensure true randoms are loaded by default.
     //Select files
     QString file = QFileDialog::getOpenFileName(
                             this,
