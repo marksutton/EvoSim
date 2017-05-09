@@ -398,9 +398,12 @@ void SimManager::SetupRun()
 
     //RJG - Either reseed with known genome if set
     if(reseedKnown){
-                    critters[n][m][0].initialise(reseedGenome, environment[n][m], n,m,0);
+                    critters[n][m][0].initialise(reseedGenome,environment[n][m],n,m,0);
+
                     //RJG - I think this is a good thing to flag clearly.
-                    MainWin->setStatusBarText("Started simulation with known genome");
+                    QString reseedGenomeString("Started simulation with known genome: ");
+                    for (int i=0; i<64; i++)if (tweakers64[i] & reseedGenome) reseedGenomeString.append("1"); else reseedGenomeString.append("0");
+                    MainWin->setStatusBarText(reseedGenomeString);
                     }
     //RJG - or try till one lives. If alive, fitness (in critter file) >0
     else while (critters[n][m][0].fitness<1) critters[n][m][0].initialise((quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32(), environment[n][m], n,m,0);
@@ -417,7 +420,7 @@ void SimManager::SetupRun()
         critters[n][m][c].initialise(gen, environment[n][m], n,m,c);
 
         if (critters[n][m][c].age>0)
-        {
+        {//qDebug()<<"here";
             critters[n][m][c].age/=((Rand8()/10)+1);
             critters[n][m][c].age +=10;
             AliveCount++;
@@ -466,10 +469,6 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             maxused[n][m]=maxalive;
             maxv=maxalive;
             (*KillCount_local)+=deathcount;
-            //if (n==50 && m==50 && deathcount)
-            //{
-            //    qDebug()<<"Before"<<oldtf<<"  After"<<totalfit[n][m]<<" Deaths:"<<deathcount;
-            //}
         }
 
         // RJG - reset counters for fitness logging to file

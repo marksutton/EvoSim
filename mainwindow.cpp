@@ -257,8 +257,6 @@ void MainWindow::on_actionReseed_triggered()
     ui->actionReseed->setChecked(reseedKnown);
 
     on_actionReset_triggered();
-    //Need to write access function in genome comparison here, then shunt those through tpo the constructor of the dialogue
-    //genoneComparison->genomeList
 
 }
 
@@ -315,8 +313,9 @@ void MainWindow::on_actionRun_for_triggered()
         }
     }
     //RJG - Option to reseed if required - This will allow people to do repeats of any given run with the same settings without closing the software!
-    else if(QMessageBox::question(this,"Reset","Would you like to reset the simulation? Yes allows repeat runs avoiding a restarting. Otherwise, no is a prefectly acceptable option.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
-      on_actionReset_triggered();
+    //Since removed as obsolete once batching is done.
+    /*else if(QMessageBox::question(this,"Reset","Would you like to reset the simulation? Yes allows repeat runs avoiding a restarting. Otherwise, no is a prefectly acceptable option.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
+      on_actionReset_triggered();*/
 
 
     bool ok;

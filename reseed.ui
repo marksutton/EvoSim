@@ -75,7 +75,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>Or choose one of those from the genome comparison docker (a max  of 10 are displayed):</string>
+    <string>Or choose one of those from the genome comparison dock (a max  of 10 are displayed):</string>
    </property>
   </widget>
   <widget class="QWidget" name="verticalLayoutWidget">
