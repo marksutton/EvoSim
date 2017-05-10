@@ -54,6 +54,11 @@ private:
     PopulationScene *popscene;
     QActionGroup *viewgroup, *viewgroup2;
     QActionGroup *envgroup;
+
+    //RJG - options for batching
+    bool batch_running;
+    int runs, batch_iterations, batch_target_runs;
+
     //Now some things settable by the ui
     int RefreshRate;
     QTime timer;

@@ -176,6 +176,12 @@ MainWindow::MainWindow(QWidget *parent) :
     NextRefresh=0;
     Report();
 
+    //RJG - Set batch variables
+    batch_running=false;
+    runs=-1;
+    batch_iterations=-1;
+    batch_target_runs=-1;
+
     showMaximized();
 
     //RJG - Output version, but also date compiled for clarity
@@ -317,11 +323,12 @@ void MainWindow::on_actionRun_for_triggered()
     /*else if(QMessageBox::question(this,"Reset","Would you like to reset the simulation? Yes allows repeat runs avoiding a restarting. Otherwise, no is a prefectly acceptable option.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
       on_actionReset_triggered();*/
 
-
     bool ok;
-    int i = QInputDialog::getInt(this, "",
-                                 tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
+    int i;
+    if(!batch_running) i= QInputDialog::getInt(this, "",tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
+    else i=batch_iterations;
     if (!ok) return;
+
     RunSetUp();
     while (pauseflag==false && i>0)
     {
@@ -340,7 +347,21 @@ void MainWindow::on_actionRun_for_triggered()
 
 void MainWindow::on_actionBatch_triggered()
 {
-QMessageBox::warning(this,"Woah...","Easy tiger. This hasn't quite been implemented yet. Email RJG for an update.");
+batch_running=true;
+runs=0;
+
+bool ok;
+batch_iterations=QInputDialog::getInt(this, "",tr("How many iterations would you like each run to go for?"), 1000, 1, 10000000, 1, &ok);
+batch_target_runs=QInputDialog::getInt(this, "",tr("And how many runs?"), 1000, 1, 10000000, 1, &ok);
+if (!ok) {QMessageBox::warning(this,"Woah...","Looks like you cancelled. Batch won't run.");return;}
+
+do{
+    on_actionRun_for_triggered();
+    runs++;
+   }while(runs<batch_target_runs);
+
+batch_running=false;
+runs=0;
 }
 
 void MainWindow::on_actionRefresh_Rate_triggered()
@@ -395,7 +416,6 @@ void MainWindow::FinishRun()
     reseedButton->setEnabled(true);
     runForBatchButton->setEnabled(true);
     settingsButton->setEnabled(true);
-
 
     //----RJG disabled this to stop getting automatic logging at end of run, thus removing variability making analysis harder.
     //NextRefresh=0;
