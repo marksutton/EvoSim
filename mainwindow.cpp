@@ -325,11 +325,16 @@ void MainWindow::on_actionRun_for_triggered()
 
     bool ok;
     int i;
-    if(!batch_running) i= QInputDialog::getInt(this, "",tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
-    else i=batch_iterations;
+    if(batch_running)
+                {
+                i=batch_iterations;
+                if(i>2)ok=true;
+                }
+    else i= QInputDialog::getInt(this, "",tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
     if (!ok) return;
 
     RunSetUp();
+
     while (pauseflag==false && i>0)
     {
         Report();
@@ -345,6 +350,7 @@ void MainWindow::on_actionRun_for_triggered()
     FinishRun();
 }
 
+//RJG - Eventually this will have to deal with environment too.
 void MainWindow::on_actionBatch_triggered()
 {
 batch_running=true;
@@ -355,8 +361,9 @@ batch_iterations=QInputDialog::getInt(this, "",tr("How many iterations would you
 batch_target_runs=QInputDialog::getInt(this, "",tr("And how many runs?"), 1000, 1, 10000000, 1, &ok);
 if (!ok) {QMessageBox::warning(this,"Woah...","Looks like you cancelled. Batch won't run.");return;}
 
-do{
+do{qDebug()<<"here"<<runs<<batch_iterations<<batch_target_runs;
     on_actionRun_for_triggered();
+    on_actionReset_triggered();
     runs++;
    }while(runs<batch_target_runs);
 
