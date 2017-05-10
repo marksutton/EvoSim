@@ -218,9 +218,8 @@ void MainWindow::on_actionReset_triggered()
     archivedspecieslists.clear();
     oldspecieslist.clear();
 
-    if (speciesLoggingToFile==true || fitnessLoggingToFile==true)
+    if ((speciesLoggingToFile==true || fitnessLoggingToFile==true)&&!batch_running)
     {
-
     // ---- RJG - deal with logging when reseeding
     if(QMessageBox::question(this,"Logging","Would you like to set up a new log file?\n\nNote new logging files will be based on the setup for last run - you won't have the opportunity to change which logging files are written.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
         {
@@ -361,7 +360,13 @@ batch_iterations=QInputDialog::getInt(this, "",tr("How many iterations would you
 batch_target_runs=QInputDialog::getInt(this, "",tr("And how many runs?"), 1000, 1, 10000000, 1, &ok);
 if (!ok) {QMessageBox::warning(this,"Woah...","Looks like you cancelled. Batch won't run.");return;}
 
-do{qDebug()<<"here"<<runs<<batch_iterations<<batch_target_runs;
+do{
+    if(runs==0)FitnessLoggingFile.insert(FitnessLoggingFile.length()-4,QString("_run_%1").arg(runs));
+    else FitnessLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
+
+    if(runs==0)SpeciesLoggingFile.insert(SpeciesLoggingFile.length()-4,QString("_run_%1").arg(runs));
+    else SpeciesLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
+
     on_actionRun_for_triggered();
     on_actionReset_triggered();
     runs++;
@@ -506,7 +511,7 @@ void MainWindow::Report()
     FRW->RefreshMe();
     FRW->WriteFiles();
 
-    LogSpecies();
+    WriteLog();
 
 
     //reset the breedattempts and breedfails arrays
@@ -1708,7 +1713,8 @@ void MainWindow::on_actionSet_Logging_File_triggered()
     QString filenamefitness(filename);
 
     // ----RJG: Add extension as Linux does not automatically
-    if(!filename.contains(".txt"))filename.append(".txt");
+    if(filename.contains(".txt"))filename.insert(filename.length()-4,"_species");
+    else filename.append("_species.txt");
 
     // ----RJG: Fitness logging
     if(filenamefitness.contains(".txt"))filenamefitness.insert(filenamefitness.length()-4,"_fitness");
@@ -1780,7 +1786,7 @@ void MainWindow::CalcSpecies()
 }
 
 
-void MainWindow::LogSpecies()
+void MainWindow::WriteLog()
 {
     if (speciesLoggingToFile==false && fitnessLoggingToFile==false) return;
 
@@ -1789,7 +1795,6 @@ void MainWindow::LogSpecies()
     {
         //log em!
         QFile outputfile(SpeciesLoggingFile);
-
 
             if (!(outputfile.exists()))
             {

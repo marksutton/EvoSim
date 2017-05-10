@@ -67,7 +67,7 @@ private:
 
     void ResetSquare(int n, int m);
     void ResizeImageObjects();
-    void LogSpecies();
+    void WriteLog();
     void CalcSpecies();
     void HandleAnalysisTool(int code);
     Analyser *a;
