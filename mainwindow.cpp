@@ -210,7 +210,7 @@ MainWindow::~MainWindow()
     delete TheSimManager;
 }
 
-// ---- RJG: Reset is here.
+// ---- RJG: Reset simulation (i.e. fill the centre pixel with a genome, then set up a run).
 void MainWindow::on_actionReset_triggered()
 {
 
@@ -243,17 +243,14 @@ void MainWindow::on_actionReset_triggered()
     TheSimManager->SetupRun();
     NextRefresh=0;
 
-    //RJG - removed this to stop duplicating the first line of log files when you create multiples using Report
-    //Report();
-
-    //Instead just update views...
+    //Update views...
     RefreshReport();
     UpdateTitles();
     RefreshPopulations();
 
 }
 
-//RJG - Reseed is here
+//RJG - Reseed provides options to either reset using a random genome, or a user defined one - drawn from the genome comparison docker.
 void MainWindow::on_actionReseed_triggered()
 {
     reseed reseed_dialogue;
@@ -352,28 +349,40 @@ void MainWindow::on_actionRun_for_triggered()
 //RJG - Eventually this will have to deal with environment too.
 void MainWindow::on_actionBatch_triggered()
 {
-batch_running=true;
-runs=0;
+    batch_running=true;
+    runs=0;
 
-bool ok;
-batch_iterations=QInputDialog::getInt(this, "",tr("How many iterations would you like each run to go for?"), 1000, 1, 10000000, 1, &ok);
-batch_target_runs=QInputDialog::getInt(this, "",tr("And how many runs?"), 1000, 1, 10000000, 1, &ok);
-if (!ok) {QMessageBox::warning(this,"Woah...","Looks like you cancelled. Batch won't run.");return;}
+    int environment_start = CurrentEnvFile;
+    qDebug()<<"Start: "<<environment_start;
 
-do{
-    if(runs==0)FitnessLoggingFile.insert(FitnessLoggingFile.length()-4,QString("_run_%1").arg(runs));
-    else FitnessLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
+    bool ok;
+    batch_iterations=QInputDialog::getInt(this, "",tr("How many iterations would you like each run to go for?"), 1000, 1, 10000000, 1, &ok);
+    batch_target_runs=QInputDialog::getInt(this, "",tr("And how many runs?"), 1000, 1, 10000000, 1, &ok);
+    if (!ok) {QMessageBox::warning(this,"Woah...","Looks like you cancelled. Batch won't run.");return;}
 
-    if(runs==0)SpeciesLoggingFile.insert(SpeciesLoggingFile.length()-4,QString("_run_%1").arg(runs));
-    else SpeciesLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
+    do{
+        if(runs==0)FitnessLoggingFile.insert(FitnessLoggingFile.length()-4,QString("_run_%1").arg(runs));
+        else FitnessLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
 
-    on_actionRun_for_triggered();
-    on_actionReset_triggered();
-    runs++;
-   }while(runs<batch_target_runs);
+        if(runs==0)SpeciesLoggingFile.insert(SpeciesLoggingFile.length()-4,QString("_run_%1").arg(runs));
+        else SpeciesLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
 
-batch_running=false;
-runs=0;
+        //RJG - Sort environment so it repeats
+        CurrentEnvFile=environment_start;
+        int emode=0;
+        if (ui->actionOnce->isChecked()) emode=1;
+        if (ui->actionBounce->isChecked()) emode=3;
+        if (ui->actionLoop->isChecked()) emode=2;
+        TheSimManager->loadEnvironmentFromFile(emode);
+
+        //And run...
+        on_actionRun_for_triggered();
+        on_actionReset_triggered();
+        runs++;
+       }while(runs<batch_target_runs);
+
+    batch_running=false;
+    runs=0;
 }
 
 void MainWindow::on_actionRefresh_Rate_triggered()
