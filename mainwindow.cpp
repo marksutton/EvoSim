@@ -346,19 +346,29 @@ void MainWindow::on_actionRun_for_triggered()
     FinishRun();
 }
 
-//RJG - Eventually this will have to deal with environment too.
+//RJG - Batch - primarily intended to allow repeats of runs with the same settings, rather than allowing these to be changed between runs
 void MainWindow::on_actionBatch_triggered()
 {
     batch_running=true;
     runs=0;
 
     int environment_start = CurrentEnvFile;
-    qDebug()<<"Start: "<<environment_start;
 
     bool ok;
     batch_iterations=QInputDialog::getInt(this, "",tr("How many iterations would you like each run to go for?"), 1000, 1, 10000000, 1, &ok);
     batch_target_runs=QInputDialog::getInt(this, "",tr("And how many runs?"), 1000, 1, 10000000, 1, &ok);
+
+    QStringList options;
+    options << tr("Yes") << tr("No");
+
+    QString environment = QInputDialog::getItem(this, tr("Environment"),
+                                            tr("Would you like the environment to repeat with each bacth?"), options, 0, false, &ok);
+
     if (!ok) {QMessageBox::warning(this,"Woah...","Looks like you cancelled. Batch won't run.");return;}
+
+    bool repeat_environment;
+    if (environment=="Yes")repeat_environment=true;
+    else repeat_environment=false;
 
     do{
         if(runs==0)FitnessLoggingFile.insert(FitnessLoggingFile.length()-4,QString("_run_%1").arg(runs));
@@ -368,12 +378,15 @@ void MainWindow::on_actionBatch_triggered()
         else SpeciesLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
 
         //RJG - Sort environment so it repeats
-        CurrentEnvFile=environment_start;
-        int emode=0;
-        if (ui->actionOnce->isChecked()) emode=1;
-        if (ui->actionBounce->isChecked()) emode=3;
-        if (ui->actionLoop->isChecked()) emode=2;
-        TheSimManager->loadEnvironmentFromFile(emode);
+        if(repeat_environment)
+                {
+                CurrentEnvFile=environment_start;
+                int emode=0;
+                if (ui->actionOnce->isChecked()) emode=1;
+                if (ui->actionBounce->isChecked()) emode=3;
+                if (ui->actionLoop->isChecked()) emode=2;
+                TheSimManager->loadEnvironmentFromFile(emode);
+                }
 
         //And run...
         on_actionRun_for_triggered();
