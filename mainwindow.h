@@ -10,7 +10,6 @@
 #include "populationscene.h"
 #include "environmentscene.h"
 #include "genomecomparison.h"
-#include <QActionGroup>
 #include "fossrecwidget.h"
 
 extern MainWindow *MainWin;
@@ -24,12 +23,12 @@ class MainWindow : public QMainWindow {
 public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    void RefreshReport();
     FossRecWidget *FRW;
 
     //---- ARTS: Add Genome Comparison UI
     GenomeComparison *genoneComparison;
     bool genomeComparisonAdd();
+    void RefreshReport();
     void Resize();
     void RefreshEnvironment();
     void setStatusBarText(QString text);
@@ -55,6 +54,11 @@ private:
     PopulationScene *popscene;
     QActionGroup *viewgroup, *viewgroup2;
     QActionGroup *envgroup;
+
+    //RJG - options for batching
+    bool batch_running;
+    int runs, batch_iterations, batch_target_runs;
+
     //Now some things settable by the ui
     int RefreshRate;
     QTime timer;
@@ -63,17 +67,19 @@ private:
 
     void ResetSquare(int n, int m);
     void ResizeImageObjects();
-    void LogSpecies();
+    void WriteLog();
     void CalcSpecies();
     void HandleAnalysisTool(int code);
     Analyser *a;
 
-    QAction *startButton, *pauseButton, *runForButton, *resetButton;
+    QAction *startButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton;
 
 private slots:
+    void on_actionReset_triggered();
     void on_actionReseed_triggered();
     void on_actionStart_Sim_triggered();
     void on_actionRun_for_triggered();
+    void on_actionBatch_triggered();
     void on_actionPause_Sim_triggered();
     void on_actionRefresh_Rate_triggered();
     void on_actionSettings_triggered();

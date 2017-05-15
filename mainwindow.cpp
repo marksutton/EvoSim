@@ -1,9 +1,11 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "settings.h"
+#include "reseed.h"
 #include "analyser.h"
 #include "fossrecwidget.h"
 #include "resizecatcher.h"
+
 #include <QTextStream>
 #include <QInputDialog>
 #include <QGraphicsPixmapItem>
@@ -51,20 +53,37 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //---- ARTS: Add Toolbar
     startButton = new QAction(QIcon(QPixmap(":/toolbar/startButton-Enabled.png")), QString("Run"), this);
-    runForButton = new QAction(QIcon(QPixmap(":/toolbar/runForButton-Enabled.png")), QString("Run For..."), this);
+    runForButton = new QAction(QIcon(QPixmap(":/toolbar/runForButton-Enabled.png")), QString("Run for..."), this);
     pauseButton = new QAction(QIcon(QPixmap(":/toolbar/pauseButton-Enabled.png")), QString("Pause"), this);
     resetButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton-Enabled.png")), QString("Reset"), this);
+    //---- RJG add further Toolbar options - May 17.
+    reseedButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton_knowngenome-Enabled.png")), QString("Reseed"), this);
+    runForBatchButton = new QAction(QIcon(QPixmap(":/toolbar/runForBatchButton-Enabled.png")), QString("Batch..."), this);
+    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled.png")), QString("Settings"), this);
+
     startButton->setEnabled(false);
     runForButton->setEnabled(false);
     pauseButton->setEnabled(false);
-    ui->toolBar->addAction(startButton);
-    ui->toolBar->addAction(runForButton);
-    ui->toolBar->addAction(pauseButton);
-    ui->toolBar->addAction(resetButton);
+    reseedButton->setEnabled(false);
+    runForBatchButton->setEnabled(false);
+    settingsButton ->setEnabled(false);
+
+    ui->toolBar->addAction(startButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(runForButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(runForBatchButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(pauseButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(resetButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(reseedButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(settingsButton);
+
     QObject::connect(startButton, SIGNAL(triggered()), this, SLOT(on_actionStart_Sim_triggered()));
     QObject::connect(runForButton, SIGNAL(triggered()), this, SLOT(on_actionRun_for_triggered()));
     QObject::connect(pauseButton, SIGNAL(triggered()), this, SLOT(on_actionPause_Sim_triggered()));
-    QObject::connect(resetButton, SIGNAL(triggered()), this, SLOT(on_actionReseed_triggered()));
+    //----RJG - note for clarity. Reset = start again with random individual. Reseed = start again with user defined genome
+    QObject::connect(resetButton, SIGNAL(triggered()), this, SLOT(on_actionReset_triggered()));
+    QObject::connect(reseedButton, SIGNAL(triggered()), this, SLOT(on_actionReseed_triggered()));
+    QObject::connect(runForBatchButton, SIGNAL(triggered()), this, SLOT(on_actionBatch_triggered()));
+    QObject::connect(settingsButton, SIGNAL(triggered()), this, SLOT(on_actionSettings_triggered()));
 
     //---- ARTS: Add Genome Comparison UI
     ui->genomeComparisonDock->hide();
@@ -79,7 +98,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QVBoxLayout *frwLayout = new QVBoxLayout;
     frwLayout->addWidget(FRW);
     ui->fossRecDockContents->setLayout(frwLayout);
-
     ui->reportViewerDock->hide();
 
     viewgroup = new QActionGroup(this);
@@ -109,7 +127,6 @@ MainWindow::MainWindow(QWidget *parent) :
     envgroup->addAction(ui->actionOnce);
     envgroup->addAction(ui->actionLoop);
     ui->actionLoop->setChecked(true);
-
 
     QObject::connect(viewgroup2, SIGNAL(triggered(QAction *)), this, SLOT(report_mode_changed(QAction *)));
 
@@ -147,11 +164,23 @@ MainWindow::MainWindow(QWidget *parent) :
 
     TheSimManager = new SimManager;
 
+    //RJG - load default environment image to allow program to run out of box (quicker for testing)
+
+    EnvFiles.append(":/EvoSim_default_env.png");
+    CurrentEnvFile=0;
+    TheSimManager->loadEnvironmentFromFile(1);
+
     FinishRun();//sets up enabling
     TheSimManager->SetupRun();
     RefreshRate=50;
     NextRefresh=0;
     Report();
+
+    //RJG - Set batch variables
+    batch_running=false;
+    runs=-1;
+    batch_iterations=-1;
+    batch_target_runs=-1;
 
     showMaximized();
 
@@ -160,10 +189,9 @@ MainWindow::MainWindow(QWidget *parent) :
     vstring.sprintf("%d.%03d",MAJORVERSION,MINORVERSION);
     this->setWindowTitle("EVOSIM v"+vstring+" - compiled - "+__DATE__);
 
-    //RJG - seed pseudoranom numbers
+    //RJG - seed pseudorandom numbers
     qsrand(QTime::currentTime().msec());
-
-    //RJG - Now load randoms into program
+    //RJG - Now load randoms into program - portable rand is just plain pseudorandom number - initially used in makelookups (called from simmanager contructor) to write to randoms array
     int seedoffset = TheSimManager->portable_rand();
     QFile rfile(":/randoms.dat");
     if (!rfile.exists()) QMessageBox::warning(this,"Oops","Error loading randoms. Please do so manually.");
@@ -171,9 +199,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     rfile.seek(seedoffset);
 
+    //RJG - overwrite pseudorandoms with genuine randoms
     int i=rfile.read((char *)randoms,65536);
     if (i!=65536) QMessageBox::warning(this,"Oops","Failed to read 65536 bytes from file - random numbers may be compromised - try again or restart program");
-
 }
 
 MainWindow::~MainWindow()
@@ -182,18 +210,18 @@ MainWindow::~MainWindow()
     delete TheSimManager;
 }
 
-// ---- RJG: Reseed is here.
-void MainWindow::on_actionReseed_triggered()
+// ---- RJG: Reset simulation (i.e. fill the centre pixel with a genome, then set up a run).
+void MainWindow::on_actionReset_triggered()
 {
+
     //---- RJG here we should reset the species archive to start from scratch
     archivedspecieslists.clear();
     oldspecieslist.clear();
 
-    if (speciesLoggingToFile==true || fitnessLoggingToFile==true)
+    if ((speciesLoggingToFile==true || fitnessLoggingToFile==true)&&!batch_running)
     {
-
-    // RJG - deal with logging when reseeding
-    if(QMessageBox::question(this,"Logging","Would you like to set up a new log file?\n\nNote new logging files will be based on the setup for last run - you won't have the oportunity to change which logging files are written.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
+    // ---- RJG - deal with logging when reseeding
+    if(QMessageBox::question(this,"Logging","Would you like to set up a new log file?\n\nNote new logging files will be based on the setup for last run - you won't have the opportunity to change which logging files are written.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
         {
         on_actionSet_Logging_File_triggered();
         ui->actionLogging->setEnabled(true);
@@ -214,16 +242,26 @@ void MainWindow::on_actionReseed_triggered()
 
     TheSimManager->SetupRun();
     NextRefresh=0;
-    //RJG - removed this to stop duplicating the first line of log files when you create multiples using Report
-    //Report();
 
-    //Instead just update views...
+    //Update views...
     RefreshReport();
     UpdateTitles();
     RefreshPopulations();
 
+}
+
+//RJG - Reseed provides options to either reset using a random genome, or a user defined one - drawn from the genome comparison docker.
+void MainWindow::on_actionReseed_triggered()
+{
+    reseed reseed_dialogue;
+    reseed_dialogue.exec();
+
+    ui->actionReseed->setChecked(reseedKnown);
+
+    on_actionReset_triggered();
 
 }
+
 
 void MainWindow::changeEvent(QEvent *e)
 {
@@ -276,16 +314,23 @@ void MainWindow::on_actionRun_for_triggered()
             return;
         }
     }
-    //Option to reseed if required - This will allow people to do repeats of any given run with the same settings without closing the software!
-    else if(QMessageBox::question(this,"Reseed","Would you like to reseed the simulation? Yes allows repeat runs avoiding a restarting. Otherwise, no is a prefectly acceptable option.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
-      on_actionReseed_triggered();
-
+    //RJG - Option to reseed if required - This will allow people to do repeats of any given run with the same settings without closing the software!
+    //Since removed as obsolete once batching is done.
+    /*else if(QMessageBox::question(this,"Reset","Would you like to reset the simulation? Yes allows repeat runs avoiding a restarting. Otherwise, no is a prefectly acceptable option.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
+      on_actionReset_triggered();*/
 
     bool ok;
-    int i = QInputDialog::getInt(this, "",
-                                 tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
+    int i;
+    if(batch_running)
+                {
+                i=batch_iterations;
+                if(i>2)ok=true;
+                }
+    else i= QInputDialog::getInt(this, "",tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
     if (!ok) return;
+
     RunSetUp();
+
     while (pauseflag==false && i>0)
     {
         Report();
@@ -301,6 +346,58 @@ void MainWindow::on_actionRun_for_triggered()
     FinishRun();
 }
 
+//RJG - Batch - primarily intended to allow repeats of runs with the same settings, rather than allowing these to be changed between runs
+void MainWindow::on_actionBatch_triggered()
+{
+    batch_running=true;
+    runs=0;
+
+    int environment_start = CurrentEnvFile;
+
+    bool ok;
+    batch_iterations=QInputDialog::getInt(this, "",tr("How many iterations would you like each run to go for?"), 1000, 1, 10000000, 1, &ok);
+    batch_target_runs=QInputDialog::getInt(this, "",tr("And how many runs?"), 1000, 1, 10000000, 1, &ok);
+
+    QStringList options;
+    options << tr("Yes") << tr("No");
+
+    QString environment = QInputDialog::getItem(this, tr("Environment"),
+                                            tr("Would you like the environment to repeat with each bacth?"), options, 0, false, &ok);
+
+    if (!ok) {QMessageBox::warning(this,"Woah...","Looks like you cancelled. Batch won't run.");return;}
+
+    bool repeat_environment;
+    if (environment=="Yes")repeat_environment=true;
+    else repeat_environment=false;
+
+    do{
+        if(runs==0)FitnessLoggingFile.insert(FitnessLoggingFile.length()-4,QString("_run_%1").arg(runs));
+        else FitnessLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
+
+        if(runs==0)SpeciesLoggingFile.insert(SpeciesLoggingFile.length()-4,QString("_run_%1").arg(runs));
+        else SpeciesLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
+
+        //RJG - Sort environment so it repeats
+        if(repeat_environment)
+                {
+                CurrentEnvFile=environment_start;
+                int emode=0;
+                if (ui->actionOnce->isChecked()) emode=1;
+                if (ui->actionBounce->isChecked()) emode=3;
+                if (ui->actionLoop->isChecked()) emode=2;
+                TheSimManager->loadEnvironmentFromFile(emode);
+                }
+
+        //And run...
+        on_actionRun_for_triggered();
+        on_actionReset_triggered();
+        runs++;
+       }while(runs<batch_target_runs);
+
+    batch_running=false;
+    runs=0;
+}
+
 void MainWindow::on_actionRefresh_Rate_triggered()
 {
     bool ok;
@@ -312,7 +409,7 @@ void MainWindow::on_actionRefresh_Rate_triggered()
 
 void MainWindow::RunSetUp()
 {
-    //RJG - Sort out GUI
+    //RJG - Sort out GUI at start of run
     pauseflag=false;
     ui->actionStart_Sim->setEnabled(false);
     startButton->setEnabled(false);
@@ -320,10 +417,17 @@ void MainWindow::RunSetUp()
     runForButton->setEnabled(false);
     ui->actionPause_Sim->setEnabled(true);
     pauseButton->setEnabled(true);
-    ui->actionReseed->setEnabled(false);
+    //Reseed or reset
+    ui->actionReset->setEnabled(false);
     resetButton->setEnabled(false);
     ui->actionSettings->setEnabled(false);
     ui->actionEnvironment_Files->setEnabled(false);
+
+    reseedButton->setEnabled(false);
+    runForBatchButton->setEnabled(false);
+    settingsButton->setEnabled(false);
+
+
     timer.restart();
     NextRefresh=RefreshRate;
 }
@@ -334,12 +438,19 @@ void MainWindow::FinishRun()
     startButton->setEnabled(true);
     ui->actionRun_for->setEnabled(true);
     runForButton->setEnabled(true);
-    ui->actionReseed->setEnabled(true);
+    //Reseed or reset
+    ui->actionReset->setEnabled(true);
     resetButton->setEnabled(true);
     ui->actionPause_Sim->setEnabled(false);
     pauseButton->setEnabled(false);
     ui->actionSettings->setEnabled(true);
     ui->actionEnvironment_Files->setEnabled(true);
+
+
+    reseedButton->setEnabled(true);
+    runForBatchButton->setEnabled(true);
+    settingsButton->setEnabled(true);
+
     //----RJG disabled this to stop getting automatic logging at end of run, thus removing variability making analysis harder.
     //NextRefresh=0;
     //Report();
@@ -422,7 +533,7 @@ void MainWindow::Report()
     FRW->RefreshMe();
     FRW->WriteFiles();
 
-    LogSpecies();
+    WriteLog();
 
 
     //reset the breedattempts and breedfails arrays
@@ -865,6 +976,7 @@ void MainWindow::RefreshPopulations()
         bf_mult=1.0;
         sf_mult=1.0;
         */
+
         //work out average per generation
         float gens=generation-lastReport;
 
@@ -1035,7 +1147,7 @@ bool  MainWindow::on_actionEnvironment_Files_triggered()
     TheSimManager->loadEnvironmentFromFile(emode);
     RefreshEnvironment();
 
-    //---- RJG - Reseed for this new environment
+    //---- RJG - Reset for this new environment
     TheSimManager->SetupRun();
 
     return true;
@@ -1623,7 +1735,8 @@ void MainWindow::on_actionSet_Logging_File_triggered()
     QString filenamefitness(filename);
 
     // ----RJG: Add extension as Linux does not automatically
-    if(!filename.contains(".txt"))filename.append(".txt");
+    if(filename.contains(".txt"))filename.insert(filename.length()-4,"_species");
+    else filename.append("_species.txt");
 
     // ----RJG: Fitness logging
     if(filenamefitness.contains(".txt"))filenamefitness.insert(filenamefitness.length()-4,"_fitness");
@@ -1695,7 +1808,7 @@ void MainWindow::CalcSpecies()
 }
 
 
-void MainWindow::LogSpecies()
+void MainWindow::WriteLog()
 {
     if (speciesLoggingToFile==false && fitnessLoggingToFile==false) return;
 
@@ -1704,7 +1817,6 @@ void MainWindow::LogSpecies()
     {
         //log em!
         QFile outputfile(SpeciesLoggingFile);
-
 
             if (!(outputfile.exists()))
             {
@@ -1764,9 +1876,9 @@ void MainWindow::LogSpecies()
             else out<<"\n";
 
             //Different versions of output, for reuse as needed
-            //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
-            //out<<"Each generation lists, for each pixel: total fitness, number of critters,entries on breed list";            
-            out<<"Each line lists generation, then the grid's: total critter number, total fitness, total entries on breed list";
+                //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
+                 //out<<"Each line lists generation, then the grid's: total critter number, total fitness, total entries on breed list";
+            out<<"Each generation lists, for each pixel (top left to bottom right): total fitness, number of critters,entries on breed list\n\n";
 
             //----RJG - deal with Linux --> windows.
             if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
@@ -1779,11 +1891,12 @@ void MainWindow::LogSpecies()
         QTextStream out(&outputfile);
 
         // ----RJG: Breedattempts was no longer in use - but seems accurate, so can be co-opted for this.
+        out<<"Iteration: "<<generation;
 
-        out<<generation<<"\t";
-        //qDebug()<<"Log generation:"<<generation<<"\n";
+        if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+        else out<<"\n";
 
-        int gridNumberAlive=0, gridTotalFitness=0, gridBreedEntries=0;
+        //int gridNumberAlive=0, gridTotalFitness=0, gridBreedEntries=0;
 
         for (int i=0; i<gridX; i++)
             {
@@ -1803,19 +1916,33 @@ void MainWindow::LogSpecies()
                     // mean = (float)totalfit[i][j]/(float)maxused[i][j]+1;
 
                     //----RJG: Manually calculate total fitness for grid
-                    gridTotalFitness+=totalfit[i][j];
+                    //gridTotalFitness+=totalfit[i][j];
+
+                    int critters_alive=0;
 
                      //----RJG: Manually count number alive thanks to maxused issue
                     for  (int k=0; k<slotsPerSq; k++)if(critters[i][j][k].fitness){
                                     //numberalive++;
-                                    gridNumberAlive++;
+                                    //gridNumberAlive++;
+                                    critters_alive++;
                                     }
+
+                    //total fitness, number of critters,entries on breed list";
+                    out<<totalfit[i][j]<<" "<<critters_alive<<" "<<breedattempts[i][j];
+
                     //----RJG: Manually count breed attempts for grid
-                    gridBreedEntries+=breedattempts[i][j];
+                    //gridBreedEntries+=breedattempts[i][j];
+
+                    if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+                    else out<<"\n";
 
                     }
-
             }
+
+        if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+        else out<<"\n";
+        if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+        else out<<"\n";
 
         //---- RJG: If outputting averages to log.
         //float avFit=(float)gridTotalFitness/(float)gridNumberAlive;
@@ -1824,7 +1951,8 @@ void MainWindow::LogSpecies()
 
         //---- RJG: If outputting totals
         //critter - fitness - breeds
-        out<<gridNumberAlive<<"\t"<<gridTotalFitness<<"\t"<<gridBreedEntries<<"\n";
+        //out<<gridNumberAlive<<"\t"<<gridTotalFitness<<"\t"<<gridBreedEntries<<"\n";
+
         outputfile.close();
       }
 }
@@ -1835,6 +1963,7 @@ void MainWindow::setStatusBarText(QString text)
 
 void MainWindow::on_actionLoad_Random_Numbers_triggered()
 {
+    // ---- RJG - have added randoms to resources and into constructor, load on launch to ensure true randoms are loaded by default.
     //Select files
     QString file = QFileDialog::getOpenFileName(
                             this,

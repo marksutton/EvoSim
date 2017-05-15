@@ -1,4 +1,8 @@
 #include "simmanager.h"
+
+//RJG - so can access MainWin
+#include "mainwindow.h"
+
 #include <QDebug>
 #include <stdlib.h>
 #include <math.h>
@@ -40,7 +44,8 @@ bool speciesLoggingToFile=false;
 bool fitnessLoggingToFile=false;
 bool nonspatial=false;
 bool toroidal=false;
-
+bool reseedKnown=false;
+quint64 reseedGenome=0;
 
 int lastReport=0;
 
@@ -147,12 +152,12 @@ void SimManager::MakeLookups()
                 for (int m=0; m<16; m++) if ((n & tweakers[m])!=0) ++count;  // count the bits
                 bitcounts[n]=count;
         }
-        qsrand(RAND_SEED);
+
+        //RJG - seed random from time qsrand(RAND_SEED);
+        qsrand(QTime::currentTime().msec());
 
         //now set up xor masks for 3 variables - these are used for each of R G and B to work out fitness
-
         //Start - random bit pattern for each
-
         xormasks[0][0]=portable_rand() * portable_rand() *2;
         xormasks[0][1]=portable_rand() * portable_rand() *2;
         xormasks[0][2]=portable_rand() * portable_rand() *2;
@@ -163,7 +168,6 @@ void SimManager::MakeLookups()
                 xormasks[n][1] = xormasks[n-1][1] ^ tweakers[portable_rand()/(PORTABLE_RAND_MAX/32)];
                 xormasks[n][2] = xormasks[n-1][2] ^ tweakers[portable_rand()/(PORTABLE_RAND_MAX/32)];
         }
-
 
         //now the randoms - pre_rolled random numbers 0-255
         for (int n=0; n<65536; n++) randoms[n] = (quint8)((portable_rand() & 255));
@@ -374,7 +378,6 @@ quint8 SimManager::Rand8()
 
 void SimManager::SetupRun()
 {
-
     //Find middle square, try creatures till something lives, duplicate it [slots] times
     //RJG - called on initial program load and reseed, but also when run/run for are hit
 
@@ -393,10 +396,18 @@ void SimManager::SetupRun()
 
     int n=gridX/2, m=gridY/2;
 
-    while (critters[n][m][0].fitness<7) //try till one lives
-    {
-        critters[n][m][0].initialise((quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32(), environment[n][m], n,m,0);
-    }
+    //RJG - Either reseed with known genome if set
+    if(reseedKnown){
+                    critters[n][m][0].initialise(reseedGenome,environment[n][m],n,m,0);
+
+                    //RJG - I think this is a good thing to flag clearly.
+                    QString reseedGenomeString("Started simulation with known genome: ");
+                    for (int i=0; i<64; i++)if (tweakers64[i] & reseedGenome) reseedGenomeString.append("1"); else reseedGenomeString.append("0");
+                    MainWin->setStatusBarText(reseedGenomeString);
+                    }
+    //RJG - or try till one lives. If alive, fitness (in critter file) >0
+    else while (critters[n][m][0].fitness<1) critters[n][m][0].initialise((quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32(), environment[n][m], n,m,0);
+
 
     totalfit[n][m]=critters[n][m][0].fitness; //may have gone wrong from above
 
@@ -409,7 +420,7 @@ void SimManager::SetupRun()
         critters[n][m][c].initialise(gen, environment[n][m], n,m,c);
 
         if (critters[n][m][c].age>0)
-        {
+        {//qDebug()<<"here";
             critters[n][m][c].age/=((Rand8()/10)+1);
             critters[n][m][c].age +=10;
             AliveCount++;
@@ -458,10 +469,6 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             maxused[n][m]=maxalive;
             maxv=maxalive;
             (*KillCount_local)+=deathcount;
-            //if (n==50 && m==50 && deathcount)
-            //{
-            //    qDebug()<<"Before"<<oldtf<<"  After"<<totalfit[n][m]<<" Deaths:"<<deathcount;
-            //}
         }
 
         // RJG - reset counters for fitness logging to file

@@ -7,6 +7,7 @@
 #include <QMutex>
 #include <QFuture>
 #include <QStringList>
+
 // ---- RJG updated this from QtConcurrent Aug16 to compile on linux
 #include <QtConcurrentRun>
 
@@ -104,6 +105,8 @@ extern int settles[GRID_X][GRID_Y]; //for analysis purposes
 extern int settlefails[GRID_X][GRID_Y]; //for analysis purposes
 extern int maxused[GRID_X][GRID_Y]; //---- RJG number of slots used within each grid square
 extern int AliveCount;
+extern bool reseedKnown;//---- RJG reseed with known genomes
+extern quint64 reseedGenome;
 
 extern int NextEnvChange;
 extern int EnvChangeCounter;

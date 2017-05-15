@@ -751,7 +751,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>1045</width>
-     <height>25</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCommands">
@@ -764,11 +764,13 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>Commands</string>
     </property>
-    <addaction name="actionEnvironment_Files"/>
     <addaction name="actionLoad_Random_Numbers"/>
+    <addaction name="actionEnvironment_Files"/>
     <addaction name="actionStart_Sim"/>
     <addaction name="actionRun_for"/>
+    <addaction name="actionBatch"/>
     <addaction name="actionPause_Sim"/>
+    <addaction name="actionReset"/>
     <addaction name="actionReseed"/>
     <addaction name="actionGo_Slow"/>
     <addaction name="separator"/>
@@ -857,7 +859,7 @@ p, li { white-space: pre-wrap; }
    <addaction name="menuDocks"/>
    <addaction name="menuAnalysis_Tools"/>
   </widget>
-  <action name="actionReseed">
+  <action name="actionReset">
    <property name="text">
     <string>Reset</string>
    </property>
@@ -1365,6 +1367,19 @@ p, li { white-space: pre-wrap; }
    </property>
    <property name="text">
     <string>Don't update GUI</string>
+   </property>
+  </action>
+  <action name="actionReseed">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Reseed with known genome</string>
+   </property>
+  </action>
+  <action name="actionBatch">
+   <property name="text">
+    <string>Batch</string>
    </property>
   </action>
  </widget>
