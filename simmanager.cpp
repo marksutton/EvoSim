@@ -399,15 +399,26 @@ void SimManager::SetupRun()
     //RJG - Either reseed with known genome if set
     if(reseedKnown){
                     critters[n][m][0].initialise(reseedGenome,environment[n][m],n,m,0);
+                    if (critters[n][m][0].fitness==0)
+                        {
+                            // RJG - But sort out if it can't survive...
+                             QMessageBox::warning(0,"Oops","The genome you're trying to reseed with can't survive in this environment. There could be a number of reasons why this is. Please contact RJG or MDS to discuss.");
+                             reseedKnown=false;
+                             SetupRun();
+                             return;
+                        }
 
-                    //RJG - I think this is a good thing to flag clearly.
+                    //RJG - I think this is a good thing to flag in an obvious fashion.
                     QString reseedGenomeString("Started simulation with known genome: ");
                     for (int i=0; i<64; i++)if (tweakers64[i] & reseedGenome) reseedGenomeString.append("1"); else reseedGenomeString.append("0");
                     MainWin->setStatusBarText(reseedGenomeString);
                     }
-    //RJG - or try till one lives. If alive, fitness (in critter file) >0
-    else while (critters[n][m][0].fitness<1) critters[n][m][0].initialise((quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32(), environment[n][m], n,m,0);
 
+    //RJG - or try till one lives. If alive, fitness (in critter file) >0
+    else {
+            while (critters[n][m][0].fitness<1) critters[n][m][0].initialise((quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32(), environment[n][m], n,m,0);
+            MainWin->setStatusBarText("");
+         }
 
     totalfit[n][m]=critters[n][m][0].fitness; //may have gone wrong from above
 
@@ -420,7 +431,7 @@ void SimManager::SetupRun()
         critters[n][m][c].initialise(gen, environment[n][m], n,m,c);
 
         if (critters[n][m][c].age>0)
-        {//qDebug()<<"here";
+        {
             critters[n][m][c].age/=((Rand8()/10)+1);
             critters[n][m][c].age +=10;
             AliveCount++;
@@ -657,7 +668,6 @@ bool SimManager::iterate(int emode, bool interpolate)
     //apply all the kills to the global count
     for (int i=0; i<ProcessorCount; i++)
             AliveCount-=KillCounts[i];
-
 
     //Now handle spat settling
 
