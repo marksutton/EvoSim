@@ -28,6 +28,7 @@ public:
     QString Groups();
     int SpeciesIndex(quint64 genome);
     void Groups_With_History_Modal();
+    void Groups_2017();
 
     //New
     QList <quint64> genome_list;
@@ -38,6 +39,7 @@ public:
     quint64 type_genomes_per_group[256*256];
     int type_genome_groups[256*256];
     int next_type_genome;
+
 private:
     quint8 randtweak(quint8 oldval);
     //Old

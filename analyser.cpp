@@ -3,9 +3,12 @@
 #include "simmanager.h"
 #include <QDebug>
 #include <QHash>
+#include <QSet>
+#include <QHashIterator>
+#include <QTime>
 
 #include "mainwindow.h"
-#include <QSet>
+
 
 species::species()
 {
@@ -121,7 +124,262 @@ done:
 }
 
 
+void Analyser::Groups_2017()
+//this is new code that uses the genealogical tracking of species since last analysis
+//each species analyses separately to see if it has split
+//initially - use a brute force approach to do this
+//NO subsampling, so no lazarus taxa. If it's not there it cannot reappear
+{
+    //Go through all critters. Make QHash by species ID of pointers to QSets of genomes
 
+    QTime t;
+    t.start();
+
+    QHash<quint64,QSet<quint64> *> genomedata;
+
+    QHash<quint64,QHash<quint64, QList<quint32> *> *> slotswithgenome;
+        //for quicker write-back of changes
+        //first key is species id
+        //second key is gemome
+        //qlist is of quint32s which are packed x,y,z as x*65536+y*256+z
+
+    QHash<quint64,qint32> speciessizes;
+    for (int n=0; n<gridX; n++)
+    for (int m=0; m<gridY; m++)
+    {
+        if (totalfit[n][m]==0) continue;
+
+        for (int c=0; c<slotsPerSq; c++)
+        {
+            if (critters[n][m][c].age>0)
+            {
+
+                QSet<quint64> *speciesset;
+                speciesset=genomedata.value(critters[n][m][c].speciesid,(QSet<quint64> *)0);
+                QHash<quint64,QList<quint32>*> *genomeposlist;
+                if (!speciesset)
+                {
+                    //was not in hash - new species
+                    speciesset=new QSet<quint64>;
+                    genomedata.insert(critters[n][m][c].speciesid,speciesset);
+
+                    genomeposlist=new QHash<quint64,QList<quint32>*>;
+                    slotswithgenome.insert(critters[n][m][c].speciesid,genomeposlist);
+                }
+                else
+                {
+                    //use hash from old species
+                    genomeposlist=slotswithgenome.value(critters[n][m][c].speciesid);
+                }
+                int before=speciesset->count();
+                speciesset->insert(critters[n][m][c].genome);
+                QList<quint32> *poslist;
+                if (before!=speciesset->count())
+                {
+                    //needs a new item
+                    poslist=new QList<quint32>;
+                    genomeposlist->insert(critters[n][m][c].genome,poslist);
+                }
+                else
+                {
+                    poslist=genomeposlist->value(critters[n][m][c].genome);
+                }
+                poslist->append((quint32)(n*65536+m*256+c));
+                speciessizes[critters[n][m][c].speciesid]=speciessizes.value(critters[n][m][c].speciesid,0)+1;
+            }
+        }
+    }
+
+    //set up data structures for conversions needed
+
+    //Next. Go through each species and do all the pairwise comparisons
+    QHashIterator<quint64,QSet<quint64> *> ii(genomedata);
+
+    QList<species> newspecieslist;
+
+    while (ii.hasNext())
+    {
+        ii.next();
+        QSet<quint64> *speciesset=ii.value();
+        quint64 speciesid=ii.key();
+
+        //speciesset is now the genomeset for this species
+        //convert it to a static array of (a) genomes, (b) group codes
+
+        //we will then go over this, compare everything to first item.
+        //if close enough - tag with same group
+        //then compare everything to second item. Merge groups by changing numbers as we go
+        //Keep going until all pairwise comparisons complete.
+        //actual sep. species we have
+
+        quint64 genomes[MAX_GENOME_COUNT];
+        qint32 groupcodes[MAX_GENOME_COUNT];
+        int arraymax=0;
+        int nextgroup=0;
+
+        if (speciesset->count()>=MAX_GENOME_COUNT)
+        {
+            qDebug()<<"ERROR - static array too small";
+            exit(0);
+        }
+        foreach(quint64 g,*speciesset)
+        {
+            genomes[arraymax]=g;
+            groupcodes[arraymax++]=-1; //code for not assigned
+        }
+
+        //now do ALL the possible pairwise comparisons
+        for (int first=0; first<(arraymax-1); first++)
+        {
+            //if this isn't in a group - put it in a new one
+            if (groupcodes[first]==-1)
+            {
+                groupcodes[first]=nextgroup++; //set up first genome to be group 0
+            }
+
+            quint64 firstgenome=genomes[first];
+            qint32 firstgroupcode=groupcodes[first];
+            for (int second=first+1; second<arraymax; second++)
+            {
+                if (groupcodes[second]==firstgroupcode) continue; //don't even bother looking - already in same group
+
+                quint64 g1x = firstgenome ^ genomes[second]; //XOR the two to compare
+                quint32 g1xl = quint32(g1x & ((quint64)65536*(quint64)65536-(quint64)1)); //lower 32 bits
+                int t1 = bitcounts[g1xl/(quint32)65536] +  bitcounts[g1xl & (quint32)65535];
+                if (t1<=maxDiff)
+                {
+                    quint32 g1xu = quint32(g1x / ((quint64)65536*(quint64)65536)); //upper 32 bits
+                    t1+= bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
+                    if (t1<=maxDiff)
+                    {
+                        //IS within species range
+                        //if not in a group - place it in group of first
+                        if (groupcodes[second]==-1)
+                             groupcodes[second]=firstgroupcode;
+                        else
+                        {
+                            //It was in a group - but not same group as first or would have been caught by first line of loop
+                            //so merge this group - the whole way through the dataset
+                            qint32 groupcodetomerge=groupcodes[second];
+                            for (int i=0; i<arraymax; i++) if (groupcodes[i]==groupcodetomerge) groupcodes[i]=firstgroupcode;
+                        }
+                    }
+                }
+            }
+        }
+        //after this loop - everything should be in groups.
+
+
+        //find out how many groups we have!
+        QHash<qint32,qint32> groups;
+        for (int i=0; i<arraymax; i++)
+        {
+            qint32 v=groups.value(groupcodes[i],0);
+            groups[groupcodes[i]]=++v;
+        }
+
+        int maxcount=-1;
+        int maxcountkey=-1;
+        QHashIterator<qint32,qint32> jj(groups);
+
+        while (jj.hasNext())
+        {
+            jj.next();
+            if (jj.value()>maxcount)
+            {
+                maxcount=jj.value();
+                maxcountkey=jj.key();
+            }
+        }
+
+        //right. We now simply create species and write back all codes for the new ones
+
+        //QHash<quint64,quint64> genomeset;
+        jj.toFront();
+        while (jj.hasNext())
+        {
+            jj.next();
+            if (jj.key()!=maxcountkey)
+            {
+                qint32 groupcode=jj.key();
+
+                quint64 speciessize=0;
+                quint64 samplegenome;
+                for (int iii=0; iii<arraymax; iii++)
+                if (groupcodes[iii]==groupcode)
+                {
+                     QList<quint32> *updatelist=slotswithgenome.value(speciesid)->value(genomes[iii]);
+                     speciessize+=updatelist->count();
+                     foreach (quint32 v,*updatelist)
+                     {
+                         int x=v/65536;
+                         int ls=v%65536;
+                         int y=ls/256;
+                         int z=ls%256;
+                         critters[x][y][z].speciesid=nextspeciesid;
+                     }
+                     samplegenome=genomes[iii];
+                }
+
+                speciessizes[nextspeciesid]=speciessize;
+                speciessizes[speciesid]=speciessizes[speciesid]-speciessize;
+                species newsp;
+                newsp.parent=speciesid;
+                newsp.origintime=generation;
+                newsp.ID=nextspeciesid++;
+                newsp.type=samplegenome;
+                newspecieslist.append(newsp);
+            }
+            else
+            {
+                species newsp;
+                for (int j=0; j<oldspecieslist.count(); j++)
+                {
+                    if (oldspecieslist[j].ID==speciesid)
+                    {
+                        newsp = oldspecieslist[j];
+
+                    }
+                }
+                for (int iii=0; iii<arraymax; iii++)
+                if (groupcodes[iii]==maxcountkey)
+                {
+                       newsp.type=genomes[iii]; // a sample genome
+                       break;
+                }
+
+                newspecieslist.append(newsp);
+            }
+
+        }
+
+    }
+
+    //finally - we have data for which genomes for which old species are to be converted to new species. Loop over everything and write back.
+    //Also count members of species
+
+    for(int f=0; f<newspecieslist.count(); f++)
+    {
+        newspecieslist[f].size=(int)speciessizes[newspecieslist[f].ID];
+    }
+
+    qDebug()<<"Species done in "<<t.elapsed();
+
+    oldspecieslist=newspecieslist;
+
+    qDeleteAll(genomedata);
+    QHashIterator<quint64, QHash<quint64, QList<quint32>* > *> iter(slotswithgenome);
+
+    while (iter.hasNext())
+    {
+        iter.next();
+        qDeleteAll(iter.value()->begin(),iter.value()->end());
+        delete (iter.value());
+    }
+}
+
+
+//this was last functional version pre-2017
 void Analyser::Groups_With_History_Modal()
 //Implementation of new search mechanism based around using modal genome as core of species
 /*

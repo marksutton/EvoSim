@@ -1280,7 +1280,7 @@ QString AnalysisTools::CountPeaks(int r, int g, int b)
     for (quint64 genome=0; genome<max; genome++)
     {
         Critter c;
-        c.initialise((quint32)genome, env, 0,0,0);
+        c.initialise((quint32)genome, env, 0,0,0,0);
         fits[c.fitness]++;
 
         if (!(genome%6553600))

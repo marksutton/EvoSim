@@ -21,6 +21,8 @@
 #define RAND_SEED 10000
 #define PREROLLED_RANDS 60000
 
+#define MAX_GENOME_COUNT 100000 //hopefully big enough for all species
+
 //Settable ints
 extern int gridX;        //Can't be used to define arrays
 extern int gridY;
@@ -50,6 +52,8 @@ extern bool  asexual;
 
 //----MDS: toroidal geography and non-spatial settling
 extern bool nonspatial, toroidal;
+extern bool breedspecies, breeddiff;
+
 
 
 extern int maxDiff;
@@ -82,12 +86,13 @@ extern quint64 newgenomes[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
 extern quint32 newgenomeX[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
 extern quint32 newgenomeY[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
 extern int newgenomeDisp[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
+extern quint64 newgenomespecies[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
 extern int newgenomecount;
 extern int envchangerate;
 extern int yearsPerIteration;
-extern int speciesSamples;
-extern int speciesSensitivity;
-extern int timeSliceConnect;
+extern int speciesSamples; //no longer used - keep for backwards compat of files
+extern int speciesSensitivity; //no longer used - keep for backwards compat of files
+extern int timeSliceConnect; //no longer used - keep for backwards compat of files
 extern bool speciesLogging;
 extern bool speciesLoggingToFile;
 extern QString SpeciesLoggingFile;

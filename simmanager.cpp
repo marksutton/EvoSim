@@ -45,6 +45,7 @@ bool fitnessLoggingToFile=false;
 bool nonspatial=false;
 bool toroidal=false;
 bool reseedKnown=false;
+bool breedspecies=false, breeddiff=true;
 quint64 reseedGenome=0;
 
 int lastReport=0;
@@ -71,6 +72,7 @@ quint64 newgenomes[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
 quint32 newgenomeX[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
 quint32 newgenomeY[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
 int newgenomeDisp[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
+quint64 newgenomespecies[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
 int newgenomecount;
 quint8 randoms[65536];
 quint16 nextrandom=0;
@@ -394,11 +396,13 @@ void SimManager::SetupRun()
         settlefails[n][m]=0;
     }
 
+    nextspeciesid=1; //reset ID counter
+
     int n=gridX/2, m=gridY/2;
 
     //RJG - Either reseed with known genome if set
     if(reseedKnown){
-                    critters[n][m][0].initialise(reseedGenome,environment[n][m],n,m,0);
+                    critters[n][m][0].initialise(reseedGenome,environment[n][m],n,m,0,nextspeciesid);
                     if (critters[n][m][0].fitness==0)
                         {
                             // RJG - But sort out if it can't survive...
@@ -416,7 +420,7 @@ void SimManager::SetupRun()
 
     //RJG - or try till one lives. If alive, fitness (in critter file) >0
     else {
-            while (critters[n][m][0].fitness<1) critters[n][m][0].initialise((quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32(), environment[n][m], n,m,0);
+            while (critters[n][m][0].fitness<1) critters[n][m][0].initialise((quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32(), environment[n][m], n,m,0,nextspeciesid);
             MainWin->setStatusBarText("");
          }
 
@@ -428,7 +432,7 @@ void SimManager::SetupRun()
     //RJG - Fill square with successful critter
     for (int c=1; c<slotsPerSq; c++)
     {
-        critters[n][m][c].initialise(gen, environment[n][m], n,m,c);
+        critters[n][m][c].initialise(gen, environment[n][m], n,m,c,nextspeciesid);
 
         if (critters[n][m][c].age>0)
         {
@@ -444,6 +448,15 @@ void SimManager::SetupRun()
 
     EnvChangeCounter=envchangerate;
     EnvChangeForward=true;
+
+    oldspecieslist.clear();
+    species newsp;
+    newsp.ID=nextspeciesid;
+    newsp.origintime=0;
+    newsp.parent=0;
+    newsp.size=slotsPerSq;
+    oldspecieslist.append(newsp);
+    nextspeciesid++; //ready for first species after this
 }
 
 int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local, int *KillCount_local)
@@ -546,7 +559,7 @@ int SimManager::settle_parallel(int newgenomecounts_start, int newgenomecounts_e
                 {
                     //place it
 
-                    crit2->initialise(newgenomes[n],environment[xpos][ypos], xpos, ypos,m);
+                    crit2->initialise(newgenomes[n],environment[xpos][ypos], xpos, ypos,m,newgenomespecies[n]);
                     if (crit2->age)
                     {
                         int fit=crit2->fitness;
@@ -607,7 +620,7 @@ int SimManager::settle_parallel(int newgenomecounts_start, int newgenomecounts_e
                 {
                     //place it
 
-                    crit2->initialise(newgenomes[n],environment[xpos][ypos], xpos, ypos,m);
+                    crit2->initialise(newgenomes[n],environment[xpos][ypos], xpos, ypos,m,newgenomespecies[n]);
                     if (crit2->age)
                     {
                         int fit=crit2->fitness;

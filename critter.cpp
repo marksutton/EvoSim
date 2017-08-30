@@ -12,10 +12,11 @@ Critter::Critter()
     age=0;  //this is the tested flag for dead
     fitness=0;
     energy=0;
+    speciesid=5; //=not assigned
 
 }
 
-void Critter::initialise(quint64 gen, quint8 *env, int x, int y, int z)
+void Critter::initialise(quint64 gen, quint8 *env, int x, int y, int z, quint64 species)
 {
     //Restart a slot - set up properly
     genome=gen;
@@ -27,6 +28,7 @@ void Critter::initialise(quint64 gen, quint8 *env, int x, int y, int z)
     recalc_fitness(env);
 
     xpos=x; ypos=y; zpos=z;
+    speciesid=species;
 
     quint32 gen2 = genome>>32;
     ugenecombo = (gen2>>16) ^ (gen2 & 65535); //for breed testing - work out in advance for speed
@@ -109,19 +111,61 @@ int Critter::breed_with_parallel(int xpos, int ypos, Critter *partner, int *newg
 {
     //do some breeding!
 
+    bool breedsuccess1=true; //for species restricted breeding
+    bool breedsuccess2=true; //for difference breeding
+    if (breedspecies)
+    {
+        if (partner->speciesid!=speciesid) breedsuccess1=false;
+    }
 
-    int t1=0;
-    // - determine success.. use genetic similarity
-    quint64 cg1x = genome ^ partner->genome; //XOR the two to compare
+    if (breeddiff)
+    {
+        int t1=0;
+        // - determine success.. use genetic similarity
+        quint64 cg1x = genome ^ partner->genome; //XOR the two to compare
 
-   //Coding half
-    quint32 g1xl = quint32(cg1x & ((quint64)65536*(quint64)65536-(quint64)1)); //lower 32 bits
-    t1 = bitcounts[g1xl/(quint32)65536] +  bitcounts[g1xl & (quint32)65535];
+       //Coding half
+        quint32 g1xl = quint32(cg1x & ((quint64)65536*(quint64)65536-(quint64)1)); //lower 32 bits
+        t1 = bitcounts[g1xl/(quint32)65536] +  bitcounts[g1xl & (quint32)65535];
 
-    //non-Coding half
-    quint32 g1xu = quint32(cg1x / ((quint64)65536*(quint64)65536)); //upper 32 bits
-    t1 += bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
-    if (t1>maxDiff)
+        //non-Coding half
+        quint32 g1xu = quint32(cg1x / ((quint64)65536*(quint64)65536)); //upper 32 bits
+        t1 += bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
+        if (t1>maxDiff)
+        {
+            breedsuccess2=false;
+        }
+     }
+
+     if (breedsuccess1 && breedsuccess2)
+    {
+         //work out new genome
+
+         quint64 g1x = genex[nextgenex++]; if (nextgenex >= 65536) nextgenex = 0;
+         quint64 g2x = ~g1x; // inverse
+
+         g2x &= genome;
+         g1x &= partner->genome;  // cross bred genome
+         g2x |= g1x;
+
+         //this is technically not threadsafe, but it doesn't matter - any value for nextrand is fine
+         if ((TheSimManager->Rand8())<mutate)
+         {
+                int w=TheSimManager->Rand8();
+                w &=63;
+                g2x ^= tweakers64[w];
+         }
+
+         //store it all
+
+         newgenomes[*newgenomecount_local]=g2x;
+         newgenomeX[*newgenomecount_local]=xpos;
+         newgenomeY[*newgenomecount_local]=ypos;
+         newgenomespecies[*newgenomecount_local]=speciesid;
+         newgenomeDisp[(*newgenomecount_local)++]=dispersal; //how far to disperse - low is actually far (it's a divider - max is 240, <10% are >30
+         return 0;
+    }
+    else
     {
         //breeders get their energy back - this is an 'abort'
         //---- RJG: Note that this refund is different to and exclusive from that in Simmanager, which refunds if no partner found.
@@ -130,29 +174,4 @@ int Critter::breed_with_parallel(int xpos, int ypos, Critter *partner, int *newg
         //partner->energy+=breedCost;
         return 1;
     }
-
-     //work out new genome
-
-     quint64 g1x = genex[nextgenex++]; if (nextgenex >= 65536) nextgenex = 0;
-     quint64 g2x = ~g1x; // inverse
-
-     g2x &= genome;
-     g1x &= partner->genome;  // cross bred genome
-     g2x |= g1x;
-
-     //this is technically not threadsafe, but it doesn't matter - any value for nextrand is fine
-     if ((TheSimManager->Rand8())<mutate)
-     {
-            int w=TheSimManager->Rand8();
-            w &=63;
-            g2x ^= tweakers64[w];
-     }
-
-     //store it all
-
-     newgenomes[*newgenomecount_local]=g2x;
-     newgenomeX[*newgenomecount_local]=xpos;
-     newgenomeY[*newgenomecount_local]=ypos;
-     newgenomeDisp[(*newgenomecount_local)++]=dispersal; //how far to disperse - low is actually far (it's a divider - max is 240, <10% are >30
-     return 0;
 }

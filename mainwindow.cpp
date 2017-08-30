@@ -800,22 +800,17 @@ void MainWindow::RefreshPopulations()
             if (totalfit[n][m]==0) pop_image_colour->setPixel(n,m,0); //black if square is empty
             else
             {
-                quint64 thisgenome=0;
+                quint64 thisspecies=0;
                 for (int c=0; c<slotsPerSq; c++)
                 {
                     if (critters[n][m][c].age>0)
                     {
-                        thisgenome=critters[n][m][c].genome;
+                        thisspecies=critters[n][m][c].speciesid;
                         break;
                     }
                 }
 
-                int species = a->SpeciesIndex(thisgenome);
-
-                if (species==-1)
-                    pop_image_colour->setPixel(n,m,qRgb(255,255,255));
-                else
-                    pop_image_colour->setPixel(n,m,species_colours[species % 65536]);
+                pop_image_colour->setPixel(n,m,species_colours[thisspecies % 65536]);
             }
         }
         pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
@@ -1371,6 +1366,8 @@ void MainWindow::on_actionSave_triggered()
 
     out<<recalcFitness; //extra new parameter
 
+    out<<breeddiff;
+    out<<breedspecies;
     outfile.close();
 }
 
@@ -1626,6 +1623,11 @@ void MainWindow::on_actionLoad_triggered()
     if (!(in.atEnd()))
         in>>recalcFitness;
 
+    if (!(in.atEnd()))
+        in>>breeddiff;
+    if (!(in.atEnd()))
+        in>>breedspecies;
+
     infile.close();
     NextRefresh=0;
     ResizeImageObjects();
@@ -1782,6 +1784,11 @@ void MainWindow::CalcSpecies()
         delete a;  //replace old analyser object with new
         a=new Analyser;
 
+        //New species analyser
+        a->Groups_2017();
+
+        //OLDER CODE
+        /*
         if (ui->actionSpecies->isChecked() || speciesLogging) //do species calcs here even if not showing species - unless turned off in settings
         {
             //set up species ID
@@ -1804,6 +1811,7 @@ void MainWindow::CalcSpecies()
             a->Groups_With_History_Modal();
             lastSpeciesCalc=generation;
         }
+        */
 
     }
 }
@@ -1841,22 +1849,22 @@ void MainWindow::WriteLog()
         //Do stuff
         }
 
-            for (int i=0; i<oldspecieslist.count(); i++)
-            {
-                out<<generation;
-                out<<","<<(oldspecieslist[i].ID);
-                out<<","<<oldspecieslist[i].origintime;
-                out<<","<<oldspecieslist[i].parent;
-                out<<","<<oldspecieslist[i].size;
-                //out<<","<<oldspecieslist[i].type;
-                //---- RJG - output binary genome if needed
-                out<<",";
-                for (int j=0; j<63; j++)
-                if (tweakers64[63-j] & oldspecieslist[i].type) out<<"1"; else out<<"0";
-                if (tweakers64[0] & oldspecieslist[i].type) out<<"1"; else out<<"0";
-                if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
-                else out<<"\n";
-            }
+        for (int i=0; i<oldspecieslist.count(); i++)
+        {
+            out<<generation;
+            out<<","<<(oldspecieslist[i].ID);
+            out<<","<<oldspecieslist[i].origintime;
+            out<<","<<oldspecieslist[i].parent;
+            out<<","<<oldspecieslist[i].size;
+            //out<<","<<oldspecieslist[i].type;
+            //---- RJG - output binary genome if needed
+            out<<",";
+            for (int j=0; j<63; j++)
+            if (tweakers64[63-j] & oldspecieslist[i].type) out<<"1"; else out<<"0";
+            if (tweakers64[0] & oldspecieslist[i].type) out<<"1"; else out<<"0";
+            if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
+            else out<<"\n";
+        }
 
         outputfile.close();
       }

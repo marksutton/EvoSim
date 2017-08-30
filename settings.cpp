@@ -25,14 +25,13 @@ SettingsImpl::SettingsImpl( QWidget * parent)
         SpinBoxFitnessTarget->setValue(target);
         SpinBoxEnvChangeRate->setValue(envchangerate);
         SpinBoxYearsPerIteration->setValue(yearsPerIteration);
-        SpinBoxSpeciesConnect->setValue(speciesSensitivity);
-        SpinBoxSpeciesSamples->setValue(speciesSamples);
-        SpinBoxTimeSliceConnect->setValue(timeSliceConnect);
         CheckBoxRecalcFitness->setChecked(recalcFitness);
         CheckBoxAsexual->setChecked(asexual);
         CheckBoxToroidal->setChecked(toroidal);
         CheckBoxNonSpatial->setChecked(nonspatial);
-        RedoImages=false;        
+        CheckBoxBreedWithinSpecies->setChecked(breedspecies);
+        CheckBoxBreedWithDifference->setChecked(breeddiff);
+        RedoImages=false;
 }
 
 void SettingsImpl::on_buttonBox_accepted()
@@ -53,13 +52,13 @@ void SettingsImpl::on_buttonBox_accepted()
         target= SpinBoxFitnessTarget->value();
         EnvChangeCounter=envchangerate=SpinBoxEnvChangeRate->value();
         yearsPerIteration=SpinBoxYearsPerIteration->value();
-        speciesSamples=SpinBoxSpeciesSamples->value();
-        speciesSensitivity=SpinBoxSpeciesConnect->value();
-        timeSliceConnect=SpinBoxTimeSliceConnect->value();
         recalcFitness=CheckBoxRecalcFitness->isChecked();
         asexual=CheckBoxAsexual->isChecked();
         toroidal=CheckBoxToroidal->isChecked();
         nonspatial=CheckBoxNonSpatial->isChecked();
+        breeddiff=CheckBoxBreedWithDifference->isChecked();
+        breedspecies=CheckBoxBreedWithinSpecies->isChecked();
+
 }
 
 
