@@ -18,7 +18,9 @@ SOURCES += main.cpp \
     fossrecwidget.cpp \
     resizecatcher.cpp \
     analysistools.cpp \
-    reseed.cpp
+    reseed.cpp \
+    logspecies.cpp \
+    logspeciesdataitem.cpp
 HEADERS += mainwindow.h \
     simmanager.h \
     critter.h \
@@ -33,7 +35,9 @@ HEADERS += mainwindow.h \
     resizecatcher.h \
     analysistools.h \
     version.h \
-    reseed.h
+    reseed.h \
+    logspecies.h \
+    logspeciesdataitem.h
 FORMS += mainwindow.ui \
     dialog.ui \
     fossrecwidget.ui \

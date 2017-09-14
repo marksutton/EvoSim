@@ -33,6 +33,22 @@ AnalysisTools::AnalysisTools()
     return;
 }
 
+bool AnalysisTools::doesthiscodeneedafile(int code)
+{
+    switch (code)
+    {
+        case ANALYSIS_TOOL_CODE_GENERATE_TREE:
+        case ANALYSIS_TOOL_CODE_RATES_OF_CHANGE:
+        case ANALYSIS_TOOL_CODE_STASIS:
+        case ANALYSIS_TOOL_CODE_EXTINCT_ORIGIN:
+        return true;
+
+        default:
+        return false;
+    }
+    return false;
+}
+
 QString AnalysisTools::SpeciesRatesOfChange(QString filename)
 {
     //Modified version of tree maker
@@ -1311,4 +1327,55 @@ QString AnalysisTools::CountPeaks(int r, int g, int b)
 
 
     return s;
+}
+
+QString AnalysisTools::MakeNewick(LogSpecies *root, quint64 min_speciessize, bool allowexclude)
+{
+    ids=0;
+    minspeciessize=min_speciessize;
+    allowexcludewithissue=allowexclude;
+
+    if (root)
+    return root->newickstring(0,0,true);
+    else
+        return "ERROR - NO PHYLOGENY DATA";
+}
+
+QString AnalysisTools::DumpData(LogSpecies *root, quint64 min_speciessize, bool allowexclude)
+{
+    ids=0;
+
+
+    quint64 ID;
+    LogSpecies *parent;
+    quint64 time_of_first_appearance;
+    quint64 time_of_last_appearance;
+    QList<LogSpeciesDataItem *>data_items;
+    QList<LogSpecies *>children;
+    quint32 maxsize;
+
+
+    quint64 generation;
+    quint64 sample_genome;
+    quint32 size; //number of critters
+    quint32 genomic_diversity; //number of genomes
+    quint16 cells_occupied; //number of cells found in - 1 (as real range is 1-65536, to fit in 0-65535)
+    quint8 geographical_range; //max distance between outliers
+    quint8 centroid_range_x; //mean of x positions
+    quint8 centroid_range_y; //mean of y positions
+    quint16 mean_fitness; //mean of all critter fitnesses, stored as x1000
+    quint8 min_env[3]; //min red, green, blue found in
+    quint8 max_env[3]; //max red, green, blue found in
+    quint8 mean_env[3]; //mean environmental colour found in
+
+
+    minspeciessize=min_speciessize;
+    allowexcludewithissue=allowexclude;
+    if (root)
+    return "ID,ParentID,generation,size,sample_genome,sample_genome_binary,diversity,cells_occupied,geog_range,centroid_x,centroid_y,mean_fit,min_env_red,min_env_green,min_env_blue,max_env_red,max_env_green,max_env_blue,mean_env_red,mean_env_green,mean_env_blue\n"+
+            root->dump_data(0,0,true);
+    else
+        return "ERROR - NO PHYLOGENY DATA";
+
+    //recurse over species,
 }

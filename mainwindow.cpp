@@ -101,6 +101,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->fossRecDockContents->setLayout(frwLayout);
     ui->reportViewerDock->hide();
 
+    speciesgroup = new QActionGroup(this);
+    speciesgroup->addAction(ui->actionBasic);
+    speciesgroup->addAction(ui->actionOff);
+    speciesgroup->addAction(ui->actionPhylogeny);
+    speciesgroup->addAction(ui->actionPhylogeny_metrics);
+    QObject::connect(speciesgroup, SIGNAL(triggered(QAction *)), this, SLOT(species_mode_changed(QAction *)));
+
+
     viewgroup = new QActionGroup(this);
     // These actions were created via qt designer
     viewgroup->addAction(ui->actionPopulation_Count);
@@ -231,13 +239,13 @@ void MainWindow::on_actionReset_triggered()
     else
        {
         //---- RJG: Risk this doesn't work quite as expected - actionsetlogging and logging to file toggle some options such as tracking setenabled.
-        speciesLoggingToFile=false;
+        //speciesLoggingToFile=false;
         fitnessLoggingToFile=false;
         ui->actionLogging->setChecked(false);
         ui->actionLogging->setEnabled(false);
         ui->actionFitness_logging_to_File->setChecked(false);
         ui->actionFitness_logging_to_File->setEnabled(false);
-        ui->actionTracking->setEnabled(true);
+        //ui->actionTracking->setEnabled(true);
         }
     }
 
@@ -1040,6 +1048,51 @@ void MainWindow::view_mode_changed(QAction *temp2)
     RefreshPopulations();
 }
 
+void MainWindow::species_mode_changed(QAction *temp2)
+{
+    int new_species_mode=SPECIES_MODE_NONE;
+    if (ui->actionPhylogeny->isChecked()) new_species_mode=SPECIES_MODE_PHYLOGENY;
+    if (ui->actionPhylogeny_metrics->isChecked()) new_species_mode=SPECIES_MODE_PHYLOGENY_AND_METRICS;
+    if (ui->actionBasic->isChecked()) new_species_mode=SPECIES_MODE_BASIC;
+
+    //some changes not allowed
+    if (generation!=0)
+    {
+        //already running. Can switch tracking off - but not on
+        //detailed tracking can be switched on/off at any point
+        if (species_mode==SPECIES_MODE_NONE)
+        {
+            if (new_species_mode!=SPECIES_MODE_NONE)
+            {
+                QMessageBox::warning(this,"Error","Turning on species logging is not allowed mid-simulation");
+                ui->actionOff->setChecked(true);
+                return;
+            }
+        }
+
+        if (species_mode==SPECIES_MODE_BASIC)
+        {
+            if (new_species_mode==SPECIES_MODE_PHYLOGENY || new_species_mode==SPECIES_MODE_PHYLOGENY_AND_METRICS)
+            {
+                QMessageBox::warning(this,"Error","Turning on phylogeny tracking is not allowed mid-simulation");
+                ui->actionBasic->setChecked(true);
+                return;
+            }
+        }
+        //all other combinations are OK - hopefully
+    }
+
+    //uncheck species visualisation if needbe
+    if (ui->actionOff->isChecked())
+    {
+        if (ui->actionSpecies->isChecked()) ui->actionGenome_as_colour->setChecked(true);
+        ui->actionSpecies->setEnabled(false);
+    }
+    else ui->actionSpecies->setEnabled(true);
+
+    species_mode=new_species_mode;
+}
+
 void MainWindow::report_mode_changed(QAction *temp2)
 {
     RefreshReport();
@@ -1121,7 +1174,7 @@ void MainWindow::on_actionMisc_triggered()
 
 void MainWindow::on_actionCount_Peaks_triggered()
 {
-    HandleAnalysisTool(4);
+    HandleAnalysisTool(ANALYSIS_TOOL_CODE_COUNT_PEAKS);
 }
 
 bool  MainWindow::on_actionEnvironment_Files_triggered()
@@ -1326,8 +1379,8 @@ void MainWindow::on_actionSave_triggered()
     out<<speciesSamples;
     out<<speciesSensitivity;
     out<<timeSliceConnect;
-    out<<speciesLogging;
-    out<<speciesLoggingToFile;
+    out<<speciesLogging; //no longer used - compatibility only
+    out<<speciesLoggingToFile; //no longer used - compatibility only
     out<<SpeciesLoggingFile;
 
 
@@ -1368,6 +1421,9 @@ void MainWindow::on_actionSave_triggered()
 
     out<<breeddiff;
     out<<breedspecies;
+
+    out<<species_mode;
+
     outfile.close();
 }
 
@@ -1560,12 +1616,12 @@ void MainWindow::on_actionLoad_triggered()
     if (!(in.atEnd())) in>>speciesSamples;
     if (!(in.atEnd())) in>>speciesSensitivity;
     if (!(in.atEnd())) in>>timeSliceConnect;
-    if (!(in.atEnd())) in>>speciesLogging;
-    if (!(in.atEnd())) in>>speciesLoggingToFile;
+    if (!(in.atEnd())) in>>speciesLogging; //no longer used - keep for file compatibility
+    if (!(in.atEnd())) in>>speciesLoggingToFile; //no longer used - keep for file compatibility
     if (!(in.atEnd())) in>>SpeciesLoggingFile;
 
-    if (speciesLogging) ui->actionTracking->setChecked(true); else ui->actionTracking->setChecked(false);
-    if (speciesLoggingToFile)  {ui->actionLogging->setChecked(true); ui->actionTracking->setEnabled(false);}  else {ui->actionLogging->setChecked(false); ui->actionTracking->setEnabled(true);}
+    //if (speciesLogging) ui->actionTracking->setChecked(true); else ui->actionTracking->setChecked(false);
+    //if (speciesLoggingToFile)  {ui->actionLogging->setChecked(true); ui->actionTracking->setEnabled(false);}  else {ui->actionLogging->setChecked(false); ui->actionTracking->setEnabled(true);}
     if (SpeciesLoggingFile!="") ui->actionLogging->setEnabled(true); else ui->actionLogging->setEnabled(false);
 
 
@@ -1627,6 +1683,16 @@ void MainWindow::on_actionLoad_triggered()
         in>>breeddiff;
     if (!(in.atEnd()))
         in>>breedspecies;
+
+    species_mode=SPECIES_MODE_BASIC;
+    if (!(in.atEnd()))
+        in>>species_mode;
+    if (rmode==0) ui->actionOff->setChecked(true);
+    if (rmode==1) ui->actionSorted_Summary->setChecked(true);
+    if (rmode==2) ui->actionGroups->setChecked(true);
+    if (rmode==3) ui->actionGroups2->setChecked(true);
+    if (rmode==4) ui->actionSimple_List->setChecked(true);
+
 
     infile.close();
     NextRefresh=0;
@@ -1711,19 +1777,6 @@ void MainWindow::on_actionShow_positions_triggered()
     RefreshEnvironment();
 }
 
-void MainWindow::on_actionTracking_triggered()
-{
-    speciesLogging=ui->actionTracking->isChecked();
-}
-
-void MainWindow::on_actionLogging_triggered()
-{
-    speciesLoggingToFile=ui->actionLogging->isChecked();
-    if (speciesLoggingToFile)
-       { ui->actionTracking->setChecked(true); ui->actionTracking->setEnabled(false); speciesLogging=true; }
-    else ui->actionTracking->setEnabled(true);
-}
-
 void MainWindow::on_actionFitness_logging_to_File_triggered()
 {
     fitnessLoggingToFile=ui->actionFitness_logging_to_File->isChecked();
@@ -1758,27 +1811,28 @@ void MainWindow::on_actionSet_Logging_File_triggered()
 
 void MainWindow::on_actionGenerate_Tree_from_Log_File_triggered()
 {
-    HandleAnalysisTool(0);
+    HandleAnalysisTool(ANALYSIS_TOOL_CODE_GENERATE_TREE);
 }
 
 
 void MainWindow::on_actionRates_of_Change_triggered()
 {
-    HandleAnalysisTool(1);
+    HandleAnalysisTool(ANALYSIS_TOOL_CODE_RATES_OF_CHANGE);
 }
 
 void MainWindow::on_actionStasis_triggered()
 {
-    HandleAnalysisTool(3);
+    HandleAnalysisTool(ANALYSIS_TOOL_CODE_STASIS);
 }
 
 void MainWindow::on_actionExtinction_and_Origination_Data_triggered()
 {
-    HandleAnalysisTool(2);
+    HandleAnalysisTool(ANALYSIS_TOOL_CODE_EXTINCT_ORIGIN);
 }
 
 void MainWindow::CalcSpecies()
 {
+    if (species_mode==SPECIES_MODE_NONE) return; //do nothing!
     if (generation!=lastSpeciesCalc)
     {
         delete a;  //replace old analyser object with new
@@ -2014,15 +2068,14 @@ void MainWindow::on_SelectOutputFile_pressed()
 
 void MainWindow::HandleAnalysisTool(int code)
 {
+    //Tidied up a bit - MDS 14/9/2017
     //do filenames
     //Is there a valid input file?
 
     AnalysisTools a;
     QString OutputString;
 
-    if (code==4)
-        OutputString = a.CountPeaks(ui->PeaksRed->value(),ui->PeaksGreen->value(),ui->PeaksBlue->value());
-    else
+    if (a.doesthiscodeneedafile(code))
     {
         QFile f(ui->LogFile->text());
         if (!(f.exists()))
@@ -2030,11 +2083,43 @@ void MainWindow::HandleAnalysisTool(int code)
             QMessageBox::warning(this,"Error","No valid input file set");
             return;
         }
+    }
 
-        if (code==0)  OutputString = a.GenerateTree(ui->LogFile->text());
-        if (code==1)  OutputString = a.SpeciesRatesOfChange(ui->LogFile->text());
-        if (code==2)  OutputString = a.ExtinctOrigin(ui->LogFile->text());
-        if (code==3)  OutputString = a.Stasis(ui->LogFile->text(),ui->StasisBins->value(),((float)ui->StasisPercentile->value())/100.0,ui->StasisQualify->value());
+    switch (code)
+    {
+        case ANALYSIS_TOOL_CODE_GENERATE_TREE:
+            OutputString = a.GenerateTree(ui->LogFile->text()); //deprecated - log file generator now removed
+            break;
+
+        case ANALYSIS_TOOL_CODE_RATES_OF_CHANGE:
+            OutputString = a.SpeciesRatesOfChange(ui->LogFile->text());
+            break;
+
+        case ANALYSIS_TOOL_CODE_EXTINCT_ORIGIN:
+            OutputString = a.ExtinctOrigin(ui->LogFile->text());
+            break;
+
+        case ANALYSIS_TOOL_CODE_STASIS:
+            OutputString = a.Stasis(ui->LogFile->text(),ui->StasisBins->value()
+                                ,((float)ui->StasisPercentile->value())/100.0,ui->StasisQualify->value());
+            break;
+
+        case ANALYSIS_TOOL_CODE_COUNT_PEAKS:
+            OutputString = a.CountPeaks(ui->PeaksRed->value(),ui->PeaksGreen->value(),ui->PeaksBlue->value());
+            break;
+
+        case ANALYSIS_TOOL_CODE_MAKE_NEWICK:
+            OutputString = a.MakeNewick(rootspecies, ui->minSpeciesSize->value(), ui->chkExcludeWithChildren->isChecked());
+            break;
+
+        case ANALYSIS_TOOL_CODE_DUMP_DATA:
+            OutputString = a.DumpData(rootspecies, ui->minSpeciesSize->value(), ui->chkExcludeWithChildren->isChecked());
+            break;
+
+        default:
+            QMessageBox::warning(this,"Error","No handler for analysis tool");
+            return;
+
     }
 
     //write result to screen
@@ -2055,4 +2140,14 @@ void MainWindow::HandleAnalysisTool(int code)
         out<<OutputString;
         o.close();
     }
+}
+
+void MainWindow::on_actionGenerate_NWK_tree_file_triggered()
+{
+    HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
+}
+
+void MainWindow::on_actionSpecies_sizes_triggered()
+{
+    HandleAnalysisTool(ANALYSIS_TOOL_CODE_DUMP_DATA);
 }

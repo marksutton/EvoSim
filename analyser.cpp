@@ -18,6 +18,7 @@ species::species()
     parent=0;
     size=-1;
     origintime=-1;
+    logspeciesstructure=(LogSpecies*)0;
 }
 
 Analyser::Analyser()
@@ -203,6 +204,7 @@ void Analyser::Groups_2017()
         }
     }
     //Done - all data retrieved and ready to process
+    //qDebug()<<"... data collected in "<<t.elapsed(); //print out time taken
 
     //Next. Go through each species and do all the pairwise comparisons. This is 2 above.
     QHashIterator<quint64,QSet<quint64> *> ii(genomedata); //iterator to loop over all species and their genome sets
@@ -215,11 +217,25 @@ void Analyser::Groups_2017()
         ii.next();
         QSet<quint64> *speciesset=ii.value(); // Get the set of genomes
         quint64 speciesid=ii.key();  //get the speciesID
+        LogSpecies *thislogspecies;
 
-        //for speed when working, we convert the set into a static array of genomes - with a parallel
+        if (species_mode>=SPECIES_MODE_PHYLOGENY)
+        {
+            thislogspecies= LogSpeciesById.value(speciesid,(LogSpecies*)0);
+            if (!thislogspecies)
+            {
+                qDebug()<<"Internal error - species not found in log hash";
+                exit(0);
+            }
+        }
+
+        //for speed when working, we convert the set into a static array of genomes
         //static array of group codes
         quint64 genomes[MAX_GENOME_COUNT];
         qint32 groupcodes[MAX_GENOME_COUNT];
+
+        qint32 grouplookup[MAX_GENOME_COUNT]; //which group is this merged with? We no longer actually change group values - far too slow
+
         int arraymax=0; //size used of static array
         int nextgroup=0; //group numbers don't leave this function. Start at 0 for each species.
 
@@ -232,25 +248,39 @@ void Analyser::Groups_2017()
         foreach(quint64 g,*speciesset) //copy genomes into static array and set groupcodes to 'not assigned' (-1)
         {
             genomes[arraymax]=g;
-            groupcodes[arraymax++]=-1; //code for not assigned
+            groupcodes[arraymax]=-1; //code for not assigned
+            grouplookup[arraymax]=arraymax; //not merged - just itself
+            arraymax++;
         }
         //arraymax is not numbe of items in the static array
 
+
+        //qDebug()<<"Starting PWC for "<<ii.key()<<"in "<<t.elapsed(); //print out time taken
         //now do ALL the possible pairwise comparisons
+        //THIS is the slow bit, when there are not many species - not really any faster with index group merging
+
         for (int first=0; first<(arraymax-1); first++)
         {
             //if this isn't in a group - put it in a new one
             if (groupcodes[first]==-1)
-                groupcodes[first]=nextgroup++; //so fist genome will be in group 0
+                groupcodes[first]=nextgroup++; //so first genome will be in group 0
 
             quint64 firstgenome=genomes[first]; //get genome of first for speed - many comparisons to come
-            qint32 firstgroupcode=groupcodes[first]; //ditto group
+            qint32 firstgroupcode=groupcodes[first];
+            while (grouplookup[firstgroupcode]!=firstgroupcode) firstgroupcode=grouplookup[firstgroupcode];
+            groupcodes[first]=firstgroupcode;
 
             for (int second=first+1; second<arraymax; second++) //for second (i.e. compare to) loop through all rest of static array
             {
-                if (groupcodes[second]==firstgroupcode) continue;
-                 //Already in same group - so no work to do, onto next iteration
+                int gcs=groupcodes[second];
+                if (gcs!=-1)
+                {
+                    while (grouplookup[gcs]!=gcs) gcs=grouplookup[gcs];
+                    grouplookup[groupcodes[second]]=gcs; //for next time!
 
+                    if (gcs==firstgroupcode) continue;
+                    //Already in same group - so no work to do, onto next iteration
+                }
                 //do comparison using standard (for EVOSIM) xor/bitcount code. By nd, t1 is bit-distance.
                 //maxDiff is set by user in the settings dialog
                 quint64 g1x = firstgenome ^ genomes[second]; //XOR the two to compare
@@ -264,22 +294,40 @@ void Analyser::Groups_2017()
                     {
                         //Pair IS within tolerances - so second should be in the same group as first
                         //if second not in a group - place it in group of first
-                        if (groupcodes[second]==-1)
+                        if (gcs==-1)
                              groupcodes[second]=firstgroupcode;
                         else
                         {
                             //It was in a group - but not same group as first or
                             //would have been caught by first line of loop
-                            //so merge this group into group of first - the whole way through the dataset
+                            //so merge this group into group of first
+
+                            grouplookup[gcs]=firstgroupcode;
+                            //old slow loop approach
+                            /*
                             qint32 groupcodetomerge=groupcodes[second];
+                            countloop++;
                             for (int i=0; i<arraymax; i++) if (groupcodes[i]==groupcodetomerge) groupcodes[i]=firstgroupcode;
+                            */
                         }
                     }
                 }
             }
         }
+        int maxcode=-1;
+        for (int i=0; i<arraymax; i++) //fix all groups
+        {
+            int gci=groupcodes[i];
+            while (grouplookup[gci]!=gci) gci=grouplookup[gci];
+            groupcodes[i]=gci;
+            if (gci>maxcode) maxcode=gci;
+        }
+
+        //if (groupcodes[i]==groupcodetomerge) groupcodes[i]=firstgroupcode;
         //after this loop - everything should be in groups - if there is more than one we need to split the species
         //one group will be old species, others will become new species
+        //qDebug()<<"Done PWC for "<<ii.key()<<" in "<<t.elapsed();
+
 
         //first - find out how many groups we have and how many genomes each has
         QHash<qint32,qint32> groups; //key is group code, value is number of genomes in that group
@@ -307,6 +355,10 @@ void Analyser::Groups_2017()
 
         //We now go through these groups and sort out species data, also writing back new species IDs to
         //critters cells for any new species
+        QVector<LogSpecies *>logspeciespointers;
+        logspeciespointers.resize(maxcode+1);
+
+       // qDebug()<<"WB";
        jj.toFront(); //reuse same iterator for groups
         while (jj.hasNext())
         {
@@ -317,6 +369,8 @@ void Analyser::Groups_2017()
 
                 quint64 speciessize=0; //zero it's size
                 quint64 samplegenome;  //will have to pick a genome for 'type' - it goes here
+
+
                 for (int iii=0; iii<arraymax; iii++) //go through static arrays -
                                                     //find all genome entries for this group
                                                     //and fix data in critters for them
@@ -332,6 +386,7 @@ void Analyser::Groups_2017()
                          int y=ls/256;
                          int z=ls%256;
                          critters[x][y][z].speciesid=nextspeciesid;
+
                      }
 
                      samplegenome=genomes[iii]; //samplegenome ends up being the last one on the list -
@@ -340,12 +395,36 @@ void Analyser::Groups_2017()
 
                 speciessizes[nextspeciesid]=speciessize; //can set species size now in the hash
                 speciessizes[speciesid]=speciessizes[speciesid]-speciessize; //remove this number from parent
+
                 species newsp;          //new species object
                 newsp.parent=speciesid;   //parent is the species we are splitting from
                 newsp.origintime=generation;  //i.e. now (generation is a global)
-                newsp.ID=nextspeciesid++;     //set the ID - last use so increment
+                newsp.ID=nextspeciesid;     //set the ID - last use so increment
                 newsp.type=samplegenome;      //put in our selected type genome
-                newspecieslist.append(newsp);  //add this species to the new species list
+
+                if (species_mode>=SPECIES_MODE_PHYLOGENY)
+                {
+                    //sort out the logspecies object
+                    LogSpecies *newlogspecies = new LogSpecies;
+                    LogSpeciesDataItem *newdata = new LogSpeciesDataItem;
+                    newdata->generation=generation;
+
+                    newlogspecies->ID=nextspeciesid;
+                    newlogspecies->time_of_first_appearance=generation;
+                    newlogspecies->time_of_last_appearance=generation;
+                    newlogspecies->parent=thislogspecies;
+                    newlogspecies->maxsize=speciessize;
+                    thislogspecies->children.append(newlogspecies);
+
+                    newlogspecies->data_items.append(newdata);
+                    LogSpeciesById.insert(nextspeciesid, newlogspecies);
+                    newsp.logspeciesstructure=newlogspecies;
+                    logspeciespointers[groupcode]=newlogspecies;
+                }
+
+                newspecieslist.append(newsp);
+
+                nextspeciesid++;
             }
             else //this is the continuing species
             {
@@ -356,7 +435,15 @@ void Analyser::Groups_2017()
                     if (oldspecieslist[j].ID==speciesid)
                     {
                         newsp = oldspecieslist[j];
+                        if (species_mode>=SPECIES_MODE_PHYLOGENY)
+                        {
 
+                            logspeciespointers[jj.key()]=newsp.logspeciesstructure;
+                            newsp.logspeciesstructure->time_of_last_appearance=generation;
+                            LogSpeciesDataItem *newdata = new LogSpeciesDataItem;
+                            newdata->generation=generation;
+                            newsp.logspeciesstructure->data_items.append(newdata);
+                        }
                     }
                 }
                 //go through and find first occurrence of this group in static arrays
@@ -374,12 +461,139 @@ void Analyser::Groups_2017()
 
         }
 
+        if (species_mode==SPECIES_MODE_PHYLOGENY_AND_METRICS)
+        {
+            //record a load of stuff
+            jj.toFront(); //reuse same iterator for groups
+             while (jj.hasNext())
+             {
+                 jj.next();
+                 qint32 groupcode=jj.key(); //get it's code
+                 LogSpecies *thislogspecies=logspeciespointers[groupcode];
+                 LogSpeciesDataItem *thisdataitem=thislogspecies->data_items.last();
+
+                 quint64 speciessize=0; //zero it's size
+
+                 quint64 samplegenome;
+                 QSet<quint16> cellsoc;
+                 thisdataitem->genomic_diversity=0;
+                 quint64 sumfit=0;
+
+                 int mincol[3];
+                 mincol[0]=256;
+                 mincol[1]=256;
+                 mincol[2]=256;
+
+                 int maxcol[3];
+                 maxcol[0]=-1;
+                 maxcol[1]=-1;
+                 maxcol[2]=-1;
+
+                 quint64 sumcol[3];
+                 sumcol[0]=0;
+                 sumcol[1]=0;
+                 sumcol[2]=0;
+
+                 quint64 sumxpos=0, sumypos=0;
+                 int minx=256;
+                 int maxx=-1;
+                 int maxy=-1;
+                 int miny=256;
+
+
+                 for (int iii=0; iii<arraymax; iii++) //go through static arrays -
+                                                     //find all genome entries for this group
+                                                     //and fix data in critters for them
+                 {
+                     if (groupcodes[iii]==groupcode)
+                     {
+                         thisdataitem->genomic_diversity++;
+                          QList<quint32> *updatelist=slotswithgenome.value(speciesid)->value(genomes[iii]);
+                             //retrieve the list of positions for this genome
+                          speciessize+=updatelist->count(); //add it's count to size
+
+
+                          foreach (quint32 v,*updatelist) //go through list and set critters data to new species
+                          {
+                              int x=v/65536;
+                              int ls=v%65536;
+                              int y=ls/256;
+                              int z=ls%256;
+
+                              sumxpos+=(quint64)x;
+                              sumypos+=(quint64)y;
+                              if (x<minx) minx=(int)x;
+                              if (y<miny) miny=(int)y;
+                              if (x>maxx) maxx=(int)x;
+                              if (y<maxy) maxy=(int)y;
+
+                              sumfit+=(quint64)(critters[x][y][z].fitness);
+                              cellsoc.insert((quint16)x*(quint16)256+(quint16)y);
+
+                              quint8 r=environment[x][y][0];
+                              quint8 g=environment[x][y][1];
+                              quint8 b=environment[x][y][2];
+
+                              if (r<mincol[0]) mincol[0]=r;
+                              if (g<mincol[1]) mincol[1]=g;
+                              if (b<mincol[2]) mincol[2]=b;
+
+                              if (r>maxcol[0]) maxcol[0]=r;
+                              if (g>maxcol[1]) maxcol[1]=g;
+                              if (b>maxcol[2]) maxcol[2]=b;
+
+                              sumcol[0]+=(quint64)r;
+                              sumcol[1]+=(quint64)g;
+                              sumcol[2]+=(quint64)b;
+
+
+                              //TODO - allow for toroidal!
+
+                              //to do - put correct data in this item
+
+//                              newdata->centroid_range_x=n; // mean of all x's - but allow for toroidal somehow
+//                              newdata->centroid_range_y=m;
+//                              newdata->geographical_range=0;  //max (max-min x, max-min y), but allow for toroidal
+
+                          }
+                          samplegenome=genomes[iii];
+                     }
+                 }
+                 thisdataitem->mean_fitness=(quint16)((sumfit*1000)/speciessize);
+                 thisdataitem->sample_genome=samplegenome;
+                 thisdataitem->size=speciessize;
+                 thisdataitem->cells_occupied=cellsoc.count();
+                 thisdataitem->max_env[0]=maxcol[0];
+                 thisdataitem->max_env[1]=maxcol[1];
+                 thisdataitem->max_env[2]=maxcol[2];
+                 thisdataitem->min_env[0]=mincol[0];
+                 thisdataitem->min_env[1]=mincol[1];
+                 thisdataitem->min_env[2]=mincol[2];
+                 thisdataitem->mean_env[0]=(quint8)(sumcol[0]/speciessize);
+                 thisdataitem->mean_env[1]=(quint8)(sumcol[1]/speciessize);
+                 thisdataitem->mean_env[2]=(quint8)(sumcol[2]/speciessize);
+                 thisdataitem->centroid_range_x=(quint8)(sumxpos/speciessize);
+                 thisdataitem->centroid_range_y=(quint8)(sumypos/speciessize);
+                 thisdataitem->geographical_range=(quint8)(qMax(maxx-minx,maxy-miny));
+             }
+        }
+
     }
 
     //Nearly there! Just need to put size data into correct species
     for(int f=0; f<newspecieslist.count(); f++) //go through new species list
-        newspecieslist[f].size=(int)speciessizes[newspecieslist[f].ID]; //find size in my hash, put it in
+    {
+        quint32 newsize=(quint32)speciessizes[newspecieslist[f].ID];
+        newspecieslist[f].size=newsize;
+        //find size in my hash, put it in
 
+        if (species_mode>=SPECIES_MODE_PHYLOGENY)
+        {
+            LogSpecies *ls = newspecieslist[f].logspeciesstructure;
+            if (newsize>ls->maxsize) ls->maxsize=newsize;
+        }
+        //also in maxsize for species fluff culling
+    }
     qDebug()<<"Species done in "<<t.elapsed(); //print out time taken
 
     oldspecieslist=newspecieslist; //copy new list over old one

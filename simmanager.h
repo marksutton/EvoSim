@@ -13,6 +13,7 @@
 
 #include "critter.h"
 #include "analyser.h"
+#include "logspecies.h"
 
 // Provides globals for the simulation - lookup tables for example
 // Only one instance. Single instance - which is the only true global
@@ -119,8 +120,20 @@ extern bool EnvChangeForward;
 extern QList<species> oldspecieslist;
 extern QList< QList<species> > archivedspecieslists;
 extern quint64 nextspeciesid;
+extern LogSpecies *rootspecies;
+extern QHash<quint64,LogSpecies *> LogSpeciesById;
 
 extern QList<uint> species_colours;
+extern quint8 species_mode;
+
+#define SPECIES_MODE_NONE 0
+#define SPECIES_MODE_BASIC 1
+#define SPECIES_MODE_PHYLOGENY 2
+#define SPECIES_MODE_PHYLOGENY_AND_METRICS 3
+
+extern quint64 minspeciessize;
+extern bool allowexcludewithissue;
+extern quint64 ids;
 
 //This is what we are aiming for overall for total bitcount
 class SimManager

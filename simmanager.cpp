@@ -84,12 +84,18 @@ int settlefails[GRID_X][GRID_Y]; //for analysis purposes
 int maxused[GRID_X][GRID_Y];
 int AliveCount;
 QList<species> oldspecieslist;
-QList< QList<species> > archivedspecieslists;
+QList< QList<species> > archivedspecieslists; //no longer used?
+LogSpecies *rootspecies;
+QHash<quint64,LogSpecies *> LogSpeciesById;
 
 quint64 nextspeciesid;
 
 QList<uint> species_colours;
 
+quint8 species_mode;
+quint64 ids; //used in tree export -
+quint64 minspeciessize;
+bool allowexcludewithissue;
 
 QMutex *mutexes[GRID_X][GRID_Y]; //set up array of mutexes
 
@@ -97,6 +103,7 @@ QMutex *mutexes[GRID_X][GRID_Y]; //set up array of mutexes
 SimManager::SimManager()
 {
     //Constructor - set up all the data!
+    species_mode=SPECIES_MODE_BASIC;
     MakeLookups();
     AliveCount=0;
     ProcessorCount=QThread::idealThreadCount();
@@ -116,6 +123,7 @@ SimManager::SimManager()
      EnvChangeCounter=0;
      EnvChangeForward=true;
      nextspeciesid=1;
+     rootspecies=(LogSpecies *)0;
 }
 
 
@@ -449,14 +457,53 @@ void SimManager::SetupRun()
     EnvChangeCounter=envchangerate;
     EnvChangeForward=true;
 
+    //remove old species log if one exists
+    if (rootspecies) delete rootspecies;
+
+    //create a new logspecies with appropriate first data entry
+    rootspecies=new LogSpecies;
+
+    rootspecies->maxsize=AliveCount;
+    rootspecies->ID=nextspeciesid;
+    rootspecies->time_of_first_appearance=0;
+    rootspecies->time_of_last_appearance=0;
+    rootspecies->parent=(LogSpecies *)0;
+    LogSpeciesDataItem *newdata = new LogSpeciesDataItem;
+    newdata->centroid_range_x=n;
+    newdata->centroid_range_y=m;
+    newdata->generation=0;
+    newdata->cells_occupied=1;
+    newdata->genomic_diversity=1;
+    newdata->size=AliveCount;
+    newdata->geographical_range=0;
+    newdata->cells_occupied=0; //=1, this is stored as -1
+    newdata->sample_genome=gen;
+    newdata->max_env[0]=environment[n][m][0];
+    newdata->max_env[1]=environment[n][m][1];
+    newdata->max_env[2]=environment[n][m][2];
+    newdata->min_env[0]=environment[n][m][0];
+    newdata->min_env[1]=environment[n][m][1];
+    newdata->min_env[2]=environment[n][m][2];
+    newdata->mean_env[0]=environment[n][m][0];
+    newdata->mean_env[1]=environment[n][m][1];
+    newdata->mean_env[2]=environment[n][m][2];
+    newdata->mean_fitness=(quint16)((totalfit[n][m]*1000)/AliveCount);
+
+    rootspecies->data_items.append(newdata);
+    LogSpeciesById.clear();
+    LogSpeciesById.insert(nextspeciesid,rootspecies);
+
     oldspecieslist.clear();
     species newsp;
     newsp.ID=nextspeciesid;
     newsp.origintime=0;
     newsp.parent=0;
     newsp.size=slotsPerSq;
+    newsp.logspeciesstructure=rootspecies;
     oldspecieslist.append(newsp);
+
     nextspeciesid++; //ready for first species after this
+
 }
 
 int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local, int *KillCount_local)

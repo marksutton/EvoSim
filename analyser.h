@@ -3,6 +3,7 @@
 #include <QString>
 #include <QList>
 #include "sortablegenome.h"
+#include "logspecies.h"
 #include <QHash>
 #include <QColor>
 
@@ -16,6 +17,7 @@ public:
     int size;
     quint64 parent;
     int origintime;
+    LogSpecies *logspeciesstructure;
 };
 
 class Analyser

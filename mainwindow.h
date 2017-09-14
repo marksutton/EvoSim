@@ -34,6 +34,7 @@ public:
     void setStatusBarText(QString text);
     Ui::MainWindow *ui;
 
+    int RefreshRate;
 
 protected:
     void changeEvent(QEvent *e);
@@ -52,7 +53,7 @@ private:
     int NextRefresh;
     EnvironmentScene *envscene;
     PopulationScene *popscene;
-    QActionGroup *viewgroup, *viewgroup2;
+    QActionGroup *viewgroup, *viewgroup2, *speciesgroup;
     QActionGroup *envgroup;
 
     //RJG - options for batching
@@ -60,7 +61,6 @@ private:
     int runs, batch_iterations, batch_target_runs;
 
     //Now some things settable by the ui
-    int RefreshRate;
     QTime timer;
     QImage *pop_image, *env_image, *pop_image_colour;
     QGraphicsPixmapItem *pop_item, *env_item;
@@ -97,8 +97,6 @@ private slots:
     void on_actionSet_Inactive_triggered();
     void on_actionSet_Sparsity_triggered();
     void on_actionShow_positions_triggered();
-    void on_actionTracking_triggered();
-    void on_actionLogging_triggered();
     void on_actionFitness_logging_to_File_triggered();
     void on_actionSet_Logging_File_triggered();
     void on_actionGenerate_Tree_from_Log_File_triggered();
@@ -108,6 +106,9 @@ private slots:
     void on_actionLoad_Random_Numbers_triggered();
     void on_SelectLogFile_pressed();
     void on_SelectOutputFile_pressed();
+    void species_mode_changed(QAction *temp2);
+    void on_actionGenerate_NWK_tree_file_triggered();
+    void on_actionSpecies_sizes_triggered();
 };
 
 

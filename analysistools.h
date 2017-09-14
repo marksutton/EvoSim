@@ -3,6 +3,15 @@
 #include <QString>
 #include <QMap>
 #include <QList>
+#include "logspecies.h"
+
+#define ANALYSIS_TOOL_CODE_GENERATE_TREE 0
+#define ANALYSIS_TOOL_CODE_RATES_OF_CHANGE 1
+#define ANALYSIS_TOOL_CODE_EXTINCT_ORIGIN 2
+#define ANALYSIS_TOOL_CODE_STASIS 3
+#define ANALYSIS_TOOL_CODE_COUNT_PEAKS 4
+#define ANALYSIS_TOOL_CODE_MAKE_NEWICK 5
+#define ANALYSIS_TOOL_CODE_DUMP_DATA 6
 
 #define SCALE 100
 
@@ -39,6 +48,7 @@ class AnalysisTools
 {
 public:
     AnalysisTools();
+    bool doesthiscodeneedafile(int code);
     QString GenerateTree(QString filename);
     QString ExtinctOrigin(QString filename);
     QString SpeciesRatesOfChange(QString filename);
@@ -46,9 +56,11 @@ public:
     QString CountPeaks(int r,int g,int b);
 
     int find_closest_index(QList <quint64>time_list, float look_for, float slot_width);
+    QString MakeNewick(LogSpecies *root, quint64 min_speciessize, bool allowexclude);
+    QString DumpData(LogSpecies *root, quint64 min_speciessize, bool allowexclude);
+    static QString ReturnBinary(quint64 genome);
 private:
     void MakeListRecursive(QList<quint64> *magiclist, QMap <quint64, logged_species> *species_list, quint64 ID, int insertpos);
-    QString ReturnBinary(quint64 genome);
 };
 
 
