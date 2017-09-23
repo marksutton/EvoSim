@@ -799,6 +799,20 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>Commands</string>
     </property>
+    <widget class="QMenu" name="menuSave_images">
+     <property name="title">
+      <string>Save images</string>
+     </property>
+     <addaction name="save_population_count"/>
+     <addaction name="save_mean_fitness"/>
+     <addaction name="save_coding_genome_as_colour"/>
+     <addaction name="save_non_coding_genome_as_colour"/>
+     <addaction name="save_gene_frequencies"/>
+     <addaction name="save_fails_settles"/>
+     <addaction name="save_settles"/>
+     <addaction name="save_species"/>
+     <addaction name="save_environment"/>
+    </widget>
     <addaction name="actionLoad_Random_Numbers"/>
     <addaction name="actionEnvironment_Files"/>
     <addaction name="actionStart_Sim"/>
@@ -811,6 +825,7 @@ p, li { white-space: pre-wrap; }
     <addaction name="separator"/>
     <addaction name="actionSave"/>
     <addaction name="actionLoad"/>
+    <addaction name="menuSave_images"/>
     <addaction name="separator"/>
     <addaction name="actionSettings"/>
     <addaction name="actionRefresh_Rate"/>
@@ -1480,6 +1495,78 @@ p, li { white-space: pre-wrap; }
   <action name="actionSpecies_sizes">
    <property name="text">
     <string>Dump logged data</string>
+   </property>
+  </action>
+  <action name="save_population_count">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Population count</string>
+   </property>
+  </action>
+  <action name="save_mean_fitness">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Mean fitness</string>
+   </property>
+  </action>
+  <action name="save_coding_genome_as_colour">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Coding genome as colour</string>
+   </property>
+  </action>
+  <action name="save_non_coding_genome_as_colour">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>NonCoding genome as colour</string>
+   </property>
+  </action>
+  <action name="save_gene_frequencies">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Gene Frequencies (012)</string>
+   </property>
+  </action>
+  <action name="save_settles">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Settles</string>
+   </property>
+  </action>
+  <action name="save_species">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Species</string>
+   </property>
+  </action>
+  <action name="save_fails_settles">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Fails (R=Breed, G=Settle)</string>
+   </property>
+  </action>
+  <action name="save_environment">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Environment</string>
    </property>
   </action>
  </widget>
