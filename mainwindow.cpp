@@ -1227,7 +1227,7 @@ void MainWindow::on_actionSave_triggered()
 
     //Otherwise - serialise all my crap
     QFile outfile(filename);
-    outfile.open(QIODevice::WriteOnly);
+    outfile.open(QIODevice::WriteOnly|QIODevice::Text);
 
     QDataStream out(&outfile);
 
@@ -1883,25 +1883,15 @@ void MainWindow::WriteLog()
 
             if (!(outputfile.exists()))
             {
-                outputfile.open(QIODevice::WriteOnly);
+                outputfile.open(QIODevice::WriteOnly|QIODevice::Text);
                 QTextStream out(&outputfile);
 
-
-                out<<"Time,Species_ID,Species_origin_time,Species_parent_ID,Species_current_size,Species_current_genome";
-                // ---- RJG: Windows and Unix systems have different line breaks - sort that shit out.
-                if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
-                else out<<"\n";
-                //for (int j=0; j<63; j++) out<<j<<",";
-                //out<<"63\n";
+                out<<"Time,Species_ID,Species_origin_time,Species_parent_ID,Species_current_size,Species_current_genome\n";
                 outputfile.close();
             }
 
-        outputfile.open(QIODevice::Append);
+        outputfile.open(QIODevice::Append|QIODevice::Text);
         QTextStream out(&outputfile);
-        if(ui->actionAnalysis_in_Linux->isChecked())
-        {
-        //Do stuff
-        }
 
         for (int i=0; i<oldspecieslist.count(); i++)
         {
@@ -1916,8 +1906,7 @@ void MainWindow::WriteLog()
             for (int j=0; j<63; j++)
             if (tweakers64[63-j] & oldspecieslist[i].type) out<<"1"; else out<<"0";
             if (tweakers64[0] & oldspecieslist[i].type) out<<"1"; else out<<"0";
-            if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
-            else out<<"\n";
+            out<<"\n";
         }
 
         outputfile.close();
@@ -1930,34 +1919,28 @@ void MainWindow::WriteLog()
 
         if (!(outputfile.exists()))
         {
-            outputfile.open(QIODevice::WriteOnly);
+            outputfile.open(QIODevice::WriteOnly|QIODevice::Text);
             QTextStream out(&outputfile);
 
             // Info on simulation setup
             out<<"Slots Per square = "<<slotsPerSq;
-            if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
-            else out<<"\n";
+            out<<"\n";
 
             //Different versions of output, for reuse as needed
                 //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
                  //out<<"Each line lists generation, then the grid's: total critter number, total fitness, total entries on breed list";
             out<<"Each generation lists, for each pixel (top left to bottom right): total fitness, number of critters,entries on breed list\n\n";
 
-            //----RJG - deal with Linux --> windows.
-            if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
-            else out<<"\n";
+           out<<"\n";
 
             outputfile.close();
         }
 
-        outputfile.open(QIODevice::Append);
+        outputfile.open(QIODevice::Append|QIODevice::Text);
         QTextStream out(&outputfile);
 
         // ----RJG: Breedattempts was no longer in use - but seems accurate, so can be co-opted for this.
-        out<<"Iteration: "<<generation;
-
-        if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
-        else out<<"\n";
+        out<<"Iteration: "<<generation<<"\n";
 
         //int gridNumberAlive=0, gridTotalFitness=0, gridBreedEntries=0;
 
@@ -1996,16 +1979,12 @@ void MainWindow::WriteLog()
                     //----RJG: Manually count breed attempts for grid
                     //gridBreedEntries+=breedattempts[i][j];
 
-                    if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
-                    else out<<"\n";
+                    out<<"\n";
 
                     }
             }
 
-        if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
-        else out<<"\n";
-        if(ui->actionAnalysis_in_Linux->isChecked())out<<"\r\n";
-        else out<<"\n";
+       out<<"\n\n";
 
         //---- RJG: If outputting averages to log.
         //float avFit=(float)gridTotalFitness/(float)gridNumberAlive;
