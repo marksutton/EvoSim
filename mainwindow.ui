@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1054</width>
+    <width>1130</width>
     <height>791</height>
    </rect>
   </property>
@@ -785,8 +785,8 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1054</width>
-     <height>21</height>
+     <width>1130</width>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCommands">
@@ -883,7 +883,6 @@ p, li { white-space: pre-wrap; }
      </property>
      <addaction name="actionFitness_logging_to_File"/>
      <addaction name="actionSet_Logging_File"/>
-     <addaction name="actionAnalysis_in_Linux"/>
     </widget>
     <addaction name="menuSpecies_tracking_mode"/>
     <addaction name="menuFitness_logging"/>
