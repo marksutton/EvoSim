@@ -55,6 +55,7 @@ private:
     PopulationScene *popscene;
     QActionGroup *viewgroup, *viewgroup2, *speciesgroup;
     QActionGroup *envgroup;
+    QLineEdit *path;
 
     //RJG - options for batching
     bool batch_running;
@@ -72,7 +73,7 @@ private:
     void HandleAnalysisTool(int code);
     Analyser *a;
 
-    QAction *startButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton;
+    QAction *startButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton, *aboutButton;
 
 private slots:
     void on_actionReset_triggered();
@@ -109,6 +110,8 @@ private slots:
     void species_mode_changed(QAction *temp2);
     void on_actionGenerate_NWK_tree_file_triggered();
     void on_actionSpecies_sizes_triggered();
+    void changepath_triggered();
+    void about_triggered();
 };
 
 

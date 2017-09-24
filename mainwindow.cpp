@@ -86,6 +86,29 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(runForBatchButton, SIGNAL(triggered()), this, SLOT(on_actionBatch_triggered()));
     QObject::connect(settingsButton, SIGNAL(triggered()), this, SLOT(on_actionSettings_triggered()));
 
+    //---- RJG - add savepath for all functions, and allow this to be changed. Also add about. Spt 17.
+    ui->toolBar->addSeparator();
+    QLabel *spath = new QLabel("Save path: ", this);
+    ui->toolBar->addWidget(spath);
+    QString program_path(QCoreApplication::applicationDirPath());
+    program_path.append("/");
+    path = new QLineEdit(program_path,this);
+    ui->toolBar->addWidget(path);
+    //Spacer
+    QWidget* empty = new QWidget();
+    empty->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+    empty->setMaximumWidth(10);
+    empty->setMaximumHeight(5);
+    ui->toolBar->addWidget(empty);
+    QPushButton *cpath = new QPushButton("&Change", this);
+    ui->toolBar->addWidget(cpath);
+    connect(cpath, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
+
+    ui->toolBar->addSeparator();
+    aboutButton = new QAction(QIcon(QPixmap(":/toolbar/aboutButton-Enabled.png")), QString("About"), this);
+    ui->toolBar->addAction(aboutButton);
+    QObject::connect(aboutButton, SIGNAL (triggered()), this, SLOT (about_triggered()));
+
     //---- ARTS: Add Genome Comparison UI
     ui->genomeComparisonDock->hide();
     genoneComparison = new GenomeComparison;
@@ -217,6 +240,23 @@ MainWindow::~MainWindow()
 {
     delete ui;
     delete TheSimManager;
+}
+
+// ---- RJG: Change the save path for various stuff.
+void MainWindow::changepath_triggered()
+{
+    QString dirname = QFileDialog::getExistingDirectory(this,"Select directory in which files should be saved.");
+    if (dirname.length()!=0)
+    {
+        dirname.append("/");
+        path->setText(dirname);
+    }
+
+}
+
+void MainWindow::about_triggered()
+{
+qDebug()<<"Here";
 }
 
 // ---- RJG: Reset simulation (i.e. fill the centre pixel with a genome, then set up a run).
