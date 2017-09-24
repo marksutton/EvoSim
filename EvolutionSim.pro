@@ -20,7 +20,8 @@ SOURCES += main.cpp \
     analysistools.cpp \
     reseed.cpp \
     logspecies.cpp \
-    logspeciesdataitem.cpp
+    logspeciesdataitem.cpp \
+    about.cpp
 HEADERS += mainwindow.h \
     simmanager.h \
     critter.h \
@@ -37,12 +38,14 @@ HEADERS += mainwindow.h \
     version.h \
     reseed.h \
     logspecies.h \
-    logspeciesdataitem.h
+    logspeciesdataitem.h \
+    about.h
 FORMS += mainwindow.ui \
     dialog.ui \
     fossrecwidget.ui \
     genomecomparison.ui \
-    reseed.ui
+    reseed.ui \
+    about.ui
 
 OTHER_FILES += \
     README.TXT

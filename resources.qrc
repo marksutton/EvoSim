@@ -13,5 +13,6 @@
     <qresource prefix="/">
         <file alias="randoms.dat">resources/randoms.dat</file>
         <file alias="EvoSim_default_env.png">resources/EvoSim_default_env.png</file>
+        <file alias="img.png">resources/img.png</file>
     </qresource>
 </RCC>

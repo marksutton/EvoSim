@@ -11,6 +11,7 @@
 #include "environmentscene.h"
 #include "genomecomparison.h"
 #include "fossrecwidget.h"
+#include "about.h"
 
 extern MainWindow *MainWin;
 

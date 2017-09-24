@@ -131,7 +131,6 @@ MainWindow::MainWindow(QWidget *parent) :
     speciesgroup->addAction(ui->actionPhylogeny_metrics);
     QObject::connect(speciesgroup, SIGNAL(triggered(QAction *)), this, SLOT(species_mode_changed(QAction *)));
 
-
     viewgroup = new QActionGroup(this);
     // These actions were created via qt designer
     viewgroup->addAction(ui->actionPopulation_Count);
@@ -256,7 +255,8 @@ void MainWindow::changepath_triggered()
 
 void MainWindow::about_triggered()
 {
-qDebug()<<"Here";
+    About adialogue;
+    adialogue.exec();
 }
 
 // ---- RJG: Reset simulation (i.e. fill the centre pixel with a genome, then set up a run).
@@ -363,10 +363,6 @@ void MainWindow::on_actionRun_for_triggered()
             return;
         }
     }
-    //RJG - Option to reseed if required - This will allow people to do repeats of any given run with the same settings without closing the software!
-    //Since removed as obsolete once batching is done.
-    /*else if(QMessageBox::question(this,"Reset","Would you like to reset the simulation? Yes allows repeat runs avoiding a restarting. Otherwise, no is a prefectly acceptable option.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
-      on_actionReset_triggered();*/
 
     bool ok;
     int i;
