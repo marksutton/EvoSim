@@ -897,7 +897,6 @@ p, li { white-space: pre-wrap; }
       <string>Fitness logging</string>
      </property>
      <addaction name="actionFitness_logging_to_File"/>
-     <addaction name="actionSet_Logging_File"/>
     </widget>
     <addaction name="menuSpecies_tracking_mode"/>
     <addaction name="menuFitness_logging"/>
@@ -1425,7 +1424,7 @@ p, li { white-space: pre-wrap; }
     <bool>true</bool>
    </property>
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text">
     <string>Fitness logging to File</string>

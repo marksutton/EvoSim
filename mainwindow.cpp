@@ -268,26 +268,12 @@ void MainWindow::on_actionReset_triggered()
     oldspecieslist.clear();
 
     if ((speciesLoggingToFile==true || fitnessLoggingToFile==true)&&!batch_running)
-    {
-    // ---- RJG - deal with logging when reseeding
-    if(QMessageBox::question(this,"Logging","Would you like to set up a new log file?\n\nNote new logging files will be based on the setup for last run - you won't have the opportunity to change which logging files are written.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
         {
-        on_actionSet_Logging_File_triggered();
-        ui->actionLogging->setEnabled(true);
-        ui->actionFitness_logging_to_File->setEnabled(true);
+            QFile outputfile(QString(path->text()+"EvoSim_fitness_log.txt"));
+
+            if (outputfile.exists())
+                QMessageBox::warning(this,"Logging","This will append the log of the new run onto your last one, unless you change directories or move the odl log file");
         }
-    else
-       {
-        //---- RJG: Risk this doesn't work quite as expected - actionsetlogging and logging to file toggle some options such as tracking setenabled.
-        //speciesLoggingToFile=false;
-        fitnessLoggingToFile=false;
-        ui->actionLogging->setChecked(false);
-        ui->actionLogging->setEnabled(false);
-        ui->actionFitness_logging_to_File->setChecked(false);
-        ui->actionFitness_logging_to_File->setEnabled(false);
-        //ui->actionTracking->setEnabled(true);
-        }
-    }
 
     TheSimManager->SetupRun();
     NextRefresh=0;
@@ -724,6 +710,8 @@ int MainWindow::ScaleFails(int fails, float gens)
 void MainWindow::RefreshPopulations()
 //Refreshes of left window - also run species ident
 {
+
+//RJG write files here!
 
     //check to see what the mode is
 
@@ -1818,9 +1806,11 @@ void MainWindow::on_actionFitness_logging_to_File_triggered()
     fitnessLoggingToFile=ui->actionFitness_logging_to_File->isChecked();
 }
 
-
+/*
+This is now obsolete, but retained in case we return to this approach
 void MainWindow::on_actionSet_Logging_File_triggered()
 {
+
     // ----RJG: set logging to a text file for greater versatility across operating systems and analysis programs (R, Excel, etc.)
     QString filename = QFileDialog::getSaveFileName(this,"Select file to log fossil record to","",".txt");
     if (filename.length()==0) return;
@@ -1842,7 +1832,8 @@ void MainWindow::on_actionSet_Logging_File_triggered()
     ui->actionFitness_logging_to_File->setEnabled(true);
     //ui->actionFitness_logging_to_File->trigger();
 
-}
+
+}*/
 
 
 void MainWindow::on_actionGenerate_Tree_from_Log_File_triggered()
@@ -1912,6 +1903,7 @@ void MainWindow::WriteLog()
     if (speciesLoggingToFile==false && fitnessLoggingToFile==false) return;
 
     // ----RJG separated species logging from fitness logging
+    //Now obsolete with new species system? Left here in case this is required again
     if (speciesLoggingToFile==true)
     {
         //log em!
@@ -1951,7 +1943,8 @@ void MainWindow::WriteLog()
     // ----RJG log fitness to separate file
     if (fitnessLoggingToFile==true)
     {
-        QFile outputfile(FitnessLoggingFile);
+
+        QFile outputfile(QString(path->text()+"EvoSim_fitness_log.txt"));
 
         if (!(outputfile.exists()))
         {
