@@ -448,6 +448,7 @@ void MainWindow::RunSetUp()
     runForButton->setEnabled(false);
     ui->actionPause_Sim->setEnabled(true);
     pauseButton->setEnabled(true);
+
     //Reseed or reset
     ui->actionReset->setEnabled(false);
     resetButton->setEnabled(false);
@@ -714,7 +715,7 @@ void MainWindow::RefreshPopulations()
     QDir save_dir(path->text());
 
     //check to see what the mode is
-    if (ui->actionPopulation_Count->isChecked())
+    if (ui->actionPopulation_Count->isChecked()||ui->save_population_count->isChecked())
     {
         //Popcount
         int bigcount=0;
@@ -731,10 +732,13 @@ void MainWindow::RefreshPopulations()
             if (count>255) count=255;
             pop_image->setPixel(n,m,count);
         }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+         if (ui->actionPopulation_Count->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        if (ui->save_population_count->isChecked())
+                 if(save_dir.mkpath("population/"))
+                             pop_image_colour->save(QString(save_dir.path()+"/population/EvoSim_population_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
-    if (ui->actionMean_fitness->isChecked())
+    if (ui->actionMean_fitness->isChecked()||ui->save_mean_fitness->isChecked())
     {
         //Popcount
         int multiplier=255/settleTolerance;
@@ -752,7 +756,10 @@ void MainWindow::RefreshPopulations()
             pop_image->setPixel(n,m,(totalfit[n][m] * multiplier) / count);
 
         }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        if (ui->actionMean_fitness->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        if (ui->save_mean_fitness->isChecked())
+                 if(save_dir.mkpath("fitness/"))
+                             pop_image_colour->save(QString(save_dir.path()+"/fitness/EvoSim_mean_fitness_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
 
@@ -826,7 +833,7 @@ void MainWindow::RefreshPopulations()
     }
 
 
-    if (ui->actionSpecies->isChecked()) //do visualisation if necessary
+    if (ui->actionSpecies->isChecked()||ui->save_species->isChecked()) //do visualisation if necessary
     {
         for (int n=0; n<gridX; n++)
         for (int m=0; m<gridY; m++)
@@ -848,7 +855,11 @@ void MainWindow::RefreshPopulations()
                 pop_image_colour->setPixel(n,m,species_colours[thisspecies % 65536]);
             }
         }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+         if (ui->actionSpecies->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+         if (ui->save_species->isChecked())
+                  if(save_dir.mkpath("species/"))
+                              pop_image_colour->save(QString(save_dir.path()+"/species/EvoSim_species_it_%1.png").arg(generation, 7, 10, QChar('0')));
+
     }
 
     if (ui->actionNonCoding_genome_as_colour->isChecked())
