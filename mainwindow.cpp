@@ -711,8 +711,6 @@ void MainWindow::RefreshPopulations()
 //Refreshes of left window - also run species ident
 {
 
-//RJG write files here!
-
     //check to see what the mode is
 
     if (ui->actionPopulation_Count->isChecked())
@@ -757,7 +755,7 @@ void MainWindow::RefreshPopulations()
     }
 
 
-    if (ui->actionGenome_as_colour->isChecked())
+    if (ui->actionGenome_as_colour->isChecked()||ui->save_coding_genome_as_colour->isChecked())
     {
         //find modal genome in each square, convert to colour
         for (int n=0; n<gridX; n++)
@@ -807,6 +805,8 @@ void MainWindow::RefreshPopulations()
                         maxg=genomes[i];
                     }
 
+                qDebug()<<max;
+
                 //now convert first 32 bits to a colour
                 // r,g,b each counts of 11,11,10 bits
                 quint32 genome= (quint32)(maxg & ((quint64)65536*(quint64)65536-(quint64)1));
@@ -819,7 +819,23 @@ void MainWindow::RefreshPopulations()
             }
 
        }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+
+       if(ui->actionGenome_as_colour->isChecked()) pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+       if (ui->save_coding_genome_as_colour->isChecked())
+        {pop_image_colour->save(QString(path->text()+"EvoSim_population_"+"%1.png").arg(generation));
+          /* QImage saveImage(pop_image_colour->save
+                       MainWin->ui->spinSize->value(),MainWin->ui->spinSize->value(),QImage::Format_RGB32);
+           for (int n=0; n<MainWin->ui->spinSize->value(); n++)
+               for (int m=0; m<MainWin->ui->spinSize->value(); m++)
+                   saveImage.setPixel(n,m,qRgb(environmentobject->environment[n][m][0], environmentobject->environment[n][m][1], environmentobject->environment[n][m][2]));
+           QString dir2;
+           if(i<10)dir2 = QString(Directory.path() + "/000%1.bmp").arg(i);
+           if(i>9&&i<100)dir2 = QString(Directory.path() + "/00%1.bmp").arg(i);
+           if(i>99&&i<1000)dir2 = QString(Directory.path() + "/0%1.bmp").arg(i);
+           if(i>999)dir2 = QString(Directory.path() + "/%1.bmp").arg(i);
+           saveImage.save(dir2);   */
+
+        }
     }
 
 
