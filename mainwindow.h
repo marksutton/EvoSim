@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QActionGroup>
 #include <QAction>
+#include <QStandardPaths>
 
 
 #include "simmanager.h"

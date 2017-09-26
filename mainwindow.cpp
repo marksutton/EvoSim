@@ -90,7 +90,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->toolBar->addSeparator();
     QLabel *spath = new QLabel("Save path: ", this);
     ui->toolBar->addWidget(spath);
-    QString program_path(QCoreApplication::applicationDirPath());
+    QString program_path(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
     program_path.append("/");
     path = new QLineEdit(program_path,this);
     ui->toolBar->addWidget(path);
@@ -711,8 +711,9 @@ void MainWindow::RefreshPopulations()
 //Refreshes of left window - also run species ident
 {
 
-    //check to see what the mode is
+    QDir save_dir(path->text());
 
+    //check to see what the mode is
     if (ui->actionPopulation_Count->isChecked())
     {
         //Popcount
@@ -791,8 +792,8 @@ void MainWindow::RefreshPopulations()
                         genomes[arraypos]=g;
                         counts[arraypos++]=1;
                     }
+                gotcounts:;
                 }
-                gotcounts:
 
                 //find max frequency
                 int max=-1;
@@ -804,8 +805,6 @@ void MainWindow::RefreshPopulations()
                         max=counts[i];
                         maxg=genomes[i];
                     }
-
-                qDebug()<<max;
 
                 //now convert first 32 bits to a colour
                 // r,g,b each counts of 11,11,10 bits
@@ -822,20 +821,8 @@ void MainWindow::RefreshPopulations()
 
        if(ui->actionGenome_as_colour->isChecked()) pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
        if (ui->save_coding_genome_as_colour->isChecked())
-        {pop_image_colour->save(QString(path->text()+"EvoSim_population_"+"%1.png").arg(generation));
-          /* QImage saveImage(pop_image_colour->save
-                       MainWin->ui->spinSize->value(),MainWin->ui->spinSize->value(),QImage::Format_RGB32);
-           for (int n=0; n<MainWin->ui->spinSize->value(); n++)
-               for (int m=0; m<MainWin->ui->spinSize->value(); m++)
-                   saveImage.setPixel(n,m,qRgb(environmentobject->environment[n][m][0], environmentobject->environment[n][m][1], environmentobject->environment[n][m][2]));
-           QString dir2;
-           if(i<10)dir2 = QString(Directory.path() + "/000%1.bmp").arg(i);
-           if(i>9&&i<100)dir2 = QString(Directory.path() + "/00%1.bmp").arg(i);
-           if(i>99&&i<1000)dir2 = QString(Directory.path() + "/0%1.bmp").arg(i);
-           if(i>999)dir2 = QString(Directory.path() + "/%1.bmp").arg(i);
-           saveImage.save(dir2);   */
-
-        }
+                if(save_dir.mkpath("coding/"))
+                            pop_image_colour->save(QString(save_dir.path()+"/coding/EvoSim_coding_genome_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
 
@@ -900,8 +887,9 @@ void MainWindow::RefreshPopulations()
                         genomes[arraypos]=g;
                         counts[arraypos++]=1;
                     }
+                gotcounts2:;
                 }
-                gotcounts2:
+
 
                 //find max frequency
                 int max=-1;
