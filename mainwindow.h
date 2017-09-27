@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QActionGroup>
 #include <QAction>
+#include <QStandardPaths>
 
 
 #include "simmanager.h"
@@ -11,6 +12,7 @@
 #include "environmentscene.h"
 #include "genomecomparison.h"
 #include "fossrecwidget.h"
+#include "about.h"
 
 extern MainWindow *MainWin;
 
@@ -55,6 +57,7 @@ private:
     PopulationScene *popscene;
     QActionGroup *viewgroup, *viewgroup2, *speciesgroup;
     QActionGroup *envgroup;
+    QLineEdit *path;
 
     //RJG - options for batching
     bool batch_running;
@@ -72,7 +75,7 @@ private:
     void HandleAnalysisTool(int code);
     Analyser *a;
 
-    QAction *startButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton;
+    QAction *startButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton, *aboutButton;
 
 private slots:
     void on_actionReset_triggered();
@@ -98,7 +101,7 @@ private slots:
     void on_actionSet_Sparsity_triggered();
     void on_actionShow_positions_triggered();
     void on_actionFitness_logging_to_File_triggered();
-    void on_actionSet_Logging_File_triggered();
+    //void on_actionSet_Logging_File_triggered();
     void on_actionGenerate_Tree_from_Log_File_triggered();
     void on_actionExtinction_and_Origination_Data_triggered();
     void on_actionRates_of_Change_triggered();
@@ -109,6 +112,9 @@ private slots:
     void species_mode_changed(QAction *temp2);
     void on_actionGenerate_NWK_tree_file_triggered();
     void on_actionSpecies_sizes_triggered();
+    void changepath_triggered();
+    void about_triggered();
+    void save_all(bool toggled);
 };
 
 

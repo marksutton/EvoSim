@@ -7,9 +7,12 @@
         <file alias="resetButton_knowngenome-Enabled.png">resources/toolbar/resetButton_knowngenome-Enabled.png</file>
         <file alias="runForBatchButton-Enabled.png">resources/toolbar/runForBatchButton-Enabled.png</file>
 	<file alias="settingsButton-Enabled.png">resources/toolbar/settingsButton-Enabled.png</file>
+	<file alias="aboutButton-Enabled.png">resources/toolbar/aboutButton-Enabled.png</file>
+	<file alias="logButton-Enabled.png">resources/toolbar/logButton-Enabled.png</file>
     </qresource>
     <qresource prefix="/">
         <file alias="randoms.dat">resources/randoms.dat</file>
         <file alias="EvoSim_default_env.png">resources/EvoSim_default_env.png</file>
+        <file alias="img.png">resources/img.png</file>
     </qresource>
 </RCC>

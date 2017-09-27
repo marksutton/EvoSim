@@ -84,7 +84,33 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(resetButton, SIGNAL(triggered()), this, SLOT(on_actionReset_triggered()));
     QObject::connect(reseedButton, SIGNAL(triggered()), this, SLOT(on_actionReseed_triggered()));
     QObject::connect(runForBatchButton, SIGNAL(triggered()), this, SLOT(on_actionBatch_triggered()));
+    //--- RJG - Also connect the save all menu option.
     QObject::connect(settingsButton, SIGNAL(triggered()), this, SLOT(on_actionSettings_triggered()));
+
+    QObject::connect(ui->save_all, SIGNAL(toggled(bool)), this, SLOT(save_all(bool)));
+
+    //---- RJG - add savepath for all functions, and allow this to be changed. Also add about. Spt 17.
+    ui->toolBar->addSeparator();
+    QLabel *spath = new QLabel("Save path: ", this);
+    ui->toolBar->addWidget(spath);
+    QString program_path(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
+    program_path.append("/");
+    path = new QLineEdit(program_path,this);
+    ui->toolBar->addWidget(path);
+    //Spacer
+    QWidget* empty = new QWidget();
+    empty->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
+    empty->setMaximumWidth(10);
+    empty->setMaximumHeight(5);
+    ui->toolBar->addWidget(empty);
+    QPushButton *cpath = new QPushButton("&Change", this);
+    ui->toolBar->addWidget(cpath);
+    connect(cpath, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
+
+    ui->toolBar->addSeparator();
+    aboutButton = new QAction(QIcon(QPixmap(":/toolbar/aboutButton-Enabled.png")), QString("About"), this);
+    ui->toolBar->addAction(aboutButton);
+    QObject::connect(aboutButton, SIGNAL (triggered()), this, SLOT (about_triggered()));
 
     //---- ARTS: Add Genome Comparison UI
     ui->genomeComparisonDock->hide();
@@ -107,7 +133,6 @@ MainWindow::MainWindow(QWidget *parent) :
     speciesgroup->addAction(ui->actionPhylogeny);
     speciesgroup->addAction(ui->actionPhylogeny_metrics);
     QObject::connect(speciesgroup, SIGNAL(triggered(QAction *)), this, SLOT(species_mode_changed(QAction *)));
-
 
     viewgroup = new QActionGroup(this);
     // These actions were created via qt designer
@@ -219,6 +244,24 @@ MainWindow::~MainWindow()
     delete TheSimManager;
 }
 
+// ---- RJG: Change the save path for various stuff.
+void MainWindow::changepath_triggered()
+{
+    QString dirname = QFileDialog::getExistingDirectory(this,"Select directory in which files should be saved.");
+    if (dirname.length()!=0)
+    {
+        dirname.append("/");
+        path->setText(dirname);
+    }
+
+}
+
+void MainWindow::about_triggered()
+{
+    About adialogue;
+    adialogue.exec();
+}
+
 // ---- RJG: Reset simulation (i.e. fill the centre pixel with a genome, then set up a run).
 void MainWindow::on_actionReset_triggered()
 {
@@ -228,26 +271,12 @@ void MainWindow::on_actionReset_triggered()
     oldspecieslist.clear();
 
     if ((speciesLoggingToFile==true || fitnessLoggingToFile==true)&&!batch_running)
-    {
-    // ---- RJG - deal with logging when reseeding
-    if(QMessageBox::question(this,"Logging","Would you like to set up a new log file?\n\nNote new logging files will be based on the setup for last run - you won't have the opportunity to change which logging files are written.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
         {
-        on_actionSet_Logging_File_triggered();
-        ui->actionLogging->setEnabled(true);
-        ui->actionFitness_logging_to_File->setEnabled(true);
+            QFile outputfile(QString(path->text()+"EvoSim_fitness_log.txt"));
+
+            if (outputfile.exists())
+                QMessageBox::warning(this,"Logging","This will append the log of the new run onto your last one, unless you change directories or move the odl log file");
         }
-    else
-       {
-        //---- RJG: Risk this doesn't work quite as expected - actionsetlogging and logging to file toggle some options such as tracking setenabled.
-        //speciesLoggingToFile=false;
-        fitnessLoggingToFile=false;
-        ui->actionLogging->setChecked(false);
-        ui->actionLogging->setEnabled(false);
-        ui->actionFitness_logging_to_File->setChecked(false);
-        ui->actionFitness_logging_to_File->setEnabled(false);
-        //ui->actionTracking->setEnabled(true);
-        }
-    }
 
     TheSimManager->SetupRun();
     NextRefresh=0;
@@ -323,10 +352,6 @@ void MainWindow::on_actionRun_for_triggered()
             return;
         }
     }
-    //RJG - Option to reseed if required - This will allow people to do repeats of any given run with the same settings without closing the software!
-    //Since removed as obsolete once batching is done.
-    /*else if(QMessageBox::question(this,"Reset","Would you like to reset the simulation? Yes allows repeat runs avoiding a restarting. Otherwise, no is a prefectly acceptable option.",QMessageBox::Yes,QMessageBox::No)==QMessageBox::Yes)
-      on_actionReset_triggered();*/
 
     bool ok;
     int i;
@@ -426,6 +451,7 @@ void MainWindow::RunSetUp()
     runForButton->setEnabled(false);
     ui->actionPause_Sim->setEnabled(true);
     pauseButton->setEnabled(true);
+
     //Reseed or reset
     ui->actionReset->setEnabled(false);
     resetButton->setEnabled(false);
@@ -689,9 +715,10 @@ void MainWindow::RefreshPopulations()
 //Refreshes of left window - also run species ident
 {
 
-    //check to see what the mode is
+    QDir save_dir(path->text());
 
-    if (ui->actionPopulation_Count->isChecked())
+    //check to see what the mode is
+    if (ui->actionPopulation_Count->isChecked()||ui->save_population_count->isChecked())
     {
         //Popcount
         int bigcount=0;
@@ -708,10 +735,13 @@ void MainWindow::RefreshPopulations()
             if (count>255) count=255;
             pop_image->setPixel(n,m,count);
         }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+         if (ui->actionPopulation_Count->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        if (ui->save_population_count->isChecked())
+                 if(save_dir.mkpath("population/"))
+                             pop_image_colour->save(QString(save_dir.path()+"/population/EvoSim_population_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
-    if (ui->actionMean_fitness->isChecked())
+    if (ui->actionMean_fitness->isChecked()||ui->save_mean_fitness->isChecked())
     {
         //Popcount
         int multiplier=255/settleTolerance;
@@ -729,11 +759,14 @@ void MainWindow::RefreshPopulations()
             pop_image->setPixel(n,m,(totalfit[n][m] * multiplier) / count);
 
         }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        if (ui->actionMean_fitness->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        if (ui->save_mean_fitness->isChecked())
+                 if(save_dir.mkpath("fitness/"))
+                             pop_image_colour->save(QString(save_dir.path()+"/fitness/EvoSim_mean_fitness_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
 
-    if (ui->actionGenome_as_colour->isChecked())
+    if (ui->actionGenome_as_colour->isChecked()||ui->save_coding_genome_as_colour->isChecked())
     {
         //find modal genome in each square, convert to colour
         for (int n=0; n<gridX; n++)
@@ -769,8 +802,8 @@ void MainWindow::RefreshPopulations()
                         genomes[arraypos]=g;
                         counts[arraypos++]=1;
                     }
+                gotcounts:;
                 }
-                gotcounts:
 
                 //find max frequency
                 int max=-1;
@@ -795,11 +828,15 @@ void MainWindow::RefreshPopulations()
             }
 
        }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+
+       if (ui->actionGenome_as_colour->isChecked()) pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+       if (ui->save_coding_genome_as_colour->isChecked())
+                if(save_dir.mkpath("coding/"))
+                            pop_image_colour->save(QString(save_dir.path()+"/coding/EvoSim_coding_genome_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
 
-    if (ui->actionSpecies->isChecked()) //do visualisation if necessary
+    if (ui->actionSpecies->isChecked()||ui->save_species->isChecked()) //do visualisation if necessary
     {
         for (int n=0; n<gridX; n++)
         for (int m=0; m<gridY; m++)
@@ -821,10 +858,14 @@ void MainWindow::RefreshPopulations()
                 pop_image_colour->setPixel(n,m,species_colours[thisspecies % 65536]);
             }
         }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+         if (ui->actionSpecies->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+         if (ui->save_species->isChecked())
+                  if(save_dir.mkpath("species/"))
+                              pop_image_colour->save(QString(save_dir.path()+"/species/EvoSim_species_it_%1.png").arg(generation, 7, 10, QChar('0')));
+
     }
 
-    if (ui->actionNonCoding_genome_as_colour->isChecked())
+    if (ui->actionNonCoding_genome_as_colour->isChecked()||ui->save_non_coding_genome_as_colour->isChecked())
     {
         //find modal genome in each square, convert non-coding to colour
         for (int n=0; n<gridX; n++)
@@ -860,8 +901,9 @@ void MainWindow::RefreshPopulations()
                         genomes[arraypos]=g;
                         counts[arraypos++]=1;
                     }
+                gotcounts2:;
                 }
-                gotcounts2:
+
 
                 //find max frequency
                 int max=-1;
@@ -885,10 +927,14 @@ void MainWindow::RefreshPopulations()
                 pop_image_colour->setPixel(n,m,qRgb(r, g, b));
             }
        }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if(ui->actionNonCoding_genome_as_colour->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if(ui->save_non_coding_genome_as_colour->isChecked())
+                 if(save_dir.mkpath("non_coding/"))
+                             pop_image_colour->save(QString(save_dir.path()+"/non_coding/EvoSim_non_coding_it_%1.png").arg(generation, 7, 10, QChar('0')));
+
     }
 
-    if (ui->actionGene_Frequencies_012->isChecked())
+    if (ui->actionGene_Frequencies_012->isChecked()||ui->save_gene_frequencies->isChecked())
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -917,9 +963,14 @@ void MainWindow::RefreshPopulations()
                 pop_image_colour->setPixel(n,m,qRgb(r, g, b));
             }
           }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+          if (ui->actionGene_Frequencies_012->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+          if(ui->save_gene_frequencies->isChecked())
+                 if(save_dir.mkpath("gene_freq/"))
+                             pop_image_colour->save(QString(save_dir.path()+"/gene_freq/EvoSim_gene_freq_it_%1.png").arg(generation, 7, 10, QChar('0')));
+
     }
 
+    //RJG - No save option as no longer in the menu as an option.
     if (ui->actionBreed_Attempts->isChecked())
     {
         //Popcount
@@ -933,6 +984,7 @@ void MainWindow::RefreshPopulations()
         pop_item->setPixmap(QPixmap::fromImage(*pop_image));
     }
 
+    //RJG - No save option as no longer in the menu as an option.
     if (ui->actionBreed_Fails->isChecked())
     {
         //Popcount
@@ -949,7 +1001,8 @@ void MainWindow::RefreshPopulations()
         pop_item->setPixmap(QPixmap::fromImage(*pop_image));
     }
 
-    if (ui->actionSettles->isChecked())
+
+    if (ui->actionSettles->isChecked()||ui->save_settles->isChecked())
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -959,10 +1012,15 @@ void MainWindow::RefreshPopulations()
             if (value>255) value=255;
             pop_image->setPixel(n,m,value);
         }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+
+       if (ui->actionSettles->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+       if(ui->save_settles->isChecked())
+               if(save_dir.mkpath("settles/"))
+                           pop_image_colour->save(QString(save_dir.path()+"/settles/EvoSim_settles_it_%1.png").arg(generation, 7, 10, QChar('0')));
+
     }
 
-    if (ui->actionSettle_Fails->isChecked())
+    if (ui->actionSettle_Fails->isChecked()||ui->save_fails_settles->isChecked())
     //this now combines breed fails (red) and settle fails (green)
     {
         //work out max and ratios
@@ -993,7 +1051,11 @@ void MainWindow::RefreshPopulations()
             int g=ScaleFails(settlefails[n][m],gens);
             pop_image_colour->setPixel(n,m,qRgb(r, g, 0));
         }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if (ui->actionSettle_Fails->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if(ui->save_fails_settles->isChecked())
+                if(save_dir.mkpath("settles_fails/"))
+                            pop_image_colour->save(QString(save_dir.path()+"/settles_fails/EvoSim_settles_fails_it_%1.png").arg(generation, 7, 10, QChar('0')));
+
     }
 
     if (ui->actionBreed_Fails_2->isChecked())
@@ -1019,15 +1081,47 @@ void MainWindow::RefreshPopulations()
 void MainWindow::RefreshEnvironment()
 {
 
+    QDir save_dir(path->text());
 
     for (int n=0; n<gridX; n++)
     for (int m=0; m<gridY; m++)
         env_image->setPixel(n,m,qRgb(environment[n][m][0], environment[n][m][1], environment[n][m][2]));
 
     env_item->setPixmap(QPixmap::fromImage(*env_image));
+    if(ui->save_environment->isChecked())
+        if(save_dir.mkpath("environment/"))
+                    env_image->save(QString(save_dir.path()+"/environment/EvoSim_environment_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
     //Draw on fossil records
     envscene->DrawLocations(FRW->FossilRecords,ui->actionShow_positions->isChecked());
+}
+
+void MainWindow::save_all(bool toggled)
+{
+    if (toggled)
+    {
+        ui->save_coding_genome_as_colour->setChecked(true);
+        ui->save_environment->setChecked(true);
+        ui->save_fails_settles->setChecked(true);
+        ui->save_gene_frequencies->setChecked(true);
+        ui->save_mean_fitness->setChecked(true);
+        ui->save_non_coding_genome_as_colour->setChecked(true);
+        ui->save_population_count->setChecked(true);
+        ui->save_settles->setChecked(true);
+        ui->save_species->setChecked(true);
+    }
+    else
+    {
+        ui->save_coding_genome_as_colour->setChecked(false);
+        ui->save_environment->setChecked(false);
+        ui->save_fails_settles->setChecked(false);
+        ui->save_gene_frequencies->setChecked(false);
+        ui->save_mean_fitness->setChecked(false);
+        ui->save_non_coding_genome_as_colour->setChecked(false);
+        ui->save_population_count->setChecked(false);
+        ui->save_settles->setChecked(false);
+        ui->save_species->setChecked(false);
+    }
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)
@@ -1127,6 +1221,7 @@ void MainWindow::ResizeImageObjects()
 
     pop_image_colour=new QImage(gridX, gridY, QImage::Format_RGB32);
 }
+
 void MainWindow::on_actionSettings_triggered()
 {
     //AutoMarkers options tab
@@ -1782,9 +1877,11 @@ void MainWindow::on_actionFitness_logging_to_File_triggered()
     fitnessLoggingToFile=ui->actionFitness_logging_to_File->isChecked();
 }
 
-
+/*
+This is now obsolete, but retained in case we return to this approach
 void MainWindow::on_actionSet_Logging_File_triggered()
 {
+
     // ----RJG: set logging to a text file for greater versatility across operating systems and analysis programs (R, Excel, etc.)
     QString filename = QFileDialog::getSaveFileName(this,"Select file to log fossil record to","",".txt");
     if (filename.length()==0) return;
@@ -1806,7 +1903,8 @@ void MainWindow::on_actionSet_Logging_File_triggered()
     ui->actionFitness_logging_to_File->setEnabled(true);
     //ui->actionFitness_logging_to_File->trigger();
 
-}
+
+}*/
 
 
 void MainWindow::on_actionGenerate_Tree_from_Log_File_triggered()
@@ -1876,6 +1974,7 @@ void MainWindow::WriteLog()
     if (speciesLoggingToFile==false && fitnessLoggingToFile==false) return;
 
     // ----RJG separated species logging from fitness logging
+    //Now obsolete with new species system? Left here in case this is required again
     if (speciesLoggingToFile==true)
     {
         //log em!
@@ -1915,7 +2014,8 @@ void MainWindow::WriteLog()
     // ----RJG log fitness to separate file
     if (fitnessLoggingToFile==true)
     {
-        QFile outputfile(FitnessLoggingFile);
+
+        QFile outputfile(QString(path->text()+"EvoSim_fitness_log.txt"));
 
         if (!(outputfile.exists()))
         {
