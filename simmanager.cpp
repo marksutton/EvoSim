@@ -408,6 +408,9 @@ void SimManager::SetupRun()
 
     int n=gridX/2, m=gridY/2;
 
+    //Temp dual seed
+    n=2;
+
     //RJG - Either reseed with known genome if set
     if(reseedKnown){
                     critters[n][m][0].initialise(reseedGenome,environment[n][m],n,m,0,nextspeciesid);
@@ -436,6 +439,23 @@ void SimManager::SetupRun()
 
     AliveCount=1;
     quint64 gen=critters[n][m][0].genome;
+
+    //RJG - Fill square with successful critter
+    for (int c=1; c<slotsPerSq; c++)
+    {
+        critters[n][m][c].initialise(gen, environment[n][m], n,m,c,nextspeciesid);
+
+        if (critters[n][m][c].age>0)
+        {
+            critters[n][m][c].age/=((Rand8()/10)+1);
+            critters[n][m][c].age +=10;
+            AliveCount++;
+            maxused[n][m]=c;
+            totalfit[n][m]+=critters[n][m][c].fitness;
+        }
+    }
+
+    n=gridX-2;
 
     //RJG - Fill square with successful critter
     for (int c=1; c<slotsPerSq; c++)

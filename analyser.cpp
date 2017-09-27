@@ -594,7 +594,7 @@ void Analyser::Groups_2017()
         }
         //also in maxsize for species fluff culling
     }
-    qDebug()<<"Species done in "<<t.elapsed(); //print out time taken
+    //qDebug()<<"Species done in "<<t.elapsed(); //print out time taken
 
     oldspecieslist=newspecieslist; //copy new list over old one
 
