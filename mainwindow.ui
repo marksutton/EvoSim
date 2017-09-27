@@ -811,7 +811,9 @@ p, li { white-space: pre-wrap; }
      <addaction name="save_fails_settles"/>
      <addaction name="save_settles"/>
      <addaction name="save_species"/>
+     <addaction name="separator"/>
      <addaction name="save_environment"/>
+     <addaction name="separator"/>
      <addaction name="save_all"/>
     </widget>
     <addaction name="actionLoad_Random_Numbers"/>
