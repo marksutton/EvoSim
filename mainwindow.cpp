@@ -1081,12 +1081,16 @@ void MainWindow::RefreshPopulations()
 void MainWindow::RefreshEnvironment()
 {
 
+    QDir save_dir(path->text());
 
     for (int n=0; n<gridX; n++)
     for (int m=0; m<gridY; m++)
         env_image->setPixel(n,m,qRgb(environment[n][m][0], environment[n][m][1], environment[n][m][2]));
 
     env_item->setPixmap(QPixmap::fromImage(*env_image));
+    if(ui->save_environment->isChecked())
+        if(save_dir.mkpath("environment/"))
+                    env_image->save(QString(save_dir.path()+"/environment/EvoSim_environment_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
     //Draw on fossil records
     envscene->DrawLocations(FRW->FossilRecords,ui->actionShow_positions->isChecked());
@@ -1217,6 +1221,7 @@ void MainWindow::ResizeImageObjects()
 
     pop_image_colour=new QImage(gridX, gridY, QImage::Format_RGB32);
 }
+
 void MainWindow::on_actionSettings_triggered()
 {
     //AutoMarkers options tab
