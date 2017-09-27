@@ -84,7 +84,10 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(resetButton, SIGNAL(triggered()), this, SLOT(on_actionReset_triggered()));
     QObject::connect(reseedButton, SIGNAL(triggered()), this, SLOT(on_actionReseed_triggered()));
     QObject::connect(runForBatchButton, SIGNAL(triggered()), this, SLOT(on_actionBatch_triggered()));
+    //--- RJG - Also connect the save all menu option.
     QObject::connect(settingsButton, SIGNAL(triggered()), this, SLOT(on_actionSettings_triggered()));
+
+    QObject::connect(ui->save_all, SIGNAL(toggled(bool)), this, SLOT(save_all(bool)));
 
     //---- RJG - add savepath for all functions, and allow this to be changed. Also add about. Spt 17.
     ui->toolBar->addSeparator();
@@ -931,7 +934,7 @@ void MainWindow::RefreshPopulations()
 
     }
 
-    if (ui->actionGene_Frequencies_012->isChecked())
+    if (ui->actionGene_Frequencies_012->isChecked()||ui->save_gene_frequencies->isChecked())
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -960,9 +963,14 @@ void MainWindow::RefreshPopulations()
                 pop_image_colour->setPixel(n,m,qRgb(r, g, b));
             }
           }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+          if (ui->actionGene_Frequencies_012->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+          if(ui->save_gene_frequencies->isChecked())
+                 if(save_dir.mkpath("gene_freq/"))
+                             pop_image_colour->save(QString(save_dir.path()+"/gene_freq/EvoSim_gene_freq_it_%1.png").arg(generation, 7, 10, QChar('0')));
+
     }
 
+    //RJG - No save option as no longer in the menu as an option.
     if (ui->actionBreed_Attempts->isChecked())
     {
         //Popcount
@@ -976,6 +984,7 @@ void MainWindow::RefreshPopulations()
         pop_item->setPixmap(QPixmap::fromImage(*pop_image));
     }
 
+    //RJG - No save option as no longer in the menu as an option.
     if (ui->actionBreed_Fails->isChecked())
     {
         //Popcount
@@ -992,7 +1001,8 @@ void MainWindow::RefreshPopulations()
         pop_item->setPixmap(QPixmap::fromImage(*pop_image));
     }
 
-    if (ui->actionSettles->isChecked())
+
+    if (ui->actionSettles->isChecked()||ui->save_settles->isChecked())
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -1002,10 +1012,15 @@ void MainWindow::RefreshPopulations()
             if (value>255) value=255;
             pop_image->setPixel(n,m,value);
         }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+
+       if (ui->actionSettles->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+       if(ui->save_settles->isChecked())
+               if(save_dir.mkpath("settles/"))
+                           pop_image_colour->save(QString(save_dir.path()+"/settles/EvoSim_settles_it_%1.png").arg(generation, 7, 10, QChar('0')));
+
     }
 
-    if (ui->actionSettle_Fails->isChecked())
+    if (ui->actionSettle_Fails->isChecked()||ui->save_fails_settles->isChecked())
     //this now combines breed fails (red) and settle fails (green)
     {
         //work out max and ratios
@@ -1036,7 +1051,11 @@ void MainWindow::RefreshPopulations()
             int g=ScaleFails(settlefails[n][m],gens);
             pop_image_colour->setPixel(n,m,qRgb(r, g, 0));
         }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if (ui->actionSettle_Fails->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if(ui->save_fails_settles->isChecked())
+                if(save_dir.mkpath("settles_fails/"))
+                            pop_image_colour->save(QString(save_dir.path()+"/settles_fails/EvoSim_settles_fails_it_%1.png").arg(generation, 7, 10, QChar('0')));
+
     }
 
     if (ui->actionBreed_Fails_2->isChecked())
@@ -1071,6 +1090,34 @@ void MainWindow::RefreshEnvironment()
 
     //Draw on fossil records
     envscene->DrawLocations(FRW->FossilRecords,ui->actionShow_positions->isChecked());
+}
+
+void MainWindow::save_all(bool toggled)
+{
+    if (toggled)
+    {
+        ui->save_coding_genome_as_colour->setChecked(true);
+        ui->save_environment->setChecked(true);
+        ui->save_fails_settles->setChecked(true);
+        ui->save_gene_frequencies->setChecked(true);
+        ui->save_mean_fitness->setChecked(true);
+        ui->save_non_coding_genome_as_colour->setChecked(true);
+        ui->save_population_count->setChecked(true);
+        ui->save_settles->setChecked(true);
+        ui->save_species->setChecked(true);
+    }
+    else
+    {
+        ui->save_coding_genome_as_colour->setChecked(false);
+        ui->save_environment->setChecked(false);
+        ui->save_fails_settles->setChecked(false);
+        ui->save_gene_frequencies->setChecked(false);
+        ui->save_mean_fitness->setChecked(false);
+        ui->save_non_coding_genome_as_colour->setChecked(false);
+        ui->save_population_count->setChecked(false);
+        ui->save_settles->setChecked(false);
+        ui->save_species->setChecked(false);
+    }
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)

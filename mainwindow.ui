@@ -812,6 +812,7 @@ p, li { white-space: pre-wrap; }
      <addaction name="save_settles"/>
      <addaction name="save_species"/>
      <addaction name="save_environment"/>
+     <addaction name="save_all"/>
     </widget>
     <addaction name="actionLoad_Random_Numbers"/>
     <addaction name="actionEnvironment_Files"/>
@@ -842,8 +843,8 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionGene_Frequencies_012"/>
     <addaction name="actionBreed_Attempts"/>
     <addaction name="actionBreed_Fails"/>
-    <addaction name="actionSettles"/>
     <addaction name="actionSettle_Fails"/>
+    <addaction name="actionSettles"/>
     <addaction name="actionSpecies"/>
     <addaction name="separator"/>
    </widget>
@@ -1566,6 +1567,14 @@ p, li { white-space: pre-wrap; }
    </property>
    <property name="text">
     <string>Environment</string>
+   </property>
+  </action>
+  <action name="save_all">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>All</string>
    </property>
   </action>
  </widget>

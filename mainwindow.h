@@ -114,6 +114,7 @@ private slots:
     void on_actionSpecies_sizes_triggered();
     void changepath_triggered();
     void about_triggered();
+    void save_all(bool toggled);
 };
 
 
