@@ -826,7 +826,7 @@ void MainWindow::RefreshPopulations()
 
        }
 
-       if(ui->actionGenome_as_colour->isChecked()) pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+       if (ui->actionGenome_as_colour->isChecked()) pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
        if (ui->save_coding_genome_as_colour->isChecked())
                 if(save_dir.mkpath("coding/"))
                             pop_image_colour->save(QString(save_dir.path()+"/coding/EvoSim_coding_genome_it_%1.png").arg(generation, 7, 10, QChar('0')));
@@ -862,7 +862,7 @@ void MainWindow::RefreshPopulations()
 
     }
 
-    if (ui->actionNonCoding_genome_as_colour->isChecked())
+    if (ui->actionNonCoding_genome_as_colour->isChecked()||ui->save_non_coding_genome_as_colour->isChecked())
     {
         //find modal genome in each square, convert non-coding to colour
         for (int n=0; n<gridX; n++)
@@ -924,7 +924,11 @@ void MainWindow::RefreshPopulations()
                 pop_image_colour->setPixel(n,m,qRgb(r, g, b));
             }
        }
-        pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if(ui->actionNonCoding_genome_as_colour->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if(ui->save_non_coding_genome_as_colour->isChecked())
+                 if(save_dir.mkpath("non_coding/"))
+                             pop_image_colour->save(QString(save_dir.path()+"/non_coding/EvoSim_non_coding_it_%1.png").arg(generation, 7, 10, QChar('0')));
+
     }
 
     if (ui->actionGene_Frequencies_012->isChecked())
