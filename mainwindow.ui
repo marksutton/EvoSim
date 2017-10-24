@@ -817,7 +817,6 @@ p, li { white-space: pre-wrap; }
      <addaction name="save_all"/>
     </widget>
     <addaction name="actionLoad_Random_Numbers"/>
-    <addaction name="actionEnvironment_Files"/>
     <addaction name="actionStart_Sim"/>
     <addaction name="actionRun_for"/>
     <addaction name="actionBatch"/>
@@ -860,6 +859,8 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionBounce"/>
     <addaction name="separator"/>
     <addaction name="actionInterpolate"/>
+    <addaction name="separator"/>
+    <addaction name="actionEnvironment_Files"/>
    </widget>
    <widget class="QMenu" name="menuDocks">
     <property name="title">

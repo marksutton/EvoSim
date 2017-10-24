@@ -1282,6 +1282,19 @@ bool  MainWindow::on_actionEnvironment_Files_triggered()
                             "Images (*.png *.bmp)");
 
     if (files.length()==0) return false;
+
+    bool notsquare=false, different_size=false;
+    for(int i=0;i<files.length();i++)
+        {
+        QImage LoadImage(files[i]);
+        int x=LoadImage.width();
+        int y=LoadImage.height();
+        if(x!=y)notsquare=true;
+        if(x!=100||y!=100)different_size=true;
+        }
+        if(notsquare||different_size)QMessageBox::warning(this,"FYI","For speed EvoSim currently has static arrays for the environment, which limits out of the box functionality to 100 x 100 square environments. "
+        "It looks like some of your Environment images don't meet this requirement. Anything smaller than 100 x 100 will be stretched (irrespective of aspect ratio) to 100x100. Anything bigger, and we'll use the top left corner. Should you wish to use a different size environment, please email RJG or MDS.");
+
     EnvFiles = files;
     CurrentEnvFile=0;
     int emode=0;
