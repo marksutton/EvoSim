@@ -55,8 +55,6 @@ extern bool  asexual;
 extern bool nonspatial, toroidal;
 extern bool breedspecies, breeddiff;
 
-
-
 extern int maxDiff;
 //chance to mutate out of 255
 extern int mutate;
@@ -111,7 +109,10 @@ extern int settles[GRID_X][GRID_Y]; //for analysis purposes
 extern int settlefails[GRID_X][GRID_Y]; //for analysis purposes
 extern int maxused[GRID_X][GRID_Y]; //---- RJG number of slots used within each grid square
 extern int AliveCount;
-extern bool reseedKnown;//---- RJG reseed with known genomes
+
+//---- RJG reseed with known genomes
+extern bool reseedKnown;
+extern bool reseedDual;
 extern quint64 reseedGenome;
 
 extern int NextEnvChange;
