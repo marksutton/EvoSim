@@ -48,8 +48,10 @@ extern int breedThreshold;
 //and cost of breeding - cost applies for success or failure of course
 extern int breedCost;
 
-//---- RJG: Also allow asexual reproduction.
-extern bool  asexual;
+//---- RJG: Also allow asexual and variable reproduction.
+extern bool asexual;
+extern bool variableBreed;
+extern bool sexual;
 
 //----MDS: toroidal geography and non-spatial settling
 extern bool nonspatial, toroidal;

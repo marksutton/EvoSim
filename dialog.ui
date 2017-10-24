@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>473</width>
-    <height>370</height>
+    <width>517</width>
+    <height>409</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -49,30 +49,6 @@
        </property>
        <property name="maximum">
         <number>256</number>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="2">
-      <widget class="QLabel" name="lableRF">
-       <property name="text">
-        <string>Recalc Fitnesses</string>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="1" alignment="Qt::AlignHCenter">
-      <widget class="QCheckBox" name="CheckBoxAsexual">
-       <property name="layoutDirection">
-        <enum>Qt::RightToLeft</enum>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="0">
-      <widget class="QLabel" name="label_18">
-       <property name="text">
-        <string>Asexual breeding</string>
        </property>
       </widget>
      </item>
@@ -269,21 +245,21 @@
        </property>
       </widget>
      </item>
-     <item row="12" column="2">
+     <item row="11" column="2">
       <widget class="QLabel" name="label_22">
        <property name="text">
         <string>Use Max Diff to Breed</string>
        </property>
       </widget>
      </item>
-     <item row="10" column="2">
-      <widget class="QLabel" name="label_19">
+     <item row="11" column="1" alignment="Qt::AlignHCenter">
+      <widget class="QCheckBox" name="CheckBoxBreedWithinSpecies">
        <property name="text">
-        <string>Toroidal</string>
+        <string/>
        </property>
       </widget>
      </item>
-     <item row="10" column="3" alignment="Qt::AlignHCenter">
+     <item row="9" column="3" alignment="Qt::AlignHCenter">
       <widget class="QCheckBox" name="CheckBoxToroidal">
        <property name="layoutDirection">
         <enum>Qt::RightToLeft</enum>
@@ -293,38 +269,28 @@
        </property>
       </widget>
      </item>
-     <item row="12" column="1" alignment="Qt::AlignHCenter">
-      <widget class="QCheckBox" name="CheckBoxBreedWithinSpecies">
+     <item row="9" column="2">
+      <widget class="QLabel" name="label_19">
        <property name="text">
-        <string/>
+        <string>Toroidal</string>
        </property>
       </widget>
      </item>
-     <item row="10" column="0">
-      <widget class="QLabel" name="label_20">
-       <property name="text">
-        <string>Nonspatial Settling</string>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="1" alignment="Qt::AlignHCenter">
+     <item row="9" column="1" alignment="Qt::AlignHCenter">
       <widget class="QCheckBox" name="CheckBoxNonSpatial">
        <property name="text">
         <string/>
        </property>
       </widget>
      </item>
-     <item row="8" column="3" alignment="Qt::AlignHCenter">
-      <widget class="QCheckBox" name="CheckBoxRecalcFitness">
-       <property name="layoutDirection">
-        <enum>Qt::RightToLeft</enum>
-       </property>
+     <item row="9" column="0">
+      <widget class="QLabel" name="label_20">
        <property name="text">
-        <string/>
+        <string>Nonspatial Settling</string>
        </property>
       </widget>
      </item>
-     <item row="12" column="0">
+     <item row="11" column="0">
       <widget class="QLabel" name="label_21">
        <property name="text">
         <string>Breed only within species</string>
@@ -335,6 +301,13 @@
       <widget class="QLabel" name="label_2">
        <property name="text">
         <string>Grid Y</string>
+       </property>
+      </widget>
+     </item>
+     <item row="11" column="3" alignment="Qt::AlignHCenter">
+      <widget class="QCheckBox" name="CheckBoxBreedWithDifference">
+       <property name="text">
+        <string/>
        </property>
       </widget>
      </item>
@@ -358,27 +331,52 @@
        </property>
       </widget>
      </item>
-     <item row="12" column="3" alignment="Qt::AlignHCenter">
-      <widget class="QCheckBox" name="CheckBoxBreedWithDifference">
+     <item row="13" column="1">
+      <widget class="QRadioButton" name="radioSexual">
+       <property name="text">
+        <string>Sexual</string>
+       </property>
+      </widget>
+     </item>
+     <item row="13" column="2" alignment="Qt::AlignHCenter">
+      <widget class="QRadioButton" name="radioAsexual">
+       <property name="text">
+        <string>Asexual</string>
+       </property>
+      </widget>
+     </item>
+     <item row="13" column="3">
+      <widget class="QRadioButton" name="radioVariable">
+       <property name="text">
+        <string>Variable</string>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="1" alignment="Qt::AlignHCenter">
+      <widget class="QCheckBox" name="CheckBoxRecalcFitness">
+       <property name="layoutDirection">
+        <enum>Qt::RightToLeft</enum>
+       </property>
        <property name="text">
         <string/>
        </property>
       </widget>
      </item>
+     <item row="13" column="0">
+      <widget class="QLabel" name="label_16">
+       <property name="text">
+        <string>Breeding</string>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="0">
+      <widget class="QLabel" name="lableRF">
+       <property name="text">
+        <string>Recalc Fitnesses</string>
+       </property>
+      </widget>
+     </item>
     </layout>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
