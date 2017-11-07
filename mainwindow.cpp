@@ -315,6 +315,7 @@ void MainWindow::changeEvent(QEvent *e)
 
 void MainWindow::on_actionStart_Sim_triggered()
 {
+
     if (CurrentEnvFile==-1)
     {
         QMessageBox::critical(0,"","Cannot start simulation without environment");

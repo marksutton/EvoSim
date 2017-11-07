@@ -481,6 +481,24 @@ void SimManager::SetupRun()
     AliveCount=1;
     quint64 gen=critters[n][m][0].genome;
 
+    //HERE
+    //Sort out printing and counting here to test for variable breding
+
+    qDebug()<<critters[n][m][0].genome<<" which is: ";
+
+    QString genome_out;
+    for (int j=0; j<32; j++)
+        if (tweakers64[63-j] & critters[n][m][0].genome) genome_out.append("1"); else genome_out.append("0");
+    genome_out.append(" ");
+    for (int j=32; j<64; j++)
+        if (tweakers64[63-j] & critters[n][m][0].genome) genome_out.append("1"); else genome_out.append("0");
+    qDebug()<<genome_out;
+
+    quint32 g1xu = quint32(critters[n][m][0].genome / ((quint64)65536*(quint64)65536)); //upper 32 bits
+    quint32 t1 = bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
+
+    qDebug()<<"And the count is"<<t1;
+
     //RJG - Fill square with successful critter
     for (int c=1; c<slotsPerSq; c++)
     {
