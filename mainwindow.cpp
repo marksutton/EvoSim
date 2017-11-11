@@ -736,7 +736,7 @@ void MainWindow::RefreshPopulations()
             if (count>255) count=255;
             pop_image->setPixel(n,m,count);
         }
-         if (ui->actionPopulation_Count->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        if (ui->actionPopulation_Count->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
         if (ui->save_population_count->isChecked())
                  if(save_dir.mkpath("population/"))
                              pop_image_colour->save(QString(save_dir.path()+"/population/EvoSim_population_it_%1.png").arg(generation, 7, 10, QChar('0')));
@@ -917,7 +917,7 @@ void MainWindow::RefreshPopulations()
                         maxg=genomes[i];
                     }
 
-                //now convert first 32 bits to a colour
+                //now convert second 32 bits to a colour
                 // r,g,b each counts of 11,11,10 bits
                 quint32 genome= (quint32)(maxg / ((quint64)65536*(quint64)65536));
                 quint32 b = bitcounts[genome & 2047] * 23;

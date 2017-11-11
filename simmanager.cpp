@@ -481,9 +481,31 @@ void SimManager::SetupRun()
     AliveCount=1;
     quint64 gen=critters[n][m][0].genome;
 
-    //HERE
-    //Sort out printing and counting here to test for variable breding
+    //Reset code to debug/play with variable breed.
+    /*
+        for (int j=0;j<33;j++)
+                {
+                int asex=0, sex=0;
+                 for (int i=0;i<10000000;i++)
+                    {
+                    bool temp_asexual=false;
+                    if(Rand32()>=tweakers64[j])temp_asexual=true;
+                    //---- RJG: If asexual, recombine with self
+                    if(temp_asexual){asex++;}
+                    else {sex++;}
+                    }
+                 qDebug()<<"J is"<<j<<" asex is "<<asex<<" sex is "<<sex;
+                }
 
+    for (int j=0;j<33;j++)
+        {
+        int ct=0;
+        for (int i=0;i<10000000;i++)if (Rand32()<=tweakers64[j])ct++;
+        float ct_av=((float)ct)/10000000.;
+        qDebug()<<"J is: "<<j<<" Tweakers is: "<< tweakers64[j]<<"Count is: "<<ct<< "and the average is"<<ct_av;
+        }
+
+    //Sort out printing and counting here to test for variable breding
     qDebug()<<critters[n][m][0].genome<<" which is: ";
 
     QString genome_out;
@@ -498,6 +520,14 @@ void SimManager::SetupRun()
     quint32 t1 = bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
 
     qDebug()<<"And the count is"<<t1;
+
+    quint32 lowergenome=(quint32)(critters[n][m][0].genome & ((quint64)65536*(quint64)65536-(quint64)1));
+
+    qDebug()<<"Coding genome is: "<<lowergenome<<"which is: ";
+    genome_out.clear();
+    for (int j=32; j<64; j++)
+        if (tweakers64[63-j] & lowergenome) genome_out.append("1"); else genome_out.append("0");
+    qDebug()<<genome_out;*/
 
     //RJG - Fill square with successful critter
     for (int c=1; c<slotsPerSq; c++)
@@ -585,6 +615,9 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
     int breedlist[SLOTS_PER_GRID_SQUARE];
     int maxalive;
     int deathcount;
+
+    int asex=0, sex=0;
+
     for (int n=firstx; n<=lastx; n++)
     for (int m=0; m<gridY; m++)
     {
@@ -636,10 +669,19 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
                 for (int c=0; c<breedlistentries; c++)
                 {
                     int partner;
+                    bool temp_asexual=asexual;
 
-                    //---- RJG: If asexual, recombine with self
-                    if(asexual)partner=c;
-                    else partner=Rand8()/divider;
+                    //Here is where variable needs to be sorted.
+                    if(variableBreed)
+                        {
+                        quint32 g1xu = quint32(crit[breedlist[c]].genome / ((quint64)65536*(quint64)65536)); //upper 32 bits
+                        quint32 t1 = bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
+                        if(Rand32()>=tweakers64[t1])temp_asexual=true;
+                        else temp_asexual=false;
+                        }
+
+                    if(temp_asexual){partner=c;asex++;}
+                    else {partner=Rand8()/divider;sex++;}
 
                     if (partner<breedlistentries)
                     {
@@ -652,6 +694,7 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             }
         }
     }
+    if(sex>0&&asex>0) qDebug()<<asex<<sex;
     return newgenomecount_local;
 }
 
