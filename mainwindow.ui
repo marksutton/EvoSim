@@ -916,11 +916,6 @@ p, li { white-space: pre-wrap; }
      <addaction name="actionGenerate_NWK_tree_file"/>
      <addaction name="actionSpecies_sizes"/>
     </widget>
-    <widget class="QMenu" name="menuType_Here">
-     <property name="title">
-      <string>Type Here</string>
-     </property>
-    </widget>
     <addaction name="actionReport_Viewer"/>
     <addaction name="separator"/>
     <addaction name="actionCount_Peaks"/>
@@ -930,7 +925,6 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionStasis"/>
     <addaction name="separator"/>
     <addaction name="menuPhylogeny_Data_Tools"/>
-    <addaction name="menuType_Here"/>
    </widget>
    <addaction name="menuCommands"/>
    <addaction name="menuEnvironment"/>

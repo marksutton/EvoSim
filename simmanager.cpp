@@ -482,21 +482,34 @@ void SimManager::SetupRun()
     quint64 gen=critters[n][m][0].genome;
 
     //Reset code to debug/play with variable breed.
-    /*
+
+    for (int j=0;j<33;j++)
+    {
+       float NSDF= 0.5 * erfc(-(j*(4294967296/32)) * M_SQRT1_2);
+       qDebug()<<NSDF;
+    }
+/*
         for (int j=0;j<33;j++)
                 {
-                int asex=0, sex=0;
-                 for (int i=0;i<10000000;i++)
-                    {
-                    bool temp_asexual=false;
-                    if(Rand32()>=tweakers64[j])temp_asexual=true;
-                    //---- RJG: If asexual, recombine with self
-                    if(temp_asexual){asex++;}
-                    else {sex++;}
-                    }
-                 qDebug()<<"J is"<<j<<" asex is "<<asex<<" sex is "<<sex;
+            int asex=0, sex=0;
+             for (int i=0;i<10000000;i++)
+                {
+                bool temp_asexual=false;
+                //if(Rand32()>(4294967296/j))temp_asexual=true;
+                //if(Rand32()>=(4294967296/tweakers64[j]))temp_asexual=true;
+                //if(Rand32()>=(j*(4294967296/32)))temp_asexual=true;
+                //if((Rand32()+Rand32())>=(j*(4294967296/32)))temp_asexual=true;
+                if((Rand32())>=((pow(10,j)/pow(10,32))*(4294967296/32)))temp_asexual=true;
+               // if(Rand32()>=(j*(4294967296/32)))temp_asexual=true;
+                //if (Rand32()/(j+(4294967296/32)))>=1)
+                //---- RJG: If asexual, recombine with self
+                if(temp_asexual)asex++;
+                else sex++;
                 }
-
+             float asexpct=((float)asex/10000000.)*100.;
+             qDebug()<<"J is"<<j<<" Asex is "<<asex<<"; sex is"<<sex<<". So breeding is "<<asexpct<<"asexual.";
+                }
+/*
     for (int j=0;j<33;j++)
         {
         int ct=0;
@@ -504,6 +517,7 @@ void SimManager::SetupRun()
         float ct_av=((float)ct)/10000000.;
         qDebug()<<"J is: "<<j<<" Tweakers is: "<< tweakers64[j]<<"Count is: "<<ct<< "and the average is"<<ct_av;
         }
+
 
     //Sort out printing and counting here to test for variable breding
     qDebug()<<critters[n][m][0].genome<<" which is: ";
