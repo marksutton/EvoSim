@@ -486,21 +486,9 @@ void SimManager::SetupRun()
 
 
     //HERE
-
     //Reset code to debug/play with variable breed.
-    float x=-5., inc=(10./33);
-    int cnt=0;
-    quint64 cumulative_normal_distribution[33];
-    do{
-
-        float NSDF= (0.5 * erfc(-(x) * M_SQRT1_2));
-        cumulative_normal_distribution[cnt]=4294967296*NSDF;
-
-        qDebug()<<NSDF<<cnt<<cumulative_normal_distribution[cnt];
-    x+=inc;
-    cnt++;
-    }while(cnt<33);
-
+    //Now just need to put the rest into the variable breed place
+for (int j=0;j<33;j++)qDebug()<<cumulative_normal_distribution[j];
         for (int j=0;j<33;j++)
                 {
             int asex=0, sex=0;
