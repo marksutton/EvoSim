@@ -10,6 +10,7 @@
 #include <QImage>
 #include <QMessageBox>
 
+//Simulation variables
 quint32 tweakers[32]; // the 32 single bit XOR values (many uses!)
 quint64 tweakers64[64]; // the 64 bit version
 quint32 bitcounts[65536]; // the bytes representing bit count of each number 0-635535
@@ -18,6 +19,8 @@ int xdisp[256][256];
 int ydisp[256][256];
 quint64 genex[65536];
 int nextgenex;
+quint64 cumulative_normal_distribution[33]; // RJG - A cumulative normal distribution for variable breeding.
+quint64 reseedGenome=0; //RJG - Genome for reseed with known genome
 
 //Settable ints
 int gridX = 100;        //Can't be used to define arrays - hence both ATM
@@ -37,6 +40,9 @@ int yearsPerIteration=1;
 int speciesSamples=1;
 int speciesSensitivity=2;
 int timeSliceConnect=5;
+int lastReport=0;
+
+//Settable bools
 bool recalcFitness=false;
 bool asexual=false;
 bool variableBreed=false;
@@ -49,18 +55,14 @@ bool toroidal=false;
 bool reseedKnown=false;
 bool reseedDual=false;
 bool breedspecies=false, breeddiff=true;
-quint64 reseedGenome=0;
 
-int lastReport=0;
-
-quint64 lastSpeciesCalc=0;
-QString SpeciesLoggingFile="";
-QString FitnessLoggingFile="";
-
+//File handling
 QStringList EnvFiles;
 int CurrentEnvFile;
 int EnvChangeCounter;
 bool EnvChangeForward;
+QString SpeciesLoggingFile="";
+QString FitnessLoggingFile="";
 
 //Globabl data
 Critter critters[GRID_X][GRID_Y][SLOTS_PER_GRID_SQUARE]; //main array - static for speed
@@ -80,21 +82,22 @@ int newgenomecount;
 quint8 randoms[65536];
 quint16 nextrandom=0;
 
+//Analysis
 int breedattempts[GRID_X][GRID_Y]; //for analysis purposes
 int breedfails[GRID_X][GRID_Y]; //for analysis purposes
 int settles[GRID_X][GRID_Y]; //for analysis purposes
 int settlefails[GRID_X][GRID_Y]; //for analysis purposes
 int maxused[GRID_X][GRID_Y];
 int AliveCount;
+
+//Species stuff
 QList<species> oldspecieslist;
 QList< QList<species> > archivedspecieslists; //no longer used?
 LogSpecies *rootspecies;
 QHash<quint64,LogSpecies *> LogSpeciesById;
-
+quint64 lastSpeciesCalc=0;
 quint64 nextspeciesid;
-
 QList<uint> species_colours;
-
 quint8 species_mode;
 quint64 ids; //used in tree export -
 quint64 minspeciessize;
@@ -481,14 +484,23 @@ void SimManager::SetupRun()
     AliveCount=1;
     quint64 gen=critters[n][m][0].genome;
 
-    //Reset code to debug/play with variable breed.
 
-    for (int j=0;j<33;j++)
-    {
-       float NSDF= 0.5 * erfc(-(j*(4294967296/32)) * M_SQRT1_2);
-       qDebug()<<NSDF;
-    }
-/*
+    //HERE
+
+    //Reset code to debug/play with variable breed.
+    float x=-5., inc=(10./33);
+    int cnt=0;
+    quint64 cumulative_normal_distribution[33];
+    do{
+
+        float NSDF= (0.5 * erfc(-(x) * M_SQRT1_2));
+        cumulative_normal_distribution[cnt]=4294967296*NSDF;
+
+        qDebug()<<NSDF<<cnt<<cumulative_normal_distribution[cnt];
+    x+=inc;
+    cnt++;
+    }while(cnt<33);
+
         for (int j=0;j<33;j++)
                 {
             int asex=0, sex=0;
@@ -499,8 +511,8 @@ void SimManager::SetupRun()
                 //if(Rand32()>=(4294967296/tweakers64[j]))temp_asexual=true;
                 //if(Rand32()>=(j*(4294967296/32)))temp_asexual=true;
                 //if((Rand32()+Rand32())>=(j*(4294967296/32)))temp_asexual=true;
-                if((Rand32())>=((pow(10,j)/pow(10,32))*(4294967296/32)))temp_asexual=true;
-               // if(Rand32()>=(j*(4294967296/32)))temp_asexual=true;
+                //if((Rand32())>=((pow(10,j)/pow(10,32))*(4294967296/32)))temp_asexual=true;
+                if(Rand32()>=cumulative_normal_distribution[j])temp_asexual=true;
                 //if (Rand32()/(j+(4294967296/32)))>=1)
                 //---- RJG: If asexual, recombine with self
                 if(temp_asexual)asex++;
