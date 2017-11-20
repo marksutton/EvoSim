@@ -416,7 +416,7 @@ void SimManager::SetupRun()
     int n=gridX/2, m=gridY/2;
     int n2=0;
 
-    //Temp dual seed
+    //Dual seed if required
     if(reseedDual)
         {
         n=2;
@@ -483,65 +483,6 @@ void SimManager::SetupRun()
 
     AliveCount=1;
     quint64 gen=critters[n][m][0].genome;
-
-
-    //HERE
-    //Reset code to debug/play with variable breed.
-    //Now just need to put the rest into the variable breed place
-for (int j=0;j<33;j++)qDebug()<<cumulative_normal_distribution[j];
-        for (int j=0;j<33;j++)
-                {
-            int asex=0, sex=0;
-             for (int i=0;i<10000000;i++)
-                {
-                bool temp_asexual=false;
-                //if(Rand32()>(4294967296/j))temp_asexual=true;
-                //if(Rand32()>=(4294967296/tweakers64[j]))temp_asexual=true;
-                //if(Rand32()>=(j*(4294967296/32)))temp_asexual=true;
-                //if((Rand32()+Rand32())>=(j*(4294967296/32)))temp_asexual=true;
-                //if((Rand32())>=((pow(10,j)/pow(10,32))*(4294967296/32)))temp_asexual=true;
-                if(Rand32()>=cumulative_normal_distribution[j])temp_asexual=true;
-                //if (Rand32()/(j+(4294967296/32)))>=1)
-                //---- RJG: If asexual, recombine with self
-                if(temp_asexual)asex++;
-                else sex++;
-                }
-             float asexpct=((float)asex/10000000.)*100.;
-             qDebug()<<"J is"<<j<<" Asex is "<<asex<<"; sex is"<<sex<<". So breeding is "<<asexpct<<"asexual.";
-                }
-/*
-    for (int j=0;j<33;j++)
-        {
-        int ct=0;
-        for (int i=0;i<10000000;i++)if (Rand32()<=tweakers64[j])ct++;
-        float ct_av=((float)ct)/10000000.;
-        qDebug()<<"J is: "<<j<<" Tweakers is: "<< tweakers64[j]<<"Count is: "<<ct<< "and the average is"<<ct_av;
-        }
-
-
-    //Sort out printing and counting here to test for variable breding
-    qDebug()<<critters[n][m][0].genome<<" which is: ";
-
-    QString genome_out;
-    for (int j=0; j<32; j++)
-        if (tweakers64[63-j] & critters[n][m][0].genome) genome_out.append("1"); else genome_out.append("0");
-    genome_out.append(" ");
-    for (int j=32; j<64; j++)
-        if (tweakers64[63-j] & critters[n][m][0].genome) genome_out.append("1"); else genome_out.append("0");
-    qDebug()<<genome_out;
-
-    quint32 g1xu = quint32(critters[n][m][0].genome / ((quint64)65536*(quint64)65536)); //upper 32 bits
-    quint32 t1 = bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
-
-    qDebug()<<"And the count is"<<t1;
-
-    quint32 lowergenome=(quint32)(critters[n][m][0].genome & ((quint64)65536*(quint64)65536-(quint64)1));
-
-    qDebug()<<"Coding genome is: "<<lowergenome<<"which is: ";
-    genome_out.clear();
-    for (int j=32; j<64; j++)
-        if (tweakers64[63-j] & lowergenome) genome_out.append("1"); else genome_out.append("0");
-    qDebug()<<genome_out;*/
 
     //RJG - Fill square with successful critter
     for (int c=1; c<slotsPerSq; c++)
@@ -690,7 +631,9 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
                         {
                         quint32 g1xu = quint32(crit[breedlist[c]].genome / ((quint64)65536*(quint64)65536)); //upper 32 bits
                         quint32 t1 = bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
-                        if(Rand32()>=tweakers64[t1])temp_asexual=true;
+                        //RJG - probability of breeding follows a standard normal distribution from -5 to +5
+                        //More 1's in non coding genome == higher probability of sexual reproduction - see documentation.
+                        if(Rand32()>=cumulative_normal_distribution[t1])temp_asexual=true;
                         else temp_asexual=false;
                         }
 
@@ -708,7 +651,7 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             }
         }
     }
-    if(sex>0&&asex>0) qDebug()<<asex<<sex;
+
     return newgenomecount_local;
 }
 
