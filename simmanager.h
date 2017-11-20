@@ -48,14 +48,14 @@ extern int breedThreshold;
 //and cost of breeding - cost applies for success or failure of course
 extern int breedCost;
 
-//---- RJG: Also allow asexual reproduction.
-extern bool  asexual;
+//---- RJG: Also allow asexual and variable reproduction.
+extern bool asexual;
+extern bool variableBreed;
+extern bool sexual;
 
 //----MDS: toroidal geography and non-spatial settling
 extern bool nonspatial, toroidal;
 extern bool breedspecies, breeddiff;
-
-
 
 extern int maxDiff;
 //chance to mutate out of 255
@@ -73,6 +73,7 @@ extern int nextgenex;
 extern quint8 probbreed[65536][16];
 extern quint8 randoms[65536];
 extern quint16 nextrandom;
+extern quint64 cumulative_normal_distribution[33]; // RJG - A cumulative normal distribution for variable breeding.
 
 //Globabl data
 extern Critter critters[GRID_X][GRID_Y][SLOTS_PER_GRID_SQUARE]; //main array - static for speed
@@ -111,7 +112,10 @@ extern int settles[GRID_X][GRID_Y]; //for analysis purposes
 extern int settlefails[GRID_X][GRID_Y]; //for analysis purposes
 extern int maxused[GRID_X][GRID_Y]; //---- RJG number of slots used within each grid square
 extern int AliveCount;
-extern bool reseedKnown;//---- RJG reseed with known genomes
+
+//---- RJG reseed with known genomes
+extern bool reseedKnown;
+extern bool reseedDual;
 extern quint64 reseedGenome;
 
 extern int NextEnvChange;

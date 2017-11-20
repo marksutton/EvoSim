@@ -10,6 +10,7 @@
 #include <QImage>
 #include <QMessageBox>
 
+//Simulation variables
 quint32 tweakers[32]; // the 32 single bit XOR values (many uses!)
 quint64 tweakers64[64]; // the 64 bit version
 quint32 bitcounts[65536]; // the bytes representing bit count of each number 0-635535
@@ -18,6 +19,8 @@ int xdisp[256][256];
 int ydisp[256][256];
 quint64 genex[65536];
 int nextgenex;
+quint64 cumulative_normal_distribution[33]; // RJG - A cumulative normal distribution for variable breeding.
+quint64 reseedGenome=0; //RJG - Genome for reseed with known genome
 
 //Settable ints
 int gridX = 100;        //Can't be used to define arrays - hence both ATM
@@ -37,27 +40,29 @@ int yearsPerIteration=1;
 int speciesSamples=1;
 int speciesSensitivity=2;
 int timeSliceConnect=5;
+int lastReport=0;
+
+//Settable bools
 bool recalcFitness=false;
 bool asexual=false;
+bool variableBreed=false;
+bool sexual=true;
 bool speciesLogging=false;
 bool speciesLoggingToFile=false;
 bool fitnessLoggingToFile=false;
 bool nonspatial=false;
 bool toroidal=false;
 bool reseedKnown=false;
+bool reseedDual=false;
 bool breedspecies=false, breeddiff=true;
-quint64 reseedGenome=0;
 
-int lastReport=0;
-
-quint64 lastSpeciesCalc=0;
-QString SpeciesLoggingFile="";
-QString FitnessLoggingFile="";
-
+//File handling
 QStringList EnvFiles;
 int CurrentEnvFile;
 int EnvChangeCounter;
 bool EnvChangeForward;
+QString SpeciesLoggingFile="";
+QString FitnessLoggingFile="";
 
 //Globabl data
 Critter critters[GRID_X][GRID_Y][SLOTS_PER_GRID_SQUARE]; //main array - static for speed
@@ -77,21 +82,22 @@ int newgenomecount;
 quint8 randoms[65536];
 quint16 nextrandom=0;
 
+//Analysis
 int breedattempts[GRID_X][GRID_Y]; //for analysis purposes
 int breedfails[GRID_X][GRID_Y]; //for analysis purposes
 int settles[GRID_X][GRID_Y]; //for analysis purposes
 int settlefails[GRID_X][GRID_Y]; //for analysis purposes
 int maxused[GRID_X][GRID_Y];
 int AliveCount;
+
+//Species stuff
 QList<species> oldspecieslist;
 QList< QList<species> > archivedspecieslists; //no longer used?
 LogSpecies *rootspecies;
 QHash<quint64,LogSpecies *> LogSpeciesById;
-
+quint64 lastSpeciesCalc=0;
 quint64 nextspeciesid;
-
 QList<uint> species_colours;
-
 quint8 species_mode;
 quint64 ids; //used in tree export -
 quint64 minspeciessize;
@@ -390,6 +396,7 @@ void SimManager::SetupRun()
 {
     //Find middle square, try creatures till something lives, duplicate it [slots] times
     //RJG - called on initial program load and reseed, but also when run/run for are hit
+    //RJG - with modification for dual seed if selected
 
     //Kill em all
     for (int n=0; n<gridX; n++)
@@ -407,9 +414,18 @@ void SimManager::SetupRun()
     nextspeciesid=1; //reset ID counter
 
     int n=gridX/2, m=gridY/2;
+    int n2=0;
+
+    //Dual seed if required
+    if(reseedDual)
+        {
+        n=2;
+        n2=gridX-2;
+        }
 
     //RJG - Either reseed with known genome if set
-    if(reseedKnown){
+    if(reseedKnown && !reseedDual)
+                {
                     critters[n][m][0].initialise(reseedGenome,environment[n][m],n,m,0,nextspeciesid);
                     if (critters[n][m][0].fitness==0)
                         {
@@ -424,15 +440,46 @@ void SimManager::SetupRun()
                     QString reseedGenomeString("Started simulation with known genome: ");
                     for (int i=0; i<64; i++)if (tweakers64[i] & reseedGenome) reseedGenomeString.append("1"); else reseedGenomeString.append("0");
                     MainWin->setStatusBarText(reseedGenomeString);
-                    }
-
+                }
+    else if(reseedKnown && reseedDual)
+                {
+                    critters[n][m][0].initialise(reseedGenome,environment[n][m],n,m,0,nextspeciesid);
+                    critters[n2][m][0].initialise(reseedGenome,environment[n2][m],n2,m,0,nextspeciesid);
+                    if (critters[n][m][0].fitness==0||critters[n2][m][0].fitness==0)
+                        {
+                            // RJG - But sort out if it can't survive...
+                             QMessageBox::warning(0,"Oops","The genome you're trying to reseed with can't survive in one of the two chosen environmental pixels. There could be a number of reasons why this is. Please contact RJG or MDS to discuss.");
+                             reseedKnown=false;
+                             SetupRun();
+                             return;
+                        }
+                    //RJG - I think this is a good thing to flag in an obvious fashion.
+                    QString reseedGenomeString("Started simulation with dual known genomes: ");
+                    for (int i=0; i<64; i++)if (tweakers64[i] & reseedGenome) reseedGenomeString.append("1"); else reseedGenomeString.append("0");
+                    MainWin->setStatusBarText(reseedGenomeString);
+                }
     //RJG - or try till one lives. If alive, fitness (in critter file) >0
-    else {
-            while (critters[n][m][0].fitness<1) critters[n][m][0].initialise((quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32(), environment[n][m], n,m,0,nextspeciesid);
-            MainWin->setStatusBarText("");
-         }
+    else if(!reseedKnown && reseedDual)
+                {
+                    int flag=0;
+                    do{
+                        flag=0;
+                        do critters[n][m][0].initialise((quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32(), environment[n][m], n,m,0,nextspeciesid);
+                            while (critters[n][m][0].fitness<1);
+                        quint64 gen=critters[n][m][0].genome;
+                        critters[n2][m][0].initialise(gen, environment[n2][m],n2,m,0,nextspeciesid);
+                        flag=critters[n2][m][0].fitness;
+                        }while(flag<1);
+                    MainWin->setStatusBarText("");
+                }
+    else
+                {
+                    while (critters[n][m][0].fitness<1) critters[n][m][0].initialise((quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32(), environment[n][m], n,m,0,nextspeciesid);
+                    MainWin->setStatusBarText("");
+                }
 
     totalfit[n][m]=critters[n][m][0].fitness; //may have gone wrong from above
+    if(reseedDual)totalfit[n2][m]=critters[n2][m][0].fitness;
 
     AliveCount=1;
     quint64 gen=critters[n][m][0].genome;
@@ -441,6 +488,7 @@ void SimManager::SetupRun()
     for (int c=1; c<slotsPerSq; c++)
     {
         critters[n][m][c].initialise(gen, environment[n][m], n,m,c,nextspeciesid);
+        if(reseedDual)critters[n2][m][c].initialise(gen, environment[n2][m], n2,m,c,nextspeciesid);
 
         if (critters[n][m][c].age>0)
         {
@@ -449,6 +497,15 @@ void SimManager::SetupRun()
             AliveCount++;
             maxused[n][m]=c;
             totalfit[n][m]+=critters[n][m][c].fitness;
+        }
+
+        if(reseedDual && critters[n2][m][c].age>0)
+        {
+            critters[n2][m][c].age/=((Rand8()/10)+1);
+            critters[n2][m][c].age +=10;
+            AliveCount++;
+            maxused[n2][m]=c;
+            totalfit[n2][m]+=critters[n2][m][c].fitness;
         }
     }
 
@@ -513,6 +570,9 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
     int breedlist[SLOTS_PER_GRID_SQUARE];
     int maxalive;
     int deathcount;
+
+    int asex=0, sex=0;
+
     for (int n=firstx; n<=lastx; n++)
     for (int m=0; m<gridY; m++)
     {
@@ -564,10 +624,21 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
                 for (int c=0; c<breedlistentries; c++)
                 {
                     int partner;
+                    bool temp_asexual=asexual;
 
-                    //---- RJG: If asexual, recombine with self
-                    if(asexual)partner=c;
-                    else partner=Rand8()/divider;
+                    //Here is where variable needs to be sorted.
+                    if(variableBreed)
+                        {
+                        quint32 g1xu = quint32(crit[breedlist[c]].genome / ((quint64)65536*(quint64)65536)); //upper 32 bits
+                        quint32 t1 = bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
+                        //RJG - probability of breeding follows a standard normal distribution from -5 to +5
+                        //More 1's in non coding genome == higher probability of sexual reproduction - see documentation.
+                        if(Rand32()>=cumulative_normal_distribution[t1])temp_asexual=true;
+                        else temp_asexual=false;
+                        }
+
+                    if(temp_asexual){partner=c;asex++;}
+                    else {partner=Rand8()/divider;sex++;}
 
                     if (partner<breedlistentries)
                     {
@@ -580,6 +651,7 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             }
         }
     }
+
     return newgenomecount_local;
 }
 

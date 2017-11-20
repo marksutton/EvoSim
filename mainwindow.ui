@@ -817,7 +817,6 @@ p, li { white-space: pre-wrap; }
      <addaction name="save_all"/>
     </widget>
     <addaction name="actionLoad_Random_Numbers"/>
-    <addaction name="actionEnvironment_Files"/>
     <addaction name="actionStart_Sim"/>
     <addaction name="actionRun_for"/>
     <addaction name="actionBatch"/>
@@ -860,6 +859,8 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionBounce"/>
     <addaction name="separator"/>
     <addaction name="actionInterpolate"/>
+    <addaction name="separator"/>
+    <addaction name="actionEnvironment_Files"/>
    </widget>
    <widget class="QMenu" name="menuDocks">
     <property name="title">
@@ -915,11 +916,6 @@ p, li { white-space: pre-wrap; }
      <addaction name="actionGenerate_NWK_tree_file"/>
      <addaction name="actionSpecies_sizes"/>
     </widget>
-    <widget class="QMenu" name="menuType_Here">
-     <property name="title">
-      <string>Type Here</string>
-     </property>
-    </widget>
     <addaction name="actionReport_Viewer"/>
     <addaction name="separator"/>
     <addaction name="actionCount_Peaks"/>
@@ -929,7 +925,6 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionStasis"/>
     <addaction name="separator"/>
     <addaction name="menuPhylogeny_Data_Tools"/>
-    <addaction name="menuType_Here"/>
    </widget>
    <addaction name="menuCommands"/>
    <addaction name="menuEnvironment"/>

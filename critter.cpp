@@ -137,7 +137,7 @@ int Critter::breed_with_parallel(int xpos, int ypos, Critter *partner, int *newg
         }
      }
 
-     if (breedsuccess1 && breedsuccess2)
+    if (breedsuccess1 && breedsuccess2)
     {
          //work out new genome
 

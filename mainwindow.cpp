@@ -196,10 +196,21 @@ MainWindow::MainWindow(QWidget *parent) :
     env_item->setPixmap(QPixmap::fromImage(*env_image));
     pop_item->setPixmap(QPixmap::fromImage(*pop_image));
 
+    //RJG - fill cumulative_normal_distribution with numbers for variable breeding
+    //These are a cumulative standard normal distribution from -5 to 5, created using the math.h complementary error function
+    //Then scaled to zero to 32 bit rand max, to allow for probabilities within each iteration through a random number
+    float x=-5., inc=(10./33);
+    int cnt=0;
+    do{
+        float NSDF=(0.5 * erfc(-(x) * M_SQRT1_2));
+        cumulative_normal_distribution[cnt]=4294967296*NSDF;
+        x+=inc;
+        cnt++;
+    }while(cnt<33);
+
     TheSimManager = new SimManager;
 
     //RJG - load default environment image to allow program to run out of box (quicker for testing)
-
     EnvFiles.append(":/EvoSim_default_env.png");
     CurrentEnvFile=0;
     TheSimManager->loadEnvironmentFromFile(1);
@@ -315,6 +326,7 @@ void MainWindow::changeEvent(QEvent *e)
 
 void MainWindow::on_actionStart_Sim_triggered()
 {
+
     if (CurrentEnvFile==-1)
     {
         QMessageBox::critical(0,"","Cannot start simulation without environment");
@@ -735,7 +747,7 @@ void MainWindow::RefreshPopulations()
             if (count>255) count=255;
             pop_image->setPixel(n,m,count);
         }
-         if (ui->actionPopulation_Count->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        if (ui->actionPopulation_Count->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
         if (ui->save_population_count->isChecked())
                  if(save_dir.mkpath("population/"))
                              pop_image_colour->save(QString(save_dir.path()+"/population/EvoSim_population_it_%1.png").arg(generation, 7, 10, QChar('0')));
@@ -916,7 +928,7 @@ void MainWindow::RefreshPopulations()
                         maxg=genomes[i];
                     }
 
-                //now convert first 32 bits to a colour
+                //now convert second 32 bits to a colour
                 // r,g,b each counts of 11,11,10 bits
                 quint32 genome= (quint32)(maxg / ((quint64)65536*(quint64)65536));
                 quint32 b = bitcounts[genome & 2047] * 23;
@@ -1282,6 +1294,19 @@ bool  MainWindow::on_actionEnvironment_Files_triggered()
                             "Images (*.png *.bmp)");
 
     if (files.length()==0) return false;
+
+    bool notsquare=false, different_size=false;
+    for(int i=0;i<files.length();i++)
+        {
+        QImage LoadImage(files[i]);
+        int x=LoadImage.width();
+        int y=LoadImage.height();
+        if(x!=y)notsquare=true;
+        if(x!=100||y!=100)different_size=true;
+        }
+        if(notsquare||different_size)QMessageBox::warning(this,"FYI","For speed EvoSim currently has static arrays for the environment, which limits out of the box functionality to 100 x 100 square environments. "
+        "It looks like some of your Environment images don't meet this requirement. Anything smaller than 100 x 100 will be stretched (irrespective of aspect ratio) to 100x100. Anything bigger, and we'll use the top left corner. Should you wish to use a different size environment, please email RJG or MDS.");
+
     EnvFiles = files;
     CurrentEnvFile=0;
     int emode=0;
