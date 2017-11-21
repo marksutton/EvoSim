@@ -196,18 +196,6 @@ MainWindow::MainWindow(QWidget *parent) :
     env_item->setPixmap(QPixmap::fromImage(*env_image));
     pop_item->setPixmap(QPixmap::fromImage(*pop_image));
 
-    //RJG - fill cumulative_normal_distribution with numbers for variable breeding
-    //These are a cumulative standard normal distribution from -5 to 5, created using the math.h complementary error function
-    //Then scaled to zero to 32 bit rand max, to allow for probabilities within each iteration through a random number
-    float x=-5., inc=(10./33);
-    int cnt=0;
-    do{
-        float NSDF=(0.5 * erfc(-(x) * M_SQRT1_2));
-        cumulative_normal_distribution[cnt]=4294967296*NSDF;
-        x+=inc;
-        cnt++;
-    }while(cnt<33);
-
     TheSimManager = new SimManager;
 
     //RJG - load default environment image to allow program to run out of box (quicker for testing)
@@ -247,6 +235,18 @@ MainWindow::MainWindow(QWidget *parent) :
     //RJG - overwrite pseudorandoms with genuine randoms
     int i=rfile.read((char *)randoms,65536);
     if (i!=65536) QMessageBox::warning(this,"Oops","Failed to read 65536 bytes from file - random numbers may be compromised - try again or restart program");
+
+    //RJG - fill cumulative_normal_distribution with numbers for variable breeding
+    //These are a cumulative standard normal distribution from -3 to 3, created using the math.h complementary error function
+    //Then scaled to zero to 32 bit rand max, to allow for probabilities within each iteration through a random number
+    float x=-3., inc=(6./33);
+    int cnt=0;
+    do{
+        float NSDF=(0.5 * erfc(-(x) * M_SQRT1_2));
+        cumulative_normal_distribution[cnt]=4294967296*NSDF;
+        x+=inc;
+        cnt++;
+    }while(cnt<33);
 }
 
 MainWindow::~MainWindow()

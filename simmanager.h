@@ -151,6 +151,7 @@ public:
     int settle_parallel(int newgenomecounts_start, int newgenomecounts_end,int *trycount_local, int *settlecount_local, int *birthcounts_local);
 
     quint8 Rand8();
+    quint32 Rand32();
 
     bool regenerateEnvironment(int emode, bool interpolate);
     void testcode();
@@ -162,7 +163,7 @@ private:
     void MakeLookups();
     QList<QFuture<int>*> FuturesList;
 
-    quint32 Rand32();
+
     int ProcessorCount;
 
 };
