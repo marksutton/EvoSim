@@ -434,6 +434,8 @@ void MainWindow::on_actionBatch_triggered()
                 TheSimManager->loadEnvironmentFromFile(emode);
                 }
 
+        HandleAnalysisTool(5);
+
         //And run...
         on_actionRun_for_triggered();
         on_actionReset_triggered();
