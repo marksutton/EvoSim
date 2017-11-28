@@ -2162,14 +2162,6 @@ void MainWindow::on_SelectLogFile_pressed()
     ui->LogFile->setText(filename);
 }
 
-void MainWindow::on_SelectOutputFile_pressed()
-{
-    QString filename = QFileDialog::getSaveFileName(this,"Select log file","","*.*");
-    if (filename.length()==0) return;
-
-    ui->OutputFile->setText(filename);
-}
-
 void MainWindow::HandleAnalysisTool(int code)
 {
     //Tidied up a bit - MDS 14/9/2017
@@ -2177,7 +2169,7 @@ void MainWindow::HandleAnalysisTool(int code)
     //Is there a valid input file?
 
     AnalysisTools a;
-    QString OutputString;
+    QString OutputString, FilenameString;
 
     if (a.doesthiscodeneedafile(code))
     {
@@ -2191,6 +2183,7 @@ void MainWindow::HandleAnalysisTool(int code)
 
     switch (code)
     {
+        //sort filenames here
         case ANALYSIS_TOOL_CODE_GENERATE_TREE:
             OutputString = a.GenerateTree(ui->LogFile->text()); //deprecated - log file generator now removed
             break;
@@ -2214,6 +2207,7 @@ void MainWindow::HandleAnalysisTool(int code)
 
         case ANALYSIS_TOOL_CODE_MAKE_NEWICK:
             OutputString = a.MakeNewick(rootspecies, ui->minSpeciesSize->value(), ui->chkExcludeWithChildren->isChecked());
+            FilenameString = "_newick";
             break;
 
         case ANALYSIS_TOOL_CODE_DUMP_DATA:
@@ -2230,10 +2224,19 @@ void MainWindow::HandleAnalysisTool(int code)
     ui->plainTextEdit->clear();
     ui->plainTextEdit->appendPlainText(OutputString);
 
+    //RJG - Make file here
     //and attempt to write to file
-    if (ui->OutputFile->text().length()>1) //i.e. if not blank
+    if (FilenameString.length()>1) //i.e. if not blank
     {
-        QFile o(ui->OutputFile->text());
+
+        QString File(path->text()+"EvoSim"+FilenameString+"_log");
+        if(batch_running)
+            {
+            File.append("_batch_");
+            File.append(QString(batch_iterations));
+            }
+        QFile o(File);
+
         if (!o.open(QIODevice::WriteOnly | QIODevice::Text))
         {
             QMessageBox::warning(this,"Error","Could not open output file for writing");
