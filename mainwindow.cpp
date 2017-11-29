@@ -196,18 +196,6 @@ MainWindow::MainWindow(QWidget *parent) :
     env_item->setPixmap(QPixmap::fromImage(*env_image));
     pop_item->setPixmap(QPixmap::fromImage(*pop_image));
 
-    //RJG - fill cumulative_normal_distribution with numbers for variable breeding
-    //These are a cumulative standard normal distribution from -5 to 5, created using the math.h complementary error function
-    //Then scaled to zero to 32 bit rand max, to allow for probabilities within each iteration through a random number
-    float x=-5., inc=(10./33);
-    int cnt=0;
-    do{
-        float NSDF=(0.5 * erfc(-(x) * M_SQRT1_2));
-        cumulative_normal_distribution[cnt]=4294967296*NSDF;
-        x+=inc;
-        cnt++;
-    }while(cnt<33);
-
     TheSimManager = new SimManager;
 
     //RJG - load default environment image to allow program to run out of box (quicker for testing)
@@ -247,6 +235,18 @@ MainWindow::MainWindow(QWidget *parent) :
     //RJG - overwrite pseudorandoms with genuine randoms
     int i=rfile.read((char *)randoms,65536);
     if (i!=65536) QMessageBox::warning(this,"Oops","Failed to read 65536 bytes from file - random numbers may be compromised - try again or restart program");
+
+    //RJG - fill cumulative_normal_distribution with numbers for variable breeding
+    //These are a cumulative standard normal distribution from -3 to 3, created using the math.h complementary error function
+    //Then scaled to zero to 32 bit rand max, to allow for probabilities within each iteration through a random number
+    float x=-3., inc=(6./33);
+    int cnt=0;
+    do{
+        float NSDF=(0.5 * erfc(-(x) * M_SQRT1_2));
+        cumulative_normal_distribution[cnt]=4294967296*NSDF;
+        x+=inc;
+        cnt++;
+    }while(cnt<33);
 }
 
 MainWindow::~MainWindow()
@@ -276,11 +276,6 @@ void MainWindow::about_triggered()
 // ---- RJG: Reset simulation (i.e. fill the centre pixel with a genome, then set up a run).
 void MainWindow::on_actionReset_triggered()
 {
-
-    //---- RJG here we should reset the species archive to start from scratch
-    archivedspecieslists.clear();
-    oldspecieslist.clear();
-
     if ((speciesLoggingToFile==true || fitnessLoggingToFile==true)&&!batch_running)
         {
             QFile outputfile(QString(path->text()+"EvoSim_fitness_log.txt"));
@@ -289,6 +284,7 @@ void MainWindow::on_actionReset_triggered()
                 QMessageBox::warning(this,"Logging","This will append the log of the new run onto your last one, unless you change directories or move the odl log file");
         }
 
+    //--- RJG: This resets all the species logging stuff as well as setting up the run
     TheSimManager->SetupRun();
     NextRefresh=0;
 
@@ -417,11 +413,6 @@ void MainWindow::on_actionBatch_triggered()
     else repeat_environment=false;
 
     do{
-        if(runs==0)FitnessLoggingFile.insert(FitnessLoggingFile.length()-4,QString("_run_%1").arg(runs));
-        else FitnessLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
-
-        if(runs==0)SpeciesLoggingFile.insert(SpeciesLoggingFile.length()-4,QString("_run_%1").arg(runs));
-        else SpeciesLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
 
         //RJG - Sort environment so it repeats
         if(repeat_environment)
@@ -436,6 +427,10 @@ void MainWindow::on_actionBatch_triggered()
 
         //And run...
         on_actionRun_for_triggered();
+
+        if(ui->actionSpecies_logging->isChecked())HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
+        if(ui->actionWrite_phylogeny->isChecked())HandleAnalysisTool(ANALYSIS_TOOL_CODE_DUMP_DATA);
+
         on_actionReset_triggered();
         runs++;
        }while(runs<batch_target_runs);
@@ -1998,9 +1993,10 @@ void MainWindow::WriteLog()
 {
     if (speciesLoggingToFile==false && fitnessLoggingToFile==false) return;
 
+
     // ----RJG separated species logging from fitness logging
     //Now obsolete with new species system? Left here in case this is required again
-    if (speciesLoggingToFile==true)
+    /*if (speciesLoggingToFile==true)
     {
         //log em!
         QFile outputfile(SpeciesLoggingFile);
@@ -2034,13 +2030,19 @@ void MainWindow::WriteLog()
         }
 
         outputfile.close();
-      }
+      }*/
 
     // ----RJG log fitness to separate file
     if (fitnessLoggingToFile==true)
     {
 
-        QFile outputfile(QString(path->text()+"EvoSim_fitness_log.txt"));
+        // else FitnessLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
+
+        QString File(path->text()+"EvoSim_fitness");
+        if(batch_running)
+            File.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
+        File.append(".txt");
+        QFile outputfile(File);
 
         if (!(outputfile.exists()))
         {
@@ -2052,13 +2054,12 @@ void MainWindow::WriteLog()
             out<<"\n";
 
             //Different versions of output, for reuse as needed
-                //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
-                 //out<<"Each line lists generation, then the grid's: total critter number, total fitness, total entries on breed list";
+            //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
+            //out<<"Each line lists generation, then the grid's: total critter number, total fitness, total entries on breed list";
             out<<"Each generation lists, for each pixel (top left to bottom right): total fitness, number of critters,entries on breed list\n\n";
 
            out<<"\n";
-
-            outputfile.close();
+           outputfile.close();
         }
 
         outputfile.open(QIODevice::Append|QIODevice::Text);
@@ -2092,7 +2093,8 @@ void MainWindow::WriteLog()
                     int critters_alive=0;
 
                      //----RJG: Manually count number alive thanks to maxused issue
-                    for  (int k=0; k<slotsPerSq; k++)if(critters[i][j][k].fitness){
+                    for  (int k=0; k<slotsPerSq; k++)if(critters[i][j][k].fitness)
+                                    {
                                     //numberalive++;
                                     //gridNumberAlive++;
                                     critters_alive++;
@@ -2162,14 +2164,6 @@ void MainWindow::on_SelectLogFile_pressed()
     ui->LogFile->setText(filename);
 }
 
-void MainWindow::on_SelectOutputFile_pressed()
-{
-    QString filename = QFileDialog::getSaveFileName(this,"Select log file","","*.*");
-    if (filename.length()==0) return;
-
-    ui->OutputFile->setText(filename);
-}
-
 void MainWindow::HandleAnalysisTool(int code)
 {
     //Tidied up a bit - MDS 14/9/2017
@@ -2177,7 +2171,7 @@ void MainWindow::HandleAnalysisTool(int code)
     //Is there a valid input file?
 
     AnalysisTools a;
-    QString OutputString;
+    QString OutputString, FilenameString;
 
     if (a.doesthiscodeneedafile(code))
     {
@@ -2191,6 +2185,7 @@ void MainWindow::HandleAnalysisTool(int code)
 
     switch (code)
     {
+        //sort filenames here
         case ANALYSIS_TOOL_CODE_GENERATE_TREE:
             OutputString = a.GenerateTree(ui->LogFile->text()); //deprecated - log file generator now removed
             break;
@@ -2213,11 +2208,15 @@ void MainWindow::HandleAnalysisTool(int code)
             break;
 
         case ANALYSIS_TOOL_CODE_MAKE_NEWICK:
-            OutputString = a.MakeNewick(rootspecies, ui->minSpeciesSize->value(), ui->chkExcludeWithChildren->isChecked());
+            if (ui->actionPhylogeny_metrics->isChecked()||ui->actionPhylogeny->isChecked())OutputString = a.MakeNewick(rootspecies, ui->minSpeciesSize->value(), ui->chkExcludeWithChildren->isChecked());
+            else OutputString = "Species tracking is not enabled.";
+            FilenameString = "_newick";
             break;
 
         case ANALYSIS_TOOL_CODE_DUMP_DATA:
-            OutputString = a.DumpData(rootspecies, ui->minSpeciesSize->value(), ui->chkExcludeWithChildren->isChecked());
+            if (ui->actionPhylogeny_metrics->isChecked())OutputString = a.DumpData(rootspecies, ui->minSpeciesSize->value(), ui->chkExcludeWithChildren->isChecked());
+            else OutputString = "Species tracking is not enabled.";
+            FilenameString = "_specieslog";
             break;
 
         default:
@@ -2230,10 +2229,18 @@ void MainWindow::HandleAnalysisTool(int code)
     ui->plainTextEdit->clear();
     ui->plainTextEdit->appendPlainText(OutputString);
 
+    //RJG - Make file here
     //and attempt to write to file
-    if (ui->OutputFile->text().length()>1) //i.e. if not blank
+    if (FilenameString.length()>1) //i.e. if not blank
     {
-        QFile o(ui->OutputFile->text());
+
+        QString File(path->text()+"EvoSim"+FilenameString);
+        if(batch_running)
+            File.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
+        File.append(".txt");
+
+        QFile o(File);
+
         if (!o.open(QIODevice::WriteOnly | QIODevice::Text))
         {
             QMessageBox::warning(this,"Error","Could not open output file for writing");

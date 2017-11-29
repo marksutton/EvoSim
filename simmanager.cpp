@@ -550,6 +550,9 @@ void SimManager::SetupRun()
     LogSpeciesById.clear();
     LogSpeciesById.insert(nextspeciesid,rootspecies);
 
+    //RJG - Depreciated, but clear here just in case
+    archivedspecieslists.clear();
+
     oldspecieslist.clear();
     species newsp;
     newsp.ID=nextspeciesid;
@@ -626,12 +629,12 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
                     int partner;
                     bool temp_asexual=asexual;
 
-                    //Here is where variable needs to be sorted.
+                    //Variable breeding allows sexual or asexual reproduction depending on the #1's in the non-coding genome.
                     if(variableBreed)
                         {
                         quint32 g1xu = quint32(crit[breedlist[c]].genome / ((quint64)65536*(quint64)65536)); //upper 32 bits
                         quint32 t1 = bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
-                        //RJG - probability of breeding follows a standard normal distribution from -5 to +5
+                        //RJG - probability of breeding follows a standard normal distribution from -3 to +3
                         //More 1's in non coding genome == higher probability of sexual reproduction - see documentation.
                         if(Rand32()>=cumulative_normal_distribution[t1])temp_asexual=true;
                         else temp_asexual=false;

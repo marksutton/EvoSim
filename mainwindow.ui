@@ -898,9 +898,11 @@ p, li { white-space: pre-wrap; }
     </widget>
     <widget class="QMenu" name="menuFitness_logging">
      <property name="title">
-      <string>Fitness logging</string>
+      <string>Logging</string>
      </property>
      <addaction name="actionFitness_logging_to_File"/>
+     <addaction name="actionSpecies_logging"/>
+     <addaction name="actionWrite_phylogeny"/>
     </widget>
     <addaction name="menuSpecies_tracking_mode"/>
     <addaction name="menuFitness_logging"/>
@@ -1425,7 +1427,7 @@ p, li { white-space: pre-wrap; }
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Fitness logging to File</string>
+    <string>Fitness logging</string>
    </property>
   </action>
   <action name="actionDon_t_update_gui">
@@ -1572,6 +1574,22 @@ p, li { white-space: pre-wrap; }
    </property>
    <property name="text">
     <string>All</string>
+   </property>
+  </action>
+  <action name="actionSpecies_logging">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Species logging</string>
+   </property>
+  </action>
+  <action name="actionWrite_phylogeny">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Write phylogeny</string>
    </property>
   </action>
  </widget>

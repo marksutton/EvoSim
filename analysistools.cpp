@@ -1329,6 +1329,7 @@ QString AnalysisTools::CountPeaks(int r, int g, int b)
     return s;
 }
 
+//Output both for docker, and for species log.
 QString AnalysisTools::MakeNewick(LogSpecies *root, quint64 min_speciessize, bool allowexclude)
 {
     ids=0;
