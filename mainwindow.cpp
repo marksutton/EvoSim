@@ -276,11 +276,6 @@ void MainWindow::about_triggered()
 // ---- RJG: Reset simulation (i.e. fill the centre pixel with a genome, then set up a run).
 void MainWindow::on_actionReset_triggered()
 {
-
-    //---- RJG here we should reset the species archive to start from scratch
-    archivedspecieslists.clear();
-    oldspecieslist.clear();
-
     if ((speciesLoggingToFile==true || fitnessLoggingToFile==true)&&!batch_running)
         {
             QFile outputfile(QString(path->text()+"EvoSim_fitness_log.txt"));
@@ -289,6 +284,7 @@ void MainWindow::on_actionReset_triggered()
                 QMessageBox::warning(this,"Logging","This will append the log of the new run onto your last one, unless you change directories or move the odl log file");
         }
 
+    //--- RJG: This resets all the species logging stuff as well as setting up the run
     TheSimManager->SetupRun();
     NextRefresh=0;
 
@@ -417,11 +413,6 @@ void MainWindow::on_actionBatch_triggered()
     else repeat_environment=false;
 
     do{
-        if(runs==0)FitnessLoggingFile.insert(FitnessLoggingFile.length()-4,QString("_run_%1").arg(runs));
-        else FitnessLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
-
-        if(runs==0)SpeciesLoggingFile.insert(SpeciesLoggingFile.length()-4,QString("_run_%1").arg(runs));
-        else SpeciesLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
 
         //RJG - Sort environment so it repeats
         if(repeat_environment)
@@ -434,10 +425,12 @@ void MainWindow::on_actionBatch_triggered()
                 TheSimManager->loadEnvironmentFromFile(emode);
                 }
 
-        HandleAnalysisTool(5);
-
         //And run...
         on_actionRun_for_triggered();
+
+        if(ui->actionSpecies_logging->isChecked())HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
+        if(ui->actionWrite_phylogeny->isChecked())HandleAnalysisTool(ANALYSIS_TOOL_CODE_DUMP_DATA);
+
         on_actionReset_triggered();
         runs++;
        }while(runs<batch_target_runs);
@@ -2000,9 +1993,10 @@ void MainWindow::WriteLog()
 {
     if (speciesLoggingToFile==false && fitnessLoggingToFile==false) return;
 
+
     // ----RJG separated species logging from fitness logging
     //Now obsolete with new species system? Left here in case this is required again
-    if (speciesLoggingToFile==true)
+    /*if (speciesLoggingToFile==true)
     {
         //log em!
         QFile outputfile(SpeciesLoggingFile);
@@ -2036,13 +2030,19 @@ void MainWindow::WriteLog()
         }
 
         outputfile.close();
-      }
+      }*/
 
     // ----RJG log fitness to separate file
     if (fitnessLoggingToFile==true)
     {
 
-        QFile outputfile(QString(path->text()+"EvoSim_fitness_log.txt"));
+        // else FitnessLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
+
+        QString File(path->text()+"EvoSim_fitness");
+        if(batch_running)
+            File.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
+        File.append(".txt");
+        QFile outputfile(File);
 
         if (!(outputfile.exists()))
         {
@@ -2054,13 +2054,12 @@ void MainWindow::WriteLog()
             out<<"\n";
 
             //Different versions of output, for reuse as needed
-                //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
-                 //out<<"Each line lists generation, then the grid's: total critter number, total fitness, total entries on breed list";
+            //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
+            //out<<"Each line lists generation, then the grid's: total critter number, total fitness, total entries on breed list";
             out<<"Each generation lists, for each pixel (top left to bottom right): total fitness, number of critters,entries on breed list\n\n";
 
            out<<"\n";
-
-            outputfile.close();
+           outputfile.close();
         }
 
         outputfile.open(QIODevice::Append|QIODevice::Text);
@@ -2094,7 +2093,8 @@ void MainWindow::WriteLog()
                     int critters_alive=0;
 
                      //----RJG: Manually count number alive thanks to maxused issue
-                    for  (int k=0; k<slotsPerSq; k++)if(critters[i][j][k].fitness){
+                    for  (int k=0; k<slotsPerSq; k++)if(critters[i][j][k].fitness)
+                                    {
                                     //numberalive++;
                                     //gridNumberAlive++;
                                     critters_alive++;
@@ -2208,12 +2208,15 @@ void MainWindow::HandleAnalysisTool(int code)
             break;
 
         case ANALYSIS_TOOL_CODE_MAKE_NEWICK:
-            OutputString = a.MakeNewick(rootspecies, ui->minSpeciesSize->value(), ui->chkExcludeWithChildren->isChecked());
+            if (ui->actionPhylogeny_metrics->isChecked()||ui->actionPhylogeny->isChecked())OutputString = a.MakeNewick(rootspecies, ui->minSpeciesSize->value(), ui->chkExcludeWithChildren->isChecked());
+            else OutputString = "Species tracking is not enabled.";
             FilenameString = "_newick";
             break;
 
         case ANALYSIS_TOOL_CODE_DUMP_DATA:
-            OutputString = a.DumpData(rootspecies, ui->minSpeciesSize->value(), ui->chkExcludeWithChildren->isChecked());
+            if (ui->actionPhylogeny_metrics->isChecked())OutputString = a.DumpData(rootspecies, ui->minSpeciesSize->value(), ui->chkExcludeWithChildren->isChecked());
+            else OutputString = "Species tracking is not enabled.";
+            FilenameString = "_specieslog";
             break;
 
         default:
@@ -2231,12 +2234,11 @@ void MainWindow::HandleAnalysisTool(int code)
     if (FilenameString.length()>1) //i.e. if not blank
     {
 
-        QString File(path->text()+"EvoSim"+FilenameString+"_log");
+        QString File(path->text()+"EvoSim"+FilenameString);
         if(batch_running)
-            {
-            File.append("_batch_");
-            File.append(QString(batch_iterations));
-            }
+            File.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
+        File.append(".txt");
+
         QFile o(File);
 
         if (!o.open(QIODevice::WriteOnly | QIODevice::Text))

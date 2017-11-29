@@ -550,6 +550,9 @@ void SimManager::SetupRun()
     LogSpeciesById.clear();
     LogSpeciesById.insert(nextspeciesid,rootspecies);
 
+    //RJG - Depreciated, but clear here just in case
+    archivedspecieslists.clear();
+
     oldspecieslist.clear();
     species newsp;
     newsp.ID=nextspeciesid;
