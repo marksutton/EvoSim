@@ -459,6 +459,8 @@ void MainWindow::RunSetUp()
     ui->actionPause_Sim->setEnabled(true);
     pauseButton->setEnabled(true);
 
+    if(ui->actionWrite_phylogeny->isChecked()||ui->actionSpecies_logging->isChecked())ui->actionPhylogeny_metrics->setChecked(true);
+
     //Reseed or reset
     ui->actionReset->setEnabled(false);
     resetButton->setEnabled(false);
