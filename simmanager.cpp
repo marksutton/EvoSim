@@ -19,7 +19,9 @@ int xdisp[256][256];
 int ydisp[256][256];
 quint64 genex[65536];
 int nextgenex;
-quint64 cumulative_normal_distribution[33]; // RJG - A cumulative normal distribution for variable breeding.
+quint32 cumulative_normal_distribution[32]; // RJG - A cumulative normal distribution for variable breeding.
+quint32 pathogen_prob_distribution[64]; // RJG - A probability distribution for pathogens killing critters
+
 quint64 reseedGenome=0; //RJG - Genome for reseed with known genome
 
 //Settable ints
@@ -35,6 +37,7 @@ int breedThreshold = 500;
 int breedCost = 500;
 int maxDiff = 2;
 int mutate = 10;
+int path_mutate = 5;
 int envchangerate=100;
 int yearsPerIteration=1;
 int speciesSamples=1;
@@ -55,6 +58,7 @@ bool toroidal=false;
 bool reseedKnown=false;
 bool reseedDual=false;
 bool breedspecies=false, breeddiff=true;
+bool path_on=false;
 
 //File handling
 QStringList EnvFiles;
@@ -66,6 +70,7 @@ QString FitnessLoggingFile="";
 
 //Globabl data
 Critter critters[GRID_X][GRID_Y][SLOTS_PER_GRID_SQUARE]; //main array - static for speed
+quint64 pathogens[GRID_X][GRID_Y]; //Pathogen overlay
 quint8 environment[GRID_X][GRID_Y][3];  //0 = red, 1 = green, 2 = blue
 quint8 environmentlast[GRID_X][GRID_Y][3];  //Used for interpolation
 quint8 environmentnext[GRID_X][GRID_Y][3];  //Used for interpolation
@@ -376,6 +381,12 @@ bool SimManager::regenerateEnvironment(int emode, bool interpolate)
     return false;
 }
 
+//----RJG: 64 bit rand useful for pathogens, and initialising critters
+quint64 SimManager::Rand64()
+{
+    return (quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32();
+}
+
 quint32 SimManager::Rand32()
 {
     //4 lots of RAND8
@@ -394,6 +405,7 @@ quint8 SimManager::Rand8()
 
 void SimManager::SetupRun()
 {
+
     //Find middle square, try creatures till something lives, duplicate it [slots] times
     //RJG - called on initial program load and reseed, but also when run/run for are hit
     //RJG - with modification for dual seed if selected
@@ -464,7 +476,7 @@ void SimManager::SetupRun()
                     int flag=0;
                     do{
                         flag=0;
-                        do critters[n][m][0].initialise((quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32(), environment[n][m], n,m,0,nextspeciesid);
+                        do critters[n][m][0].initialise(Rand64(), environment[n][m], n,m,0,nextspeciesid);
                             while (critters[n][m][0].fitness<1);
                         quint64 gen=critters[n][m][0].genome;
                         critters[n2][m][0].initialise(gen, environment[n2][m],n2,m,0,nextspeciesid);
@@ -474,7 +486,7 @@ void SimManager::SetupRun()
                 }
     else
                 {
-                    while (critters[n][m][0].fitness<1) critters[n][m][0].initialise((quint64)Rand32()+(quint64)(65536)*(quint64)(65536)*(quint64)Rand32(), environment[n][m], n,m,0,nextspeciesid);
+                    while (critters[n][m][0].fitness<1) critters[n][m][0].initialise(Rand64(), environment[n][m], n,m,0,nextspeciesid);
                     MainWin->setStatusBarText("");
                 }
 
@@ -564,6 +576,11 @@ void SimManager::SetupRun()
 
     nextspeciesid++; //ready for first species after this
 
+    //RJG - now set up pathogens. Chose to do here rather than with lookups as pathogens mutate, and thus it's pretty much impossible to repeat them anyway - so start afresh each run
+    for (int n=0; n<256; n++)
+            for (int m=0; m<256; m++)
+                //RJG - Seed pathogen layer with 64 bit randoms too
+                pathogens[n][m]=Rand64();
 }
 
 int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local, int *KillCount_local)
@@ -614,6 +631,16 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
 
             int breedlistentries=0;
 
+            // ----RJG: Pathogens have set chance of killing any living critter - implement here as explained below
+            if(path_on)
+                for (int c=0; c<=maxv; c++)
+                    //Iterate critters kills those which have --age == zero - set age to 1 here and it'll be killed at iterate below
+                    {
+                    //NEED TO IMPLEMENT XOR THEN COUNT
+                    if(Rand32()>=pathogen_prob_distribution[COUNT])crit[c].age=1;
+                    }
+
+            // ----RJG: Iterate critters will kill and clean up pathogened critters
             for (int c=0; c<=maxv; c++)
                     if (crit[c].iterate_parallel(KillCount_local,addfood)) breedlist[breedlistentries++]=c;
 
@@ -652,6 +679,15 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
                         crit[breedlist[c]].energy+=breedCost;
                 }
             }
+
+            // ----RJG: If not skipped whole square, then mutate pathogens.
+            if(path_on)
+                for (int n=0; n<256; n++)
+                        for (int m=0; m<256; m++)
+                                //----RJG: User defined prob of mutation each iteration
+                                if(Rand8()<path_mutate)
+                                          //----RJG: Flip a bit.
+                                          pathogens[n][m] ^= tweakers64[portable_rand()/(PORTABLE_RAND_MAX/64)];
         }
     }
 
@@ -701,7 +737,6 @@ int SimManager::settle_parallel(int newgenomecounts_start, int newgenomecounts_e
     else
     {
         //old code - normal settling with radiation from original point
-        //qDebug()<<"toroidal is "<<toroidal;
         for (int n=newgenomecounts_start; n<newgenomecounts_end; n++)
         {
             //first handle dispersal
@@ -836,11 +871,17 @@ bool SimManager::iterate(int emode, bool interpolate)
     return false;
 }
 
-void SimManager::testcode()
-//Use for any test with debugger, triggers from menu item
+void SimManager::testcode()//Use for any test with debugger, triggers from menu item
 {
     qDebug()<<"Test code";
 
 }
 
-
+//RJG - this is useful for debugging stuff with critters, and I'm a little bored of recoding it every time I need to print one to screen
+void SimManager::debug_genome(quint64 genome)
+{
+    QString newGenome;
+    for (int i=0; i<64; i++)
+        if (tweakers64[63-i] & genome) newGenome.append("1"); else newGenome.append("0");
+    qDebug()<<newGenome;
+}
