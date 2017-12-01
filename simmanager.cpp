@@ -634,10 +634,20 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             // ----RJG: Pathogens have set chance of killing any living critter - implement here as explained below
             if(path_on)
                 for (int c=0; c<=maxv; c++)
-                    //Iterate critters kills those which have --age == zero - set age to 1 here and it'll be killed at iterate below
                     {
-                    //NEED TO IMPLEMENT XOR THEN COUNT
-                    if(Rand32()>=pathogen_prob_distribution[COUNT])crit[c].age=1;
+                    //XOR critter and pathogen genome for bit counting
+                    quint64 xr = crit[c].genome ^ pathogens[n][m];
+
+                    //Count the bits
+                    int t1=0;
+                    quint32 g1xl = quint32(xr & ((quint64)65536*(quint64)65536-(quint64)1)); //lower 32 bits
+                    t1 += bitcounts[g1xl/(quint32)65536] +  bitcounts[g1xl & (quint32)65535];
+                    quint32 g1xu = quint32(xr / ((quint64)65536*(quint64)65536)); //upper 32 bits
+                    t1 += bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
+
+                    //Kill the critter depending on prob distribution
+                    //Iterate critters kills those which have --age == zero hence set age to 1 here and it'll be killed at iterate below
+                    if(Rand32()>=pathogen_prob_distribution[t1])crit[c].age=1;
                     }
 
             // ----RJG: Iterate critters will kill and clean up pathogened critters
@@ -648,6 +658,7 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             // ----RJG: breedattempts was no longer used - co-opting for fitness report.
             if(fitnessLoggingToFile)breedattempts[n][m]=breedlistentries;
 
+            //----RJG Do breeding
             if (breedlistentries>0)
             {
                 quint8 divider=255/breedlistentries; //originally had breedlistentries+5, no idea why. //lol - RG
@@ -660,7 +671,7 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
                     if(variableBreed)
                         {
                         quint32 g1xu = quint32(crit[breedlist[c]].genome / ((quint64)65536*(quint64)65536)); //upper 32 bits
-                        quint32 t1 = bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
+                        int t1 = bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
                         //RJG - probability of breeding follows a standard normal distribution from -3 to +3
                         //More 1's in non coding genome == higher probability of sexual reproduction - see documentation.
                         if(Rand32()>=cumulative_normal_distribution[t1])temp_asexual=true;
