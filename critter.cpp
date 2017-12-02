@@ -72,7 +72,6 @@ int Critter::recalc_fitness(quint8 *env)
 
 bool Critter::iterate_parallel(int *KillCount_local, int addfood)
 {
-
     if (age)
     {
         //RJG - Here is where an individual dies.

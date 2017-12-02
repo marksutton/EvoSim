@@ -43,7 +43,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
-
     a = new Analyser; // so can delete next time!
     ui->setupUi(this);
     MainWin=this;
@@ -250,7 +249,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //RJG - fill pathogen probability distribution as required so pathogens can kill critters
     //Start with linear, may want to change down the line.
       for(int cnt=0;cnt<65;cnt++)
-        pathogen_prob_distribution[cnt]=cnt*(4294967296/64);
+        pathogen_prob_distribution[cnt]=(4294967296/2)+(cnt*(4294967295/128));
 }
 
 MainWindow::~MainWindow()
@@ -308,7 +307,6 @@ void MainWindow::on_actionReseed_triggered()
     ui->actionReseed->setChecked(reseedKnown);
 
     on_actionReset_triggered();
-
 }
 
 

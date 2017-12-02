@@ -640,9 +640,9 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
 
                     //Count the bits
                     int t1=0;
-                    quint32 g1xl = quint32(xr & ((quint64)65536*(quint64)65536-(quint64)1)); //lower 32 bits
+                    quint32 g1xl = quint32(xr & (quint64)4294967295); //lower 32 bits
                     t1 += bitcounts[g1xl/(quint32)65536] +  bitcounts[g1xl & (quint32)65535];
-                    quint32 g1xu = quint32(xr / ((quint64)65536*(quint64)65536)); //upper 32 bits
+                    quint32 g1xu = quint32(xr / ((quint64)4294967296)); //upper 32 bits
                     t1 += bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
 
                     //Kill the critter depending on prob distribution
@@ -653,7 +653,6 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             // ----RJG: Iterate critters will kill and clean up pathogened critters
             for (int c=0; c<=maxv; c++)
                     if (crit[c].iterate_parallel(KillCount_local,addfood)) breedlist[breedlistentries++]=c;
-
 
             // ----RJG: breedattempts was no longer used - co-opting for fitness report.
             if(fitnessLoggingToFile)breedattempts[n][m]=breedlistentries;
@@ -670,7 +669,7 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
                     //Variable breeding allows sexual or asexual reproduction depending on the #1's in the non-coding genome.
                     if(variableBreed)
                         {
-                        quint32 g1xu = quint32(crit[breedlist[c]].genome / ((quint64)65536*(quint64)65536)); //upper 32 bits
+                        quint32 g1xu = quint32(crit[breedlist[c]].genome / ((quint64)4294967296)); //upper 32 bits
                         int t1 = bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
                         //RJG - probability of breeding follows a standard normal distribution from -3 to +3
                         //More 1's in non coding genome == higher probability of sexual reproduction - see documentation.
@@ -690,15 +689,6 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
                         crit[breedlist[c]].energy+=breedCost;
                 }
             }
-
-            // ----RJG: If not skipped whole square, then mutate pathogens.
-            if(path_on)
-                for (int n=0; n<256; n++)
-                        for (int m=0; m<256; m++)
-                                //----RJG: User defined prob of mutation each iteration
-                                if(Rand8()<path_mutate)
-                                          //----RJG: Flip a bit.
-                                          pathogens[n][m] ^= tweakers64[portable_rand()/(PORTABLE_RAND_MAX/64)];
         }
     }
 
@@ -814,6 +804,13 @@ bool SimManager::iterate(int emode, bool interpolate)
 {
     generation++;
 
+    qDebug()<<AliveCount;
+            int test_alive_cnt=0;
+            for (int n=0; n<100; n++)
+                for (int m=0; m<100; m++)
+                    for (int c=0; c<100; c++)if (critters[n][m][c].fitness)test_alive_cnt++;
+    qDebug()<<"Test"<<test_alive_cnt;
+
     if (regenerateEnvironment(emode, interpolate)==true) return true;
 
     //New parallelised version
@@ -879,6 +876,15 @@ bool SimManager::iterate(int emode, bool interpolate)
          settlecount+=settlecounts[i];
     }
 
+    // ----RJG: Mutate pathogens.
+    if(path_on)
+        for (int n=0; n<gridX; n++)
+                for (int m=0; m<gridY; m++)
+                        //----RJG: User defined prob of mutation each iteration
+                        if(Rand8()<path_mutate)
+                                  //----RJG: Flip a bit.
+                                  pathogens[n][m] ^= tweakers64[portable_rand()/(PORTABLE_RAND_MAX/64)];
+
     return false;
 }
 
@@ -893,6 +899,8 @@ void SimManager::debug_genome(quint64 genome)
 {
     QString newGenome;
     for (int i=0; i<64; i++)
+        {
         if (tweakers64[63-i] & genome) newGenome.append("1"); else newGenome.append("0");
+        }
     qDebug()<<newGenome;
 }
