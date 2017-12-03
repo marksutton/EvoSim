@@ -43,7 +43,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
-
     a = new Analyser; // so can delete next time!
     ui->setupUi(this);
     MainWin=this;
@@ -239,14 +238,18 @@ MainWindow::MainWindow(QWidget *parent) :
     //RJG - fill cumulative_normal_distribution with numbers for variable breeding
     //These are a cumulative standard normal distribution from -3 to 3, created using the math.h complementary error function
     //Then scaled to zero to 32 bit rand max, to allow for probabilities within each iteration through a random number
-    float x=-3., inc=(6./33);
-    int cnt=0;
-    do{
-        float NSDF=(0.5 * erfc(-(x) * M_SQRT1_2));
-        cumulative_normal_distribution[cnt]=4294967296*NSDF;
-        x+=inc;
-        cnt++;
-    }while(cnt<33);
+    float x=-3., inc=(6./32.);
+    for(int cnt=0;cnt<33;cnt++)
+            {
+            double NSDF=(0.5 * erfc(-(x) * M_SQRT1_2));
+            cumulative_normal_distribution[cnt]=4294967296*NSDF;
+            x+=inc;
+            }
+
+    //RJG - fill pathogen probability distribution as required so pathogens can kill critters
+    //Start with linear, may want to change down the line.
+      for(int cnt=0;cnt<65;cnt++)
+        pathogen_prob_distribution[cnt]=(4294967296/2)+(cnt*(4294967295/128));
 }
 
 MainWindow::~MainWindow()
@@ -304,7 +307,6 @@ void MainWindow::on_actionReseed_triggered()
     ui->actionReseed->setChecked(reseedKnown);
 
     on_actionReset_triggered();
-
 }
 
 

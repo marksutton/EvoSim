@@ -53,6 +53,9 @@ extern bool asexual;
 extern bool variableBreed;
 extern bool sexual;
 
+//---- RJG: Pathogens on/off
+extern bool path_on;
+
 //----MDS: toroidal geography and non-spatial settling
 extern bool nonspatial, toroidal;
 extern bool breedspecies, breeddiff;
@@ -60,6 +63,8 @@ extern bool breedspecies, breeddiff;
 extern int maxDiff;
 //chance to mutate out of 255
 extern int mutate;
+//Pathogen to mutate any given iteration out of 255
+extern int path_mutate;
 
 //Global lookups -
 extern quint32 tweakers[32]; // the 32 single bit XOR values (many uses!)
@@ -73,10 +78,12 @@ extern int nextgenex;
 extern quint8 probbreed[65536][16];
 extern quint8 randoms[65536];
 extern quint16 nextrandom;
-extern quint64 cumulative_normal_distribution[33]; // RJG - A cumulative normal distribution for variable breeding.
+extern quint32 cumulative_normal_distribution[32]; // RJG - A cumulative normal distribution for variable breeding.
+extern quint32 pathogen_prob_distribution[64];// RJG - A probability distribution for pathogens killing critters
 
 //Globabl data
 extern Critter critters[GRID_X][GRID_Y][SLOTS_PER_GRID_SQUARE]; //main array - static for speed
+extern quint64 pathogens[GRID_X][GRID_Y]; //Pathogen overlay
 extern quint8 environment[GRID_X][GRID_Y][3];  //0 = red, 1 = green, 2 = blue
 extern quint8 environmentlast[GRID_X][GRID_Y][3];  //Used for interpolation
 extern quint8 environmentnext[GRID_X][GRID_Y][3];  //Used for interpolation
@@ -152,6 +159,7 @@ public:
 
     quint8 Rand8();
     quint32 Rand32();
+    quint64 Rand64();
 
     bool regenerateEnvironment(int emode, bool interpolate);
     void testcode();
@@ -159,10 +167,11 @@ public:
     //Public data (keep public for speed)
 
     int portable_rand();
+
 private:
     void MakeLookups();
     QList<QFuture<int>*> FuturesList;
-
+    void debug_genome(quint64 genome);
 
     int ProcessorCount;
 

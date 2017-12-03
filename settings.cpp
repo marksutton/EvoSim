@@ -17,6 +17,7 @@ SettingsImpl::SettingsImpl( QWidget * parent)
         SpinBoxFood->setValue(food);
         SpinBoxBreedCost->setValue(breedCost);
         SpinBoxMutationChance->setValue(mutate);
+        SpinBoxPathogenMutation->setValue(path_mutate);
         SpinBoxDifferenceBreed->setValue(maxDiff);
         SpinBoxBreedThreshold->setValue(breedThreshold);
         SpinBoxSlots->setValue(slotsPerSq);
@@ -30,6 +31,7 @@ SettingsImpl::SettingsImpl( QWidget * parent)
         CheckBoxNonSpatial->setChecked(nonspatial);
         CheckBoxBreedWithinSpecies->setChecked(breedspecies);
         CheckBoxBreedWithDifference->setChecked(breeddiff);
+        CheckBoxPathogens->setChecked(path_on);
         radioSexual->setChecked(sexual);
         radioAsexual->setChecked(asexual);
         radioVariable->setChecked(variableBreed);
@@ -46,6 +48,7 @@ void SettingsImpl::on_buttonBox_accepted()
         food= SpinBoxFood->value();
         breedCost= SpinBoxBreedCost->value();
         mutate= SpinBoxMutationChance->value();
+        path_mutate=SpinBoxPathogenMutation->value();
         maxDiff= SpinBoxDifferenceBreed->value();
         breedThreshold= SpinBoxBreedThreshold->value();
         slotsPerSq= SpinBoxSlots->value();
@@ -59,9 +62,11 @@ void SettingsImpl::on_buttonBox_accepted()
         nonspatial=CheckBoxNonSpatial->isChecked();
         breeddiff=CheckBoxBreedWithDifference->isChecked();
         breedspecies=CheckBoxBreedWithinSpecies->isChecked();
+        path_on=CheckBoxPathogens->isChecked();
         sexual=radioSexual->isChecked();
         asexual=radioAsexual->isChecked();
         variableBreed=radioVariable->isChecked();
+
 
 }
 
