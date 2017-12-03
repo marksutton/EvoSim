@@ -77,6 +77,7 @@ bool Critter::iterate_parallel(int *KillCount_local, int addfood)
         //RJG - Here is where an individual dies.
         if ((--age)==0)
         {
+           // qDebug()<<"Die ";
             (*KillCount_local)++;
             totalfit[xpos][ypos]-=fitness;
             fitness=0;
@@ -91,6 +92,7 @@ bool Critter::iterate_parallel(int *KillCount_local, int addfood)
                 maxused[xpos][ypos]=-1;
     past:   ;
             }
+            //qDebug()<<"Return false";
             return false;
         }
         energy +=  fitness * addfood;

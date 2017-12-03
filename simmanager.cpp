@@ -602,9 +602,6 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
 
         if (recalcFitness)
         {
-            //Check it works
-
-            //int oldtf=totalfit[n][m];
             totalfit[n][m]=0;
             maxalive=0;
             deathcount=0;
@@ -630,25 +627,6 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
             int addfood = 1+(food / totalfit[n][m]);
 
             int breedlistentries=0;
-
-            // ----RJG: Pathogens have set chance of killing any living critter - implement here as explained below
-            if(path_on)
-                for (int c=0; c<=maxv; c++)
-                    {
-                    //XOR critter and pathogen genome for bit counting
-                    quint64 xr = crit[c].genome ^ pathogens[n][m];
-
-                    //Count the bits
-                    int t1=0;
-                    quint32 g1xl = quint32(xr & (quint64)4294967295); //lower 32 bits
-                    t1 += bitcounts[g1xl/(quint32)65536] +  bitcounts[g1xl & (quint32)65535];
-                    quint32 g1xu = quint32(xr / ((quint64)4294967296)); //upper 32 bits
-                    t1 += bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
-
-                    //Kill the critter depending on prob distribution
-                    //Iterate critters kills those which have --age == zero hence set age to 1 here and it'll be killed at iterate below
-                    if(Rand32()>=pathogen_prob_distribution[t1])crit[c].age=1;
-                    }
 
             // ----RJG: Iterate critters will kill and clean up pathogened critters
             for (int c=0; c<=maxv; c++)
@@ -689,6 +667,27 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
                         crit[breedlist[c]].energy+=breedCost;
                 }
             }
+
+
+        // ----RJG: Pathogens have set chance of killing any living critter
+        if(path_on)
+            for (int c=0; c<=maxv; c++)
+                {
+                //XOR critter and pathogen genome for bit counting
+                quint64 xr = crit[c].genome ^ pathogens[n][m];
+
+                //Count the bits
+                int t1=0;
+                quint32 g1xl = quint32(xr & (quint64)4294967295); //lower 32 bits
+                t1 += bitcounts[g1xl/(quint32)65536] +  bitcounts[g1xl & (quint32)65535];
+                quint32 g1xu = quint32(xr / ((quint64)4294967296)); //upper 32 bits
+                t1 += bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
+
+                //Kill the critter depending on prob distribution
+                //Iterate critters kills those which have --age == zero hence set age to 1 here and it'll be killed at iterate below
+                if(Rand32()>pathogen_prob_distribution[t1])crit[c].age=1;
+                }
+
         }
     }
 
@@ -844,6 +843,9 @@ bool SimManager::iterate(int emode, bool interpolate)
 */
 
     //apply all the kills to the global count
+    qDebug()<<"Killcounts";
+    for(int i=0; i<ProcessorCount; i++)qDebug()<<KillCounts[i];
+
     for (int i=0; i<ProcessorCount; i++)
             AliveCount-=KillCounts[i];
 
