@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>524</width>
-    <height>409</height>
+    <width>553</width>
+    <height>476</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -401,6 +401,23 @@
       <widget class="QSpinBox" name="SpinBoxPathogenMutation">
        <property name="maximum">
         <number>255</number>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="2">
+      <widget class="QLabel" name="label_18">
+       <property name="text">
+        <string>Pathogen frequency</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="3">
+      <widget class="QSpinBox" name="spinBoxPathogenFrequency">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="value">
+        <number>5</number>
        </property>
       </widget>
      </item>

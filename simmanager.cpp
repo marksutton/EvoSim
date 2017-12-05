@@ -38,6 +38,7 @@ int breedCost = 500;
 int maxDiff = 2;
 int mutate = 10;
 int path_mutate = 5;
+int path_frequency =5;
 int envchangerate=100;
 int yearsPerIteration=1;
 int speciesSamples=1;
@@ -670,7 +671,7 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
 
 
         // ----RJG: Pathogens have set chance of killing any living critter
-        if(path_on)
+        if(temp_path_on)
             for (int c=0; c<=maxv; c++)
                 {
                 //XOR critter and pathogen genome for bit counting
@@ -803,14 +804,10 @@ bool SimManager::iterate(int emode, bool interpolate)
 {
     generation++;
 
-    qDebug()<<AliveCount;
-            int test_alive_cnt=0;
-            for (int n=0; n<100; n++)
-                for (int m=0; m<100; m++)
-                    for (int c=0; c<100; c++)if (critters[n][m][c].fitness)test_alive_cnt++;
-    qDebug()<<"Test"<<test_alive_cnt;
-
     if (regenerateEnvironment(emode, interpolate)==true) return true;
+
+    if(generation%path_frequency==0&&path_on)temp_path_on=true;
+    else temp_path_on=false;
 
     //New parallelised version
 
@@ -824,7 +821,6 @@ bool SimManager::iterate(int emode, bool interpolate)
 
     int KillCounts[256];
     for (int i=0; i<ProcessorCount; i++) KillCounts[i]=0;
-
 
     //do the magic! Set up futures objects, call the functions, wait till done, retrieve values
 
@@ -843,11 +839,15 @@ bool SimManager::iterate(int emode, bool interpolate)
 */
 
     //apply all the kills to the global count
-    qDebug()<<"Killcounts";
-    for(int i=0; i<ProcessorCount; i++)qDebug()<<KillCounts[i];
-
     for (int i=0; i<ProcessorCount; i++)
             AliveCount-=KillCounts[i];
+
+    //Currently pathogens is messing up AiveCount - localKillCounts seem to be too high, so number goes very negative. Bodge fix for now:
+    int tmp_alive_cnt=0;
+            for (int n=0; n<100; n++)
+                for (int m=0; m<100; m++)
+                    for (int c=0; c<100; c++)if (critters[n][m][c].fitness)tmp_alive_cnt++;
+    AliveCount=tmp_alive_cnt;
 
     //Now handle spat settling
 
@@ -879,7 +879,7 @@ bool SimManager::iterate(int emode, bool interpolate)
     }
 
     // ----RJG: Mutate pathogens.
-    if(path_on)
+    if(temp_path_on)
         for (int n=0; n<gridX; n++)
                 for (int m=0; m<gridY; m++)
                         //----RJG: User defined prob of mutation each iteration
