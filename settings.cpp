@@ -26,6 +26,7 @@ SettingsImpl::SettingsImpl( QWidget * parent)
         SpinBoxFitnessTarget->setValue(target);
         SpinBoxEnvChangeRate->setValue(envchangerate);
         SpinBoxYearsPerIteration->setValue(yearsPerIteration);
+        spinBoxPathogenFrequency->setValue(path_frequency);
         CheckBoxRecalcFitness->setChecked(recalcFitness);
         CheckBoxToroidal->setChecked(toroidal);
         CheckBoxNonSpatial->setChecked(nonspatial);
@@ -49,6 +50,7 @@ void SettingsImpl::on_buttonBox_accepted()
         breedCost= SpinBoxBreedCost->value();
         mutate= SpinBoxMutationChance->value();
         path_mutate=SpinBoxPathogenMutation->value();
+        path_frequency=spinBoxPathogenFrequency->value();
         maxDiff= SpinBoxDifferenceBreed->value();
         breedThreshold= SpinBoxBreedThreshold->value();
         slotsPerSq= SpinBoxSlots->value();

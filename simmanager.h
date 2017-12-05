@@ -55,6 +55,10 @@ extern bool sexual;
 
 //---- RJG: Pathogens on/off
 extern bool path_on;
+//Pathogen to mutate any given iteration out of 255
+extern int path_mutate;
+//Frequency of applying pathogens
+extern int path_frequency;
 
 //----MDS: toroidal geography and non-spatial settling
 extern bool nonspatial, toroidal;
@@ -63,8 +67,6 @@ extern bool breedspecies, breeddiff;
 extern int maxDiff;
 //chance to mutate out of 255
 extern int mutate;
-//Pathogen to mutate any given iteration out of 255
-extern int path_mutate;
 
 //Global lookups -
 extern quint32 tweakers[32]; // the 32 single bit XOR values (many uses!)
@@ -174,6 +176,7 @@ private:
     void debug_genome(quint64 genome);
 
     int ProcessorCount;
+    bool temp_path_on;
 
 };
 
