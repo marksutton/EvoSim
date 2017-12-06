@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1130</width>
+    <width>1148</width>
     <height>791</height>
    </rect>
   </property>
@@ -785,8 +785,8 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1130</width>
-     <height>22</height>
+     <width>1148</width>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCommands">
@@ -903,6 +903,7 @@ p, li { white-space: pre-wrap; }
      <addaction name="actionFitness_logging_to_File"/>
      <addaction name="actionSpecies_logging"/>
      <addaction name="actionWrite_phylogeny"/>
+     <addaction name="actionRecombination_logging"/>
     </widget>
     <addaction name="menuSpecies_tracking_mode"/>
     <addaction name="menuFitness_logging"/>
@@ -1589,7 +1590,15 @@ p, li { white-space: pre-wrap; }
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Write phylogeny</string>
+    <string>Phylogeny logging</string>
+   </property>
+  </action>
+  <action name="actionRecombination_logging">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Recombination logging</string>
    </property>
   </action>
  </widget>

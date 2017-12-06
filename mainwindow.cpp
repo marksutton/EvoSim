@@ -279,13 +279,8 @@ void MainWindow::about_triggered()
 // ---- RJG: Reset simulation (i.e. fill the centre pixel with a genome, then set up a run).
 void MainWindow::on_actionReset_triggered()
 {
-    if ((speciesLoggingToFile==true || fitnessLoggingToFile==true)&&!batch_running)
-        {
-            QFile outputfile(QString(path->text()+"EvoSim_fitness_log.txt"));
-
-            if (outputfile.exists())
-                QMessageBox::warning(this,"Logging","This will append the log of the new run onto your last one, unless you change directories or move the odl log file");
-        }
+    if ((ui->actionRecombination_logging->isChecked()||ui->actionSpecies_logging->isChecked()|| ui->actionFitness_logging_to_File->isChecked())&&!batch_running)
+                                            QMessageBox::warning(this,"Logging","This will append logs from the new run onto your last one, unless you change directories or move the old log file. It will also overwrite any images within that folder.");
 
     //--- RJG: This resets all the species logging stuff as well as setting up the run
     TheSimManager->SetupRun();
@@ -415,6 +410,12 @@ void MainWindow::on_actionBatch_triggered()
     else repeat_environment=false;
 
     do{
+
+        QString new_path(path->text());
+        if (runs!=0)new_path.chop(5);
+        else new_path.append(QString("Run_"));
+        new_path.append(QString("%1/").arg(runs, 4, 10, QChar('0')));
+        path->setText(new_path);
 
         //RJG - Sort environment so it repeats
         if(repeat_environment)
@@ -1995,7 +1996,7 @@ void MainWindow::CalcSpecies()
 
 void MainWindow::WriteLog()
 {
-    if (speciesLoggingToFile==false && fitnessLoggingToFile==false) return;
+    if (!ui->actionRecombination_logging->isChecked() && !ui->actionFitness_logging_to_File->isChecked()) return;
 
 
     // ----RJG separated species logging from fitness logging
@@ -2036,11 +2037,60 @@ void MainWindow::WriteLog()
         outputfile.close();
       }*/
 
-    // ----RJG log fitness to separate file
-    if (fitnessLoggingToFile==true)
-    {
 
-        // else FitnessLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
+    // ----RJG recombination logging to separate file
+    if (ui->actionRecombination_logging->isChecked())
+    {
+        QString rFile(path->text()+"EvoSim_recombination");
+        if(batch_running)
+            rFile.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
+        rFile.append(".txt");
+        QFile routputfile(rFile);
+
+        if (!(routputfile.exists()))
+        {
+            routputfile.open(QIODevice::WriteOnly|QIODevice::Text);
+            QTextStream rout(&routputfile);
+
+            // Info on simulation setup
+            rout<<"Slots Per square = "<<slotsPerSq;
+            rout<<"\nNote on log: this only calculates proportions when variable breeding is selected for speed, and also currently will only count total breed attempts when the fitness log is also running.";
+            rout<<"For now, this is merely a list of:\nIteration\tAsexual breeds\tSexual breeds\tTotal breed attempts\tTotal breed fails\tTotal Alive.\n";
+
+            routputfile.close();
+        }
+
+        routputfile.open(QIODevice::Append|QIODevice::Text);
+        QTextStream rout(&routputfile);
+
+        rout<<generation<<"\t";
+
+        //RJG count breeding. Bit of a bodge, probably a better way
+        int cntAsex=0, cntSex=0;
+        int totalBreedAttempts=0, totalBreedFails=0;
+
+        for (int i=0; i<gridX; i++)
+                for (int j=0; j<gridY; j++)
+                        {
+                        for (int c=0; c<100; c++)
+                            if (critters[i][j][c].fitness)
+                                {
+                                    if(critters[i][j][c].return_recomb()<0)cntAsex++;
+                                    else if (critters[i][j][c].return_recomb()>0)cntSex++;
+                                }
+                        totalBreedAttempts+=breedattempts[i][j];
+                        totalBreedFails+=breedfails[i][j];
+
+                        }
+
+        rout<<cntAsex<<"\t"<<cntSex<<"\t"<<totalBreedAttempts<<"\t"<<totalBreedFails<<"\t"<<AliveCount<<"\n";
+
+        routputfile.close();
+    }
+
+    // ----RJG log fitness to separate file
+    if (ui->actionFitness_logging_to_File->isChecked())
+    {
 
         QString File(path->text()+"EvoSim_fitness");
         if(batch_running)
@@ -2235,7 +2285,7 @@ void MainWindow::HandleAnalysisTool(int code)
 
     //RJG - Make file here
     //and attempt to write to file
-    if (FilenameString.length()>1) //i.e. if not blank
+    if (FilenameString.length()>1 && ui->actionSpecies_logging->isChecked()) //i.e. if not blank and loging is on
     {
 
         QString File(path->text()+"EvoSim"+FilenameString);

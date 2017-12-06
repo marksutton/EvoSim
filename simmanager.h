@@ -108,7 +108,7 @@ extern bool speciesLogging;
 extern bool speciesLoggingToFile;
 extern QString SpeciesLoggingFile;
 extern bool fitnessLoggingToFile;
-extern QString FitnessLoggingFile;
+//extern QString FitnessLoggingFile;
 
 extern QStringList EnvFiles;
 extern int CurrentEnvFile;
@@ -121,6 +121,7 @@ extern int settles[GRID_X][GRID_Y]; //for analysis purposes
 extern int settlefails[GRID_X][GRID_Y]; //for analysis purposes
 extern int maxused[GRID_X][GRID_Y]; //---- RJG number of slots used within each grid square
 extern int AliveCount;
+extern int totalRecombination;
 
 //---- RJG reseed with known genomes
 extern bool reseedKnown;

@@ -95,6 +95,7 @@ int settles[GRID_X][GRID_Y]; //for analysis purposes
 int settlefails[GRID_X][GRID_Y]; //for analysis purposes
 int maxused[GRID_X][GRID_Y];
 int AliveCount;
+int totalRecombination;
 
 //Species stuff
 QList<species> oldspecieslist;
@@ -592,8 +593,6 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
     int maxalive;
     int deathcount;
 
-    int asex=0, sex=0;
-
     for (int n=firstx; n<=lastx; n++)
     for (int m=0; m<gridY; m++)
     {
@@ -635,6 +634,7 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
 
             // ----RJG: breedattempts was no longer used - co-opting for fitness report.
             if(fitnessLoggingToFile)breedattempts[n][m]=breedlistentries;
+            if(variableBreed) for (int c=0; c<=maxv; c++)crit[c].variableBreedAsex=0;
 
             //----RJG Do breeding
             if (breedlistentries>0)
@@ -656,13 +656,16 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
                         else temp_asexual=false;
                         }
 
-                    if(temp_asexual){partner=c;asex++;}
-                    else {partner=Rand8()/divider;sex++;}
+                    if(temp_asexual)partner=c;
+                    else partner=Rand8()/divider;
 
                     if (partner<breedlistentries)
                     {
                         if (crit[breedlist[c]].breed_with_parallel(n,m,&(crit[breedlist[partner]]),&newgenomecount_local))
                             breedfails[n][m]++; //for analysis purposes
+                        //RJG - Keeping track of how bred for recombination log - may want to change down line
+                        else if (temp_asexual && variableBreed)crit[breedlist[c]].variableBreedAsex=-1;
+                        else if(!temp_asexual && variableBreed)crit[breedlist[c]].variableBreedAsex=1;
                     }
                     else //didn't find a partner, refund breed cost
                         crit[breedlist[c]].energy+=breedCost;
