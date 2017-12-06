@@ -2055,7 +2055,7 @@ void MainWindow::WriteLog()
             // Info on simulation setup
             rout<<"Slots Per square = "<<slotsPerSq;
             rout<<"\nNote on log: this only calculates proportions when variable breeding is selected for speed, and also currently will only count total breed attempts when the fitness log is also running.";
-            rout<<"For now, this is merely a list of:\nIteration\tAsexual breeds\tSexual breeds\tTotal breed attempts\tTotal breed fails\tTotal Alive.\n";
+            rout<<"For now, this is merely a list of:\nIteration\tAsexual breeds\tSexual breeds\tTotal breed attempts\tTotal breed fails\tTotal Alive\tPerecnt sexual.\n";
 
             routputfile.close();
         }
@@ -2082,8 +2082,8 @@ void MainWindow::WriteLog()
                         totalBreedFails+=breedfails[i][j];
 
                         }
-
-        rout<<cntAsex<<"\t"<<cntSex<<"\t"<<totalBreedAttempts<<"\t"<<totalBreedFails<<"\t"<<AliveCount<<"\n";
+        double percent=((float)cntSex/(float)(cntAsex+cntSex))*100.;
+        rout<<cntAsex<<"\t"<<cntSex<<"\t"<<totalBreedAttempts<<"\t"<<totalBreedFails<<"\t"<<AliveCount<<"\t"<<percent<<"\n";
 
         routputfile.close();
     }
