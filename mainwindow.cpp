@@ -2110,8 +2110,8 @@ void MainWindow::WriteLog()
             //Different versions of output, for reuse as needed
             //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
             //out<<"Each line lists generation, then the grid's: total critter number, total fitness, total entries on breed list";
-            out<<"Each generation lists, for each pixel (top left to bottom right): total fitness, number of critters,entries on breed list\n\n";
-
+            //out<<"Each generation lists, for each pixel (top left to bottom right): total fitness, number of critters,entries on breed list\n\n";
+            out<<"Each generation lists, for the grid: mean fitness, total entries on breed list, number alive";
            out<<"\n";
            outputfile.close();
         }
@@ -2120,9 +2120,9 @@ void MainWindow::WriteLog()
         QTextStream out(&outputfile);
 
         // ----RJG: Breedattempts was no longer in use - but seems accurate, so can be co-opted for this.
-        out<<"Iteration: "<<generation<<"\n";
-
-        //int gridNumberAlive=0, gridTotalFitness=0, gridBreedEntries=0;
+        //out<<"Iteration: "<<generation<<"\n";
+        out<<generation<<"\t";
+        int gridNumberAlive=0, gridTotalFitness=0, gridBreedEntries=0;
 
         for (int i=0; i<gridX; i++)
             {
@@ -2142,7 +2142,7 @@ void MainWindow::WriteLog()
                     // mean = (float)totalfit[i][j]/(float)maxused[i][j]+1;
 
                     //----RJG: Manually calculate total fitness for grid
-                    //gridTotalFitness+=totalfit[i][j];
+                    gridTotalFitness+=totalfit[i][j];
 
                     int critters_alive=0;
 
@@ -2150,22 +2150,20 @@ void MainWindow::WriteLog()
                     for  (int k=0; k<slotsPerSq; k++)if(critters[i][j][k].fitness)
                                     {
                                     //numberalive++;
-                                    //gridNumberAlive++;
+                                    gridNumberAlive++;
                                     critters_alive++;
                                     }
 
                     //total fitness, number of critters,entries on breed list";
-                    out<<totalfit[i][j]<<" "<<critters_alive<<" "<<breedattempts[i][j];
+                    //out<<totalfit[i][j]<<" "<<critters_alive<<" "<<breedattempts[i][j];
 
                     //----RJG: Manually count breed attempts for grid
-                    //gridBreedEntries+=breedattempts[i][j];
+                    gridBreedEntries+=breedattempts[i][j];
 
-                    out<<"\n";
+                    //out<<"\n";
 
                     }
             }
-
-       out<<"\n\n";
 
         //---- RJG: If outputting averages to log.
         //float avFit=(float)gridTotalFitness/(float)gridNumberAlive;
@@ -2174,8 +2172,7 @@ void MainWindow::WriteLog()
 
         //---- RJG: If outputting totals
         //critter - fitness - breeds
-        //out<<gridNumberAlive<<"\t"<<gridTotalFitness<<"\t"<<gridBreedEntries<<"\n";
-
+        out<<gridNumberAlive<<"\t"<<gridTotalFitness<<"\t"<<gridBreedEntries<<"\n";
         outputfile.close();
       }
 }
