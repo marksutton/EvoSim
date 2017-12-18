@@ -409,11 +409,11 @@ void MainWindow::on_actionBatch_triggered()
     if (environment=="Yes")repeat_environment=true;
     else repeat_environment=false;
 
+    QString save_path(path->text());
+
     do{
 
-        QString new_path(path->text());
-        if (runs!=0)new_path.chop(5);
-        else new_path.append(QString("Run_"));
+        QString new_path(save_path+"Run_");
         new_path.append(QString("%1/").arg(runs, 4, 10, QChar('0')));
         path->setText(new_path);
 
@@ -438,6 +438,7 @@ void MainWindow::on_actionBatch_triggered()
         runs++;
        }while(runs<batch_target_runs);
 
+    path->setText(save_path);
     batch_running=false;
     runs=0;
 }
@@ -463,6 +464,13 @@ void MainWindow::RunSetUp()
     pauseButton->setEnabled(true);
 
     if(ui->actionWrite_phylogeny->isChecked()||ui->actionSpecies_logging->isChecked())ui->actionPhylogeny_metrics->setChecked(true);
+
+    //RJG - make path if required
+    QString save_path(path->text());
+    if(!save_path.endsWith(QDir::separator()))save_path.append(QDir::separator());
+    path->setText(save_path);
+    QDir save_dir;
+    if(!save_dir.mkpath(path->text())) QMessageBox::warning(this,"Error","Failed to make path to save files.");
 
     //Reseed or reset
     ui->actionReset->setEnabled(false);
