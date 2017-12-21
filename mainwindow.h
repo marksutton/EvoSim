@@ -75,6 +75,8 @@ private:
     void HandleAnalysisTool(int code);
     Analyser *a;
 
+    QString print_settings();
+
     QAction *startButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton, *aboutButton;
 
 private slots:

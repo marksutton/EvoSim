@@ -2321,3 +2321,39 @@ void MainWindow::on_actionSpecies_sizes_triggered()
 {
     HandleAnalysisTool(ANALYSIS_TOOL_CODE_DUMP_DATA);
 }
+
+
+QString MainWindow::print_settings()
+{
+    QString settings;
+    QTextStream settings_out(&settings);
+
+    settings_out<<"Integers - Grid X: "<<gridX;
+    settings_out<<" Grid Y: "<<gridY;
+    settings_out<<" Settle tolerance: "<<settleTolerance;
+    settings_out<<" Start age: "<<startAge;
+    settings_out<<" Disperal: "<<dispersal;
+    settings_out<<" Food: "<<food;
+    settings_out<<" Breed cost: "<<breedCost;
+    settings_out<<" Mutate: "<<mutate;
+    settings_out<<" Pathogen mutate: "<<path_mutate;
+    settings_out<<" Pathogen frequency: "<<path_frequency;
+    settings_out<<" Max diff to breed: "<<maxDiff;
+    settings_out<<" Breed threshold: "<<breedThreshold;
+    settings_out<<" Slots per square: "<<slotsPerSq;
+    settings_out<<" Fitness target: "<<target;
+    settings_out<<" Environmental change rate: "<<EnvChangeCounter;
+    settings_out<<" Years per iteration: "<<yearsPerIteration;
+    settings_out<<" Bools - recalculate fitness: "<<recalcFitness;
+    settings_out<<" Toroidal environment: "<<toroidal;
+    settings_out<<" Nonspatial setling: "<<nonspatial;
+    settings_out<<" Enforce max diff to breed:"<<breeddiff;
+    settings_out<<" Only breed within species:"<<breedspecies;
+    settings_out<<" Pathogens enabled:"<<path_on;
+    settings_out<<" Breeding:";
+    if(sexual)settings_out<<" sexual.";
+    else if (asexual)settings_out<<" asexual.";
+    else settings_out<<" variable.";
+
+    return settings;
+}
