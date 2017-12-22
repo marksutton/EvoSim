@@ -2061,7 +2061,7 @@ void MainWindow::WriteLog()
             QTextStream rout(&routputfile);
 
             // Info on simulation setup
-            rout<<"Slots Per square = "<<slotsPerSq;
+            rout<<print_settings()<<"\n";
             rout<<"\nNote on log: this only calculates proportions when variable breeding is selected for speed, and also currently will only count total breed attempts when the fitness log is also running.";
             rout<<"For now, this is merely a list of:\nIteration\tAsexual breeds\tSexual breeds\tTotal breed attempts\tTotal breed fails\tTotal Alive\tPercent sexual.\n";
 
@@ -2112,8 +2112,7 @@ void MainWindow::WriteLog()
             QTextStream out(&outputfile);
 
             // Info on simulation setup
-            out<<"Slots Per square = "<<slotsPerSq;
-            out<<"\n";
+            out<<print_settings()<<"\n";
 
             //Different versions of output, for reuse as needed
             //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
@@ -2328,29 +2327,29 @@ QString MainWindow::print_settings()
     QString settings;
     QTextStream settings_out(&settings);
 
-    settings_out<<"Integers - Grid X: "<<gridX;
-    settings_out<<" Grid Y: "<<gridY;
-    settings_out<<" Settle tolerance: "<<settleTolerance;
-    settings_out<<" Start age: "<<startAge;
-    settings_out<<" Disperal: "<<dispersal;
-    settings_out<<" Food: "<<food;
-    settings_out<<" Breed cost: "<<breedCost;
-    settings_out<<" Mutate: "<<mutate;
-    settings_out<<" Pathogen mutate: "<<path_mutate;
-    settings_out<<" Pathogen frequency: "<<path_frequency;
-    settings_out<<" Max diff to breed: "<<maxDiff;
-    settings_out<<" Breed threshold: "<<breedThreshold;
-    settings_out<<" Slots per square: "<<slotsPerSq;
-    settings_out<<" Fitness target: "<<target;
-    settings_out<<" Environmental change rate: "<<EnvChangeCounter;
-    settings_out<<" Years per iteration: "<<yearsPerIteration;
-    settings_out<<" Bools - recalculate fitness: "<<recalcFitness;
-    settings_out<<" Toroidal environment: "<<toroidal;
-    settings_out<<" Nonspatial setling: "<<nonspatial;
-    settings_out<<" Enforce max diff to breed:"<<breeddiff;
-    settings_out<<" Only breed within species:"<<breedspecies;
-    settings_out<<" Pathogens enabled:"<<path_on;
-    settings_out<<" Breeding:";
+    settings_out<<"EvoSim settings - integers - Grid X: "<<gridX;
+    settings_out<<"; Grid Y: "<<gridY;
+    settings_out<<"; Settle tolerance: "<<settleTolerance;
+    settings_out<<"; Start age: "<<startAge;
+    settings_out<<"; Disperal: "<<dispersal;
+    settings_out<<"; Food: "<<food;
+    settings_out<<"; Breed cost: "<<breedCost;
+    settings_out<<"; Mutate: "<<mutate;
+    settings_out<<"; Pathogen mutate: "<<path_mutate;
+    settings_out<<"; Pathogen frequency: "<<path_frequency;
+    settings_out<<"; Max diff to breed: "<<maxDiff;
+    settings_out<<"; Breed threshold: "<<breedThreshold;
+    settings_out<<"; Slots per square: "<<slotsPerSq;
+    settings_out<<"; Fitness target: "<<target;
+    settings_out<<"; Environmental change rate: "<<EnvChangeCounter;
+    settings_out<<"; Years per iteration: "<<yearsPerIteration;
+    settings_out<<"; EvoSim settings - bools - recalculate fitness: "<<recalcFitness;
+    settings_out<<"; Toroidal environment: "<<toroidal;
+    settings_out<<"; Nonspatial setling: "<<nonspatial;
+    settings_out<<"; Enforce max diff to breed:"<<breeddiff;
+    settings_out<<"; Only breed within species:"<<breedspecies;
+    settings_out<<"; Pathogens enabled:"<<path_on;
+    settings_out<<"; Breeding:";
     if(sexual)settings_out<<" sexual.";
     else if (asexual)settings_out<<" asexual.";
     else settings_out<<" variable.";
