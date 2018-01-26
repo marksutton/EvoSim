@@ -465,13 +465,6 @@ void MainWindow::RunSetUp()
 
     if(ui->actionWrite_phylogeny->isChecked()||ui->actionSpecies_logging->isChecked())ui->actionPhylogeny_metrics->setChecked(true);
 
-    //RJG - make path if required
-    QString save_path(path->text());
-    if(!save_path.endsWith(QDir::separator()))save_path.append(QDir::separator());
-    path->setText(save_path);
-    QDir save_dir;
-    if(!save_dir.mkpath(path->text())) QMessageBox::warning(this,"Error","Failed to make path to save files.");
-
     //Reseed or reset
     ui->actionReset->setEnabled(false);
     resetButton->setEnabled(false);
@@ -481,7 +474,6 @@ void MainWindow::RunSetUp()
     reseedButton->setEnabled(false);
     runForBatchButton->setEnabled(false);
     settingsButton->setEnabled(false);
-
 
     timer.restart();
     NextRefresh=RefreshRate;
@@ -735,7 +727,10 @@ void MainWindow::RefreshPopulations()
 //Refreshes of left window - also run species ident
 {
 
-    QDir save_dir(path->text());
+    //RJG - make path if required - this way as if user adds file name to path, this will create a subfolder with the same file name as logs
+    QString save_path(path->text());
+    if(!save_path.endsWith(QDir::separator()))save_path.append(QDir::separator());
+    QDir save_dir(save_path);
 
     //check to see what the mode is
     if (ui->actionPopulation_Count->isChecked()||ui->save_population_count->isChecked())
@@ -2118,8 +2113,8 @@ void MainWindow::WriteLog()
             //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
             //out<<"Each line lists generation, then the grid's: total critter number, total fitness, total entries on breed list";
             //out<<"Each generation lists, for each pixel (top left to bottom right): total fitness, number of critters,entries on breed list\n\n";
-            out<<"Each generation lists, for the grid: mean fitness, total entries on breed list, number alive";
-           out<<"\n";
+            out<<"Each generation lists, for the grid: the number of living crittes, then the total fitness of all those critters, and then the number of entries on the breed list";
+            out<<"\n";
            outputfile.close();
         }
 
