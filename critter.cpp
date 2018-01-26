@@ -14,6 +14,9 @@ Critter::Critter()
     energy=0;
     speciesid=5; //=not assigned
 
+    //Temporary variable breed tag. Probably better way of doing this but short on time
+    int variableBreedAsex = 0;
+
 }
 
 void Critter::initialise(quint64 gen, quint8 *env, int x, int y, int z, quint64 species)
@@ -32,6 +35,11 @@ void Critter::initialise(quint64 gen, quint8 *env, int x, int y, int z, quint64 
 
     quint32 gen2 = genome>>32;
     ugenecombo = (gen2>>16) ^ (gen2 & 65535); //for breed testing - work out in advance for speed
+}
+
+int Critter::return_recomb()
+{
+    return variableBreedAsex;
 }
 
 int Critter::recalc_fitness(quint8 *env)

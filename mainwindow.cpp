@@ -279,13 +279,8 @@ void MainWindow::about_triggered()
 // ---- RJG: Reset simulation (i.e. fill the centre pixel with a genome, then set up a run).
 void MainWindow::on_actionReset_triggered()
 {
-    if ((speciesLoggingToFile==true || fitnessLoggingToFile==true)&&!batch_running)
-        {
-            QFile outputfile(QString(path->text()+"EvoSim_fitness_log.txt"));
-
-            if (outputfile.exists())
-                QMessageBox::warning(this,"Logging","This will append the log of the new run onto your last one, unless you change directories or move the odl log file");
-        }
+    if ((ui->actionRecombination_logging->isChecked()||ui->actionSpecies_logging->isChecked()|| ui->actionFitness_logging_to_File->isChecked())&&!batch_running)
+                                            QMessageBox::warning(this,"Logging","This will append logs from the new run onto your last one, unless you change directories or move the old log file. It will also overwrite any images within that folder.");
 
     //--- RJG: This resets all the species logging stuff as well as setting up the run
     TheSimManager->SetupRun();
@@ -414,7 +409,13 @@ void MainWindow::on_actionBatch_triggered()
     if (environment=="Yes")repeat_environment=true;
     else repeat_environment=false;
 
+    QString save_path(path->text());
+
     do{
+
+        QString new_path(save_path+"Run_");
+        new_path.append(QString("%1/").arg(runs, 4, 10, QChar('0')));
+        path->setText(new_path);
 
         //RJG - Sort environment so it repeats
         if(repeat_environment)
@@ -437,6 +438,7 @@ void MainWindow::on_actionBatch_triggered()
         runs++;
        }while(runs<batch_target_runs);
 
+    path->setText(save_path);
     batch_running=false;
     runs=0;
 }
@@ -472,7 +474,6 @@ void MainWindow::RunSetUp()
     reseedButton->setEnabled(false);
     runForBatchButton->setEnabled(false);
     settingsButton->setEnabled(false);
-
 
     timer.restart();
     NextRefresh=RefreshRate;
@@ -726,7 +727,10 @@ void MainWindow::RefreshPopulations()
 //Refreshes of left window - also run species ident
 {
 
-    QDir save_dir(path->text());
+    //RJG - make path if required - this way as if user adds file name to path, this will create a subfolder with the same file name as logs
+    QString save_path(path->text());
+    if(!save_path.endsWith(QDir::separator()))save_path.append(QDir::separator());
+    QDir save_dir(save_path);
 
     //check to see what the mode is
     if (ui->actionPopulation_Count->isChecked()||ui->save_population_count->isChecked())
@@ -1995,7 +1999,7 @@ void MainWindow::CalcSpecies()
 
 void MainWindow::WriteLog()
 {
-    if (speciesLoggingToFile==false && fitnessLoggingToFile==false) return;
+    if (!ui->actionRecombination_logging->isChecked() && !ui->actionFitness_logging_to_File->isChecked()) return;
 
 
     // ----RJG separated species logging from fitness logging
@@ -2036,11 +2040,60 @@ void MainWindow::WriteLog()
         outputfile.close();
       }*/
 
-    // ----RJG log fitness to separate file
-    if (fitnessLoggingToFile==true)
-    {
 
-        // else FitnessLoggingFile.replace(QString("_run_%1").arg(runs-1),QString("_run_%1").arg(runs));
+    // ----RJG recombination logging to separate file
+    if (ui->actionRecombination_logging->isChecked())
+    {
+        QString rFile(path->text()+"EvoSim_recombination");
+        if(batch_running)
+            rFile.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
+        rFile.append(".txt");
+        QFile routputfile(rFile);
+
+        if (!(routputfile.exists()))
+        {
+            routputfile.open(QIODevice::WriteOnly|QIODevice::Text);
+            QTextStream rout(&routputfile);
+
+            // Info on simulation setup
+            rout<<print_settings()<<"\n";
+            rout<<"\nNote on log: this only calculates proportions when variable breeding is selected for speed, and also currently will only count total breed attempts when the fitness log is also running.";
+            rout<<"For now, this is merely a list of:\nIteration\tAsexual breeds\tSexual breeds\tTotal breed attempts\tTotal breed fails\tTotal Alive\tPercent sexual.\n";
+
+            routputfile.close();
+        }
+
+        routputfile.open(QIODevice::Append|QIODevice::Text);
+        QTextStream rout(&routputfile);
+
+        rout<<generation<<"\t";
+
+        //RJG count breeding. Bit of a bodge, probably a better way
+        int cntAsex=0, cntSex=0;
+        int totalBreedAttempts=0, totalBreedFails=0;
+
+        for (int i=0; i<gridX; i++)
+                for (int j=0; j<gridY; j++)
+                        {
+                        for (int c=0; c<100; c++)
+                            if (critters[i][j][c].fitness)
+                                {
+                                    if(critters[i][j][c].return_recomb()<0)cntAsex++;
+                                    else if (critters[i][j][c].return_recomb()>0)cntSex++;
+                                }
+                        totalBreedAttempts+=breedattempts[i][j];
+                        totalBreedFails+=breedfails[i][j];
+
+                        }
+        double percent=((float)cntSex/(float)(cntAsex+cntSex))*100.;
+        rout<<cntAsex<<"\t"<<cntSex<<"\t"<<totalBreedAttempts<<"\t"<<totalBreedFails<<"\t"<<AliveCount<<"\t"<<percent<<"\n";
+
+        routputfile.close();
+    }
+
+    // ----RJG log fitness to separate file
+    if (ui->actionFitness_logging_to_File->isChecked())
+    {
 
         QString File(path->text()+"EvoSim_fitness");
         if(batch_running)
@@ -2054,15 +2107,14 @@ void MainWindow::WriteLog()
             QTextStream out(&outputfile);
 
             // Info on simulation setup
-            out<<"Slots Per square = "<<slotsPerSq;
-            out<<"\n";
+            out<<print_settings()<<"\n";
 
             //Different versions of output, for reuse as needed
             //out<<"Each generation lists, for each pixel: mean fitness, entries on breed list";
             //out<<"Each line lists generation, then the grid's: total critter number, total fitness, total entries on breed list";
-            out<<"Each generation lists, for each pixel (top left to bottom right): total fitness, number of critters,entries on breed list\n\n";
-
-           out<<"\n";
+            //out<<"Each generation lists, for each pixel (top left to bottom right): total fitness, number of critters,entries on breed list\n\n";
+            out<<"Each generation lists, for the grid: the number of living crittes, then the total fitness of all those critters, and then the number of entries on the breed list";
+            out<<"\n";
            outputfile.close();
         }
 
@@ -2070,9 +2122,9 @@ void MainWindow::WriteLog()
         QTextStream out(&outputfile);
 
         // ----RJG: Breedattempts was no longer in use - but seems accurate, so can be co-opted for this.
-        out<<"Iteration: "<<generation<<"\n";
-
-        //int gridNumberAlive=0, gridTotalFitness=0, gridBreedEntries=0;
+        //out<<"Iteration: "<<generation<<"\n";
+        out<<generation<<"\t";
+        int gridNumberAlive=0, gridTotalFitness=0, gridBreedEntries=0;
 
         for (int i=0; i<gridX; i++)
             {
@@ -2092,7 +2144,7 @@ void MainWindow::WriteLog()
                     // mean = (float)totalfit[i][j]/(float)maxused[i][j]+1;
 
                     //----RJG: Manually calculate total fitness for grid
-                    //gridTotalFitness+=totalfit[i][j];
+                    gridTotalFitness+=totalfit[i][j];
 
                     int critters_alive=0;
 
@@ -2100,22 +2152,20 @@ void MainWindow::WriteLog()
                     for  (int k=0; k<slotsPerSq; k++)if(critters[i][j][k].fitness)
                                     {
                                     //numberalive++;
-                                    //gridNumberAlive++;
+                                    gridNumberAlive++;
                                     critters_alive++;
                                     }
 
                     //total fitness, number of critters,entries on breed list";
-                    out<<totalfit[i][j]<<" "<<critters_alive<<" "<<breedattempts[i][j];
+                    //out<<totalfit[i][j]<<" "<<critters_alive<<" "<<breedattempts[i][j];
 
                     //----RJG: Manually count breed attempts for grid
-                    //gridBreedEntries+=breedattempts[i][j];
+                    gridBreedEntries+=breedattempts[i][j];
 
-                    out<<"\n";
+                    //out<<"\n";
 
                     }
             }
-
-       out<<"\n\n";
 
         //---- RJG: If outputting averages to log.
         //float avFit=(float)gridTotalFitness/(float)gridNumberAlive;
@@ -2124,8 +2174,7 @@ void MainWindow::WriteLog()
 
         //---- RJG: If outputting totals
         //critter - fitness - breeds
-        //out<<gridNumberAlive<<"\t"<<gridTotalFitness<<"\t"<<gridBreedEntries<<"\n";
-
+        out<<gridNumberAlive<<"\t"<<gridTotalFitness<<"\t"<<gridBreedEntries<<"\n";
         outputfile.close();
       }
 }
@@ -2235,7 +2284,7 @@ void MainWindow::HandleAnalysisTool(int code)
 
     //RJG - Make file here
     //and attempt to write to file
-    if (FilenameString.length()>1) //i.e. if not blank
+    if (FilenameString.length()>1 && ui->actionSpecies_logging->isChecked()) //i.e. if not blank and loging is on
     {
 
         QString File(path->text()+"EvoSim"+FilenameString);
@@ -2265,4 +2314,40 @@ void MainWindow::on_actionGenerate_NWK_tree_file_triggered()
 void MainWindow::on_actionSpecies_sizes_triggered()
 {
     HandleAnalysisTool(ANALYSIS_TOOL_CODE_DUMP_DATA);
+}
+
+
+QString MainWindow::print_settings()
+{
+    QString settings;
+    QTextStream settings_out(&settings);
+
+    settings_out<<"EvoSim settings - integers - Grid X: "<<gridX;
+    settings_out<<"; Grid Y: "<<gridY;
+    settings_out<<"; Settle tolerance: "<<settleTolerance;
+    settings_out<<"; Start age: "<<startAge;
+    settings_out<<"; Disperal: "<<dispersal;
+    settings_out<<"; Food: "<<food;
+    settings_out<<"; Breed cost: "<<breedCost;
+    settings_out<<"; Mutate: "<<mutate;
+    settings_out<<"; Pathogen mutate: "<<path_mutate;
+    settings_out<<"; Pathogen frequency: "<<path_frequency;
+    settings_out<<"; Max diff to breed: "<<maxDiff;
+    settings_out<<"; Breed threshold: "<<breedThreshold;
+    settings_out<<"; Slots per square: "<<slotsPerSq;
+    settings_out<<"; Fitness target: "<<target;
+    settings_out<<"; Environmental change rate: "<<EnvChangeCounter;
+    settings_out<<"; Years per iteration: "<<yearsPerIteration;
+    settings_out<<"; EvoSim settings - bools - recalculate fitness: "<<recalcFitness;
+    settings_out<<"; Toroidal environment: "<<toroidal;
+    settings_out<<"; Nonspatial setling: "<<nonspatial;
+    settings_out<<"; Enforce max diff to breed:"<<breeddiff;
+    settings_out<<"; Only breed within species:"<<breedspecies;
+    settings_out<<"; Pathogens enabled:"<<path_on;
+    settings_out<<"; Breeding:";
+    if(sexual)settings_out<<" sexual.";
+    else if (asexual)settings_out<<" asexual.";
+    else settings_out<<" variable.";
+
+    return settings;
 }
