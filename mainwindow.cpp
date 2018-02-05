@@ -2179,7 +2179,10 @@ void MainWindow::WriteLog()
 
         //---- RJG: If outputting totals
         //critter - fitness - breeds
-        out<<gridNumberAlive<<"\t"<<gridTotalFitness<<"\t"<<gridBreedEntries<<"\n";
+
+        double mean_fitness= (double)gridTotalFitness / (double)gridNumberAlive;
+
+        out<<mean_fitness<<"\t"<<gridBreedEntries<<"\t"<<gridNumberAlive<<"\n";
         outputfile.close();
       }
 }
