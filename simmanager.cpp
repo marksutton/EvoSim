@@ -50,6 +50,7 @@ int lastReport=0;
 bool recalcFitness=false;
 bool asexual=false;
 bool variableBreed=false;
+bool variableMutate=false;
 bool sexual=true;
 bool speciesLogging=false;
 bool speciesLoggingToFile=false;

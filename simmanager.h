@@ -67,6 +67,8 @@ extern bool breedspecies, breeddiff;
 extern int maxDiff;
 //chance to mutate out of 255
 extern int mutate;
+// Variable mutation based on population density - DAMP
+extern bool variableMutate;
 
 //Global lookups -
 extern quint32 tweakers[32]; // the 32 single bit XOR values (many uses!)

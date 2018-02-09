@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>553</width>
-    <height>476</height>
+    <height>442</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -229,21 +229,21 @@
        </property>
       </widget>
      </item>
-     <item row="14" column="1">
+     <item row="15" column="1">
       <widget class="QRadioButton" name="radioSexual">
        <property name="text">
         <string>Sexual</string>
        </property>
       </widget>
      </item>
-     <item row="14" column="2" alignment="Qt::AlignHCenter">
+     <item row="15" column="2" alignment="Qt::AlignHCenter">
       <widget class="QRadioButton" name="radioAsexual">
        <property name="text">
         <string>Asexual</string>
        </property>
       </widget>
      </item>
-     <item row="14" column="3">
+     <item row="15" column="3">
       <widget class="QRadioButton" name="radioVariable">
        <property name="text">
         <string>Variable</string>
@@ -260,7 +260,7 @@
        </property>
       </widget>
      </item>
-     <item row="14" column="0">
+     <item row="15" column="0">
       <widget class="QLabel" name="label_16">
        <property name="text">
         <string>Breeding</string>
@@ -418,6 +418,20 @@
        </property>
        <property name="value">
         <number>5</number>
+       </property>
+      </widget>
+     </item>
+     <item row="14" column="0">
+      <widget class="QLabel" name="label_23">
+       <property name="text">
+        <string>Variable mutation</string>
+       </property>
+      </widget>
+     </item>
+     <item row="14" column="1" alignment="Qt::AlignHCenter">
+      <widget class="QCheckBox" name="CheckBoxVariableMutation">
+       <property name="text">
+        <string/>
        </property>
       </widget>
      </item>

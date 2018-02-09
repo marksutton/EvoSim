@@ -33,10 +33,17 @@ SettingsImpl::SettingsImpl( QWidget * parent)
         CheckBoxBreedWithinSpecies->setChecked(breedspecies);
         CheckBoxBreedWithDifference->setChecked(breeddiff);
         CheckBoxPathogens->setChecked(path_on);
+        CheckBoxVariableMutation->setChecked(variableMutate);
         radioSexual->setChecked(sexual);
         radioAsexual->setChecked(asexual);
         radioVariable->setChecked(variableBreed);
         RedoImages=false;
+}
+
+void SettingsImpl::on_CheckBoxVariableMutation_toggled()
+{
+    if(CheckBoxVariableMutation->isChecked())SpinBoxMutationChance->setEnabled(false);
+    if(!CheckBoxVariableMutation->isChecked())SpinBoxMutationChance->setEnabled(true);
 }
 
 void SettingsImpl::on_buttonBox_accepted()
@@ -65,6 +72,7 @@ void SettingsImpl::on_buttonBox_accepted()
         breeddiff=CheckBoxBreedWithDifference->isChecked();
         breedspecies=CheckBoxBreedWithinSpecies->isChecked();
         path_on=CheckBoxPathogens->isChecked();
+        variableMutate=CheckBoxVariableMutation->isChecked();
         sexual=radioSexual->isChecked();
         asexual=radioAsexual->isChecked();
         variableBreed=radioVariable->isChecked();
