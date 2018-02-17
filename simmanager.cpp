@@ -19,7 +19,8 @@ int xdisp[256][256];
 int ydisp[256][256];
 quint64 genex[65536];
 int nextgenex;
-quint32 cumulative_normal_distribution[32]; // RJG - A cumulative normal distribution for variable breeding.
+
+quint32 cumulative_normal_distribution[32]; // RJG - A cumulative normal distribution for variable breeding & mutation.
 quint32 pathogen_prob_distribution[64]; // RJG - A probability distribution for pathogens killing critters
 
 quint64 reseedGenome=0; //RJG - Genome for reseed with known genome
@@ -666,7 +667,7 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
                             breedfails[n][m]++; //for analysis purposes
                         //RJG - Keeping track of how bred for recombination log - may want to change down line
                         else if (temp_asexual && variableBreed)crit[breedlist[c]].variableBreedAsex=-1;
-                        else if(!temp_asexual && variableBreed)crit[breedlist[c]].variableBreedAsex=1;
+                        else if (!temp_asexual && variableBreed)crit[breedlist[c]].variableBreedAsex=1;
                     }
                     else //didn't find a partner, refund breed cost
                         crit[breedlist[c]].energy+=breedCost;
@@ -838,20 +839,24 @@ bool SimManager::iterate(int emode, bool interpolate)
          newgenomecounts_ends[i]=FuturesList[i]->result();
 
     //Testbed - call parallel functions, but in series
-/*    for (int i=0; i<ProcessorCount; i++)
-        newgenomecounts_ends[i]=SimManager::iterate_parallel((i*gridX)/ProcessorCount, (((i+1)*gridX)/ProcessorCount)-1,newgenomecounts_starts[i], &(KillCounts[i]));
-*/
+    /*
+      for (int i=0; i<ProcessorCount; i++)
+            newgenomecounts_ends[i]=SimManager::iterate_parallel((i*gridX)/ProcessorCount, (((i+1)*gridX)/ProcessorCount)-1,newgenomecounts_starts[i], &(KillCounts[i]));
+    */
 
     //apply all the kills to the global count
     for (int i=0; i<ProcessorCount; i++)
             AliveCount-=KillCounts[i];
 
-    //Currently pathogens is messing up AiveCount - localKillCounts seem to be too high, so number goes very negative. Bodge fix for now:
+    //Currently pathogens is messing up AliveCount - localKillCounts seem to be too high, so number goes very negative. Bodge fix for now:
+    if(temp_path_on)
+    {
     int tmp_alive_cnt=0;
             for (int n=0; n<100; n++)
                 for (int m=0; m<100; m++)
                     for (int c=0; c<100; c++)if (critters[n][m][c].fitness)tmp_alive_cnt++;
     AliveCount=tmp_alive_cnt;
+    }
 
     //Now handle spat settling
 

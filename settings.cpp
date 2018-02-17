@@ -76,8 +76,6 @@ void SettingsImpl::on_buttonBox_accepted()
         sexual=radioSexual->isChecked();
         asexual=radioAsexual->isChecked();
         variableBreed=radioVariable->isChecked();
-
-
 }
 
 
