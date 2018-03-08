@@ -85,7 +85,6 @@ bool Critter::iterate_parallel(int *KillCount_local, int addfood)
         //RJG - Here is where an individual dies.
         if ((--age)==0)
         {
-           // qDebug()<<"Die ";
             (*KillCount_local)++;
             totalfit[xpos][ypos]-=fitness;
             fitness=0;
@@ -100,7 +99,6 @@ bool Critter::iterate_parallel(int *KillCount_local, int addfood)
                 maxused[xpos][ypos]=-1;
     past:   ;
             }
-            //qDebug()<<"Return false";
             return false;
         }
         energy +=  fitness * addfood;
@@ -122,6 +120,7 @@ int Critter::breed_with_parallel(int xpos, int ypos, Critter *partner, int *newg
 
     bool breedsuccess1=true; //for species restricted breeding
     bool breedsuccess2=true; //for difference breeding
+
     if (breedspecies)
     {
         if (partner->speciesid!=speciesid) breedsuccess1=false;
@@ -157,12 +156,28 @@ int Critter::breed_with_parallel(int xpos, int ypos, Critter *partner, int *newg
          g1x &= partner->genome;  // cross bred genome
          g2x |= g1x;
 
+         bool local_mutate=false;
+
          //this is technically not threadsafe, but it doesn't matter - any value for nextrand is fine
-         if ((TheSimManager->Rand8())<mutate)
+         if(!variableMutate)
+             if ((TheSimManager->Rand8())<mutate)
+                 local_mutate=true;
+
+         //RJG - Variable mutate implemented here.
+         if(variableMutate)
          {
-                int w=TheSimManager->Rand8();
-                w &=63;
-                g2x ^= tweakers64[w];
+             quint32 g1xu = quint32(g2x / ((quint64)4294967296)); //upper 32 bits
+             int t1 = bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
+            //RJG - probability of mutation currently standard normal distribution from -3 to +3 scaled to randmax
+            //More 1's in non coding genome == higher probability of mutation - see documentation.
+            if(TheSimManager->Rand32()>=cumulative_normal_distribution[t1])local_mutate=true;
+         }
+
+         if(local_mutate)
+         {
+             int w=TheSimManager->Rand8();
+             w &=63;
+             g2x ^= tweakers64[w];
          }
 
          //store it all

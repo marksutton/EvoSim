@@ -411,11 +411,19 @@ void MainWindow::on_actionBatch_triggered()
 
     QString save_path(path->text());
 
+    for (int i=15;i<260;i+=5)
+    {
+
+    mutate=i;
     do{
 
-        QString new_path(save_path+"Run_");
-        new_path.append(QString("%1/").arg(runs, 4, 10, QChar('0')));
+        QString new_path(save_path);
+        new_path.append(QString("mutate_%1_run_%2/").arg(mutate).arg(runs, 4, 10, QChar('0')));
         path->setText(new_path);
+
+        QDir save_dir(path->text());
+
+        save_dir.mkpath("Fitness/");
 
         //RJG - Sort environment so it repeats
         if(repeat_environment)
@@ -437,10 +445,10 @@ void MainWindow::on_actionBatch_triggered()
         on_actionReset_triggered();
         runs++;
        }while(runs<batch_target_runs);
-
     path->setText(save_path);
-    batch_running=false;
     runs=0;
+    }
+    batch_running=false;
 }
 
 void MainWindow::on_actionRefresh_Rate_triggered()
@@ -2174,7 +2182,10 @@ void MainWindow::WriteLog()
 
         //---- RJG: If outputting totals
         //critter - fitness - breeds
-        out<<gridNumberAlive<<"\t"<<gridTotalFitness<<"\t"<<gridBreedEntries<<"\n";
+
+        double mean_fitness= (double)gridTotalFitness / (double)gridNumberAlive;
+
+        out<<mean_fitness<<"\t"<<gridBreedEntries<<"\t"<<gridNumberAlive<<"\n";
         outputfile.close();
       }
 }

@@ -19,8 +19,9 @@ int xdisp[256][256];
 int ydisp[256][256];
 quint64 genex[65536];
 int nextgenex;
-quint32 cumulative_normal_distribution[32]; // RJG - A cumulative normal distribution for variable breeding.
-quint32 pathogen_prob_distribution[64]; // RJG - A probability distribution for pathogens killing critters
+
+quint32 cumulative_normal_distribution[33]; // RJG - A cumulative normal distribution for variable breeding & mutation.
+quint32 pathogen_prob_distribution[65]; // RJG - A probability distribution for pathogens killing critters
 
 quint64 reseedGenome=0; //RJG - Genome for reseed with known genome
 
@@ -50,6 +51,7 @@ int lastReport=0;
 bool recalcFitness=false;
 bool asexual=false;
 bool variableBreed=false;
+bool variableMutate=false;
 bool sexual=true;
 bool speciesLogging=false;
 bool speciesLoggingToFile=false;
@@ -665,7 +667,7 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
                             breedfails[n][m]++; //for analysis purposes
                         //RJG - Keeping track of how bred for recombination log - may want to change down line
                         else if (temp_asexual && variableBreed)crit[breedlist[c]].variableBreedAsex=-1;
-                        else if(!temp_asexual && variableBreed)crit[breedlist[c]].variableBreedAsex=1;
+                        else if (!temp_asexual && variableBreed)crit[breedlist[c]].variableBreedAsex=1;
                     }
                     else //didn't find a partner, refund breed cost
                         crit[breedlist[c]].energy+=breedCost;
@@ -677,17 +679,17 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
         if(temp_path_on)
             for (int c=0; c<=maxv; c++)
                 {
-                //XOR critter and pathogen genome for bit counting
+                //RJG - XOR critter and pathogen genome for bit counting
                 quint64 xr = crit[c].genome ^ pathogens[n][m];
 
-                //Count the bits
+                //RJG - Count the bits
                 int t1=0;
                 quint32 g1xl = quint32(xr & (quint64)4294967295); //lower 32 bits
                 t1 += bitcounts[g1xl/(quint32)65536] +  bitcounts[g1xl & (quint32)65535];
                 quint32 g1xu = quint32(xr / ((quint64)4294967296)); //upper 32 bits
                 t1 += bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
 
-                //Kill the critter depending on prob distribution
+                //RJG - Kill the critter depending on prob distribution
                 //Iterate critters kills those which have --age == zero hence set age to 1 here and it'll be killed at iterate below
                 if(Rand32()>pathogen_prob_distribution[t1])crit[c].age=1;
                 }
@@ -837,20 +839,24 @@ bool SimManager::iterate(int emode, bool interpolate)
          newgenomecounts_ends[i]=FuturesList[i]->result();
 
     //Testbed - call parallel functions, but in series
-/*    for (int i=0; i<ProcessorCount; i++)
-        newgenomecounts_ends[i]=SimManager::iterate_parallel((i*gridX)/ProcessorCount, (((i+1)*gridX)/ProcessorCount)-1,newgenomecounts_starts[i], &(KillCounts[i]));
-*/
+    /*
+      for (int i=0; i<ProcessorCount; i++)
+            newgenomecounts_ends[i]=SimManager::iterate_parallel((i*gridX)/ProcessorCount, (((i+1)*gridX)/ProcessorCount)-1,newgenomecounts_starts[i], &(KillCounts[i]));
+    */
 
     //apply all the kills to the global count
     for (int i=0; i<ProcessorCount; i++)
             AliveCount-=KillCounts[i];
 
-    //Currently pathogens is messing up AiveCount - localKillCounts seem to be too high, so number goes very negative. Bodge fix for now:
+    //Currently pathogens is messing up AliveCount - localKillCounts seem to be too high, so number goes very negative. Bodge fix for now:
+    if(temp_path_on)
+    {
     int tmp_alive_cnt=0;
             for (int n=0; n<100; n++)
                 for (int m=0; m<100; m++)
                     for (int c=0; c<100; c++)if (critters[n][m][c].fitness)tmp_alive_cnt++;
     AliveCount=tmp_alive_cnt;
+    }
 
     //Now handle spat settling
 
