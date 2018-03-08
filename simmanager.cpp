@@ -20,8 +20,8 @@ int ydisp[256][256];
 quint64 genex[65536];
 int nextgenex;
 
-quint32 cumulative_normal_distribution[32]; // RJG - A cumulative normal distribution for variable breeding & mutation.
-quint32 pathogen_prob_distribution[64]; // RJG - A probability distribution for pathogens killing critters
+quint32 cumulative_normal_distribution[33]; // RJG - A cumulative normal distribution for variable breeding & mutation.
+quint32 pathogen_prob_distribution[65]; // RJG - A probability distribution for pathogens killing critters
 
 quint64 reseedGenome=0; //RJG - Genome for reseed with known genome
 
@@ -679,17 +679,17 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
         if(temp_path_on)
             for (int c=0; c<=maxv; c++)
                 {
-                //XOR critter and pathogen genome for bit counting
+                //RJG - XOR critter and pathogen genome for bit counting
                 quint64 xr = crit[c].genome ^ pathogens[n][m];
 
-                //Count the bits
+                //RJG - Count the bits
                 int t1=0;
                 quint32 g1xl = quint32(xr & (quint64)4294967295); //lower 32 bits
                 t1 += bitcounts[g1xl/(quint32)65536] +  bitcounts[g1xl & (quint32)65535];
                 quint32 g1xu = quint32(xr / ((quint64)4294967296)); //upper 32 bits
                 t1 += bitcounts[g1xu/(quint32)65536] +  bitcounts[g1xu & (quint32)65535];
 
-                //Kill the critter depending on prob distribution
+                //RJG - Kill the critter depending on prob distribution
                 //Iterate critters kills those which have --age == zero hence set age to 1 here and it'll be killed at iterate below
                 if(Rand32()>pathogen_prob_distribution[t1])crit[c].age=1;
                 }
