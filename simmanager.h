@@ -82,8 +82,8 @@ extern int nextgenex;
 extern quint8 probbreed[65536][16];
 extern quint8 randoms[65536];
 extern quint16 nextrandom;
-extern quint32 cumulative_normal_distribution[32]; // RJG - A cumulative normal distribution for variable breeding.
-extern quint32 pathogen_prob_distribution[64];// RJG - A probability distribution for pathogens killing critters
+extern quint32 cumulative_normal_distribution[33]; // RJG - A cumulative normal distribution for variable breeding.
+extern quint32 pathogen_prob_distribution[65];// RJG - A probability distribution for pathogens killing critters
 
 //Globabl data
 extern Critter critters[GRID_X][GRID_Y][SLOTS_PER_GRID_SQUARE]; //main array - static for speed
