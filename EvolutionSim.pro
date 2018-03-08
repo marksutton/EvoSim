@@ -52,3 +52,7 @@ OTHER_FILES += \
 
 RESOURCES += \
     resources.qrc
+
+#Needed to use C++ lamda functions
+CONFIG += c++11
+

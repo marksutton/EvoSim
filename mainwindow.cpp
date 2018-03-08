@@ -76,16 +76,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->toolBar->addAction(reseedButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(settingsButton);
 
+    //----RJG - Connect button signals to slot. Note for clarity: Reset = start again with random individual. Reseed = start again with user defined genome
     QObject::connect(startButton, SIGNAL(triggered()), this, SLOT(on_actionStart_Sim_triggered()));
     QObject::connect(runForButton, SIGNAL(triggered()), this, SLOT(on_actionRun_for_triggered()));
     QObject::connect(pauseButton, SIGNAL(triggered()), this, SLOT(on_actionPause_Sim_triggered()));
-    //----RJG - note for clarity. Reset = start again with random individual. Reseed = start again with user defined genome
     QObject::connect(resetButton, SIGNAL(triggered()), this, SLOT(on_actionReset_triggered()));
     QObject::connect(reseedButton, SIGNAL(triggered()), this, SLOT(on_actionReseed_triggered()));
     QObject::connect(runForBatchButton, SIGNAL(triggered()), this, SLOT(on_actionBatch_triggered()));
-    //--- RJG - Also connect the save all menu option.
     QObject::connect(settingsButton, SIGNAL(triggered()), this, SLOT(on_actionSettings_triggered()));
-
     QObject::connect(ui->save_all, SIGNAL(toggled(bool)), this, SLOT(save_all(bool)));
 
     //---- RJG - add savepath for all functions, and allow this to be changed. Also add about. Spt 17.
@@ -110,6 +108,37 @@ MainWindow::MainWindow(QWidget *parent) :
     aboutButton = new QAction(QIcon(QPixmap(":/toolbar/aboutButton-Enabled.png")), QString("About"), this);
     ui->toolBar->addAction(aboutButton);
     QObject::connect(aboutButton, SIGNAL (triggered()), this, SLOT (about_triggered()));
+
+    //----RJG - set up settings docker.
+    QDockWidget *settings_dock = new QDockWidget("Settings", this);
+    settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
+    settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
+    addDockWidget(Qt::RightDockWidgetArea, settings_dock);
+
+    QVBoxLayout *settings_layout = new QVBoxLayout;
+    settings_layout->setAlignment(Qt::AlignTop);
+
+    QLabel *environment_label= new QLabel("Environmental Settings");
+    environment_label->setStyleSheet("font-weight: bold");
+    settings_layout->addWidget(environment_label);
+
+    QHBoxLayout *environment_rate_layout = new QHBoxLayout;
+    QLabel *environment_rate_label = new QLabel("Environment refresh rate:");
+    QSpinBox *environment_rate_spin = new QSpinBox;
+    environment_rate_spin->setMinimum(0);
+    environment_rate_spin->setMaximum(100000);
+    environment_rate_spin->setValue(envchangerate);
+    environment_rate_layout->addWidget(environment_rate_label);
+    environment_rate_layout->addWidget(environment_rate_spin);
+    settings_layout->addLayout(environment_rate_layout);
+    //----RJG - Note in order to use a lamda not only do you need to use C++11, but there are two valueCHanged signals for spinbox - and int and a string. Need to cast it to an int
+    connect(environment_rate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &rate_value ) { envchangerate=rate_value; });
+
+    QWidget *settings_layout_widget = new QWidget;
+    settings_layout_widget->setLayout(settings_layout);
+    settings_layout_widget->setMinimumWidth(300);
+    settings_dock->setWidget(settings_layout_widget);
 
     //---- ARTS: Add Genome Comparison UI
     ui->genomeComparisonDock->hide();
