@@ -116,17 +116,14 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::RightDockWidgetArea, settings_dock);
 
-    QVBoxLayout *settings_layout = new QVBoxLayout;
-    settings_layout->setAlignment(Qt::AlignTop);
-
-    QLabel *environment_label= new QLabel("Environmental Settings");
-    environment_label->setStyleSheet("font-weight: bold");
-    settings_layout->addWidget(environment_label);
-
     QGridLayout *settings_grid = new QGridLayout;
     settings_grid->setAlignment(Qt::AlignTop);
 
-    QHBoxLayout *environment_rate_layout = new QHBoxLayout;
+    QLabel *environment_label= new QLabel("Environmental Settings");
+    environment_label->setStyleSheet("font-weight: bold");
+    settings_grid->addWidget(environment_label,0,1,1,2);
+
+
     QLabel *environment_rate_label = new QLabel("Environment refresh rate:");
     QSpinBox *environment_rate_spin = new QSpinBox;
     environment_rate_spin->setMinimum(0);
@@ -134,27 +131,36 @@ MainWindow::MainWindow(QWidget *parent) :
     environment_rate_spin->setValue(envchangerate);
     settings_grid->addWidget(environment_rate_label,1,1);
     settings_grid->addWidget(environment_rate_spin,1,2);
-    //environment_rate_layout->addWidget(environment_rate_label);
-    //environment_rate_layout->addWidget(environment_rate_spin);
-    //settings_layout->addLayout(environment_rate_layout);
-
     //----RJG - Note in order to use a lamda not only do you need to use C++11, but there are two valueCHanged signals for spinbox - and int and a string. Need to cast it to an int
     connect(environment_rate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i ) { envchangerate=i; });
 
-    QHBoxLayout *gridX_layout = new QHBoxLayout;
+    QCheckBox *toroidal_checkbox = new QCheckBox("Toroidal");
+    toroidal_checkbox->setChecked(toroidal);
+    settings_grid->addWidget(toroidal_checkbox,2,1,1,2);
+
+
+    QLabel *simulation_size_label= new QLabel("Simulation size");
+    simulation_size_label->setStyleSheet("font-weight: bold");
+    settings_grid->addWidget(simulation_size_label,3,1,1,2);
+    //NEED TO CONNECT SIGNAL TO SLOT HERE
+
     QLabel *gridX_label = new QLabel("Grid X:");
     QSpinBox *gridX_spin = new QSpinBox;
     gridX_spin->setMinimum(1);
     gridX_spin->setMaximum(256);
     gridX_spin->setValue(gridX);
-    settings_grid->addWidget(gridX_label,2,1);
-    settings_grid->addWidget(gridX_spin,2,2);
-    //gridX_layout->addWidget(gridX_label);
-    //gridX_layout->addWidget(gridX_spin);
-    //settings_layout->addLayout(gridX_layout);
-    //----RJG - Note in order to use a lamda not only do you need to use C++11, but there are two valueCHanged signals for spinbox - and int and a string. Need to cast it to an int
+    settings_grid->addWidget(gridX_label,4,1);
+    settings_grid->addWidget(gridX_spin,4,2);
     connect(gridX_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { gridX=i; });
 
+    QLabel *gridY_label = new QLabel("Grid Y:");
+    QSpinBox *gridY_spin = new QSpinBox;
+    gridY_spin->setMinimum(1);
+    gridY_spin->setMaximum(256);
+    gridY_spin->setValue(gridY);
+    settings_grid->addWidget(gridY_label,5,1);
+    settings_grid->addWidget(gridY_spin,5,2);
+    connect(gridY_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { gridY=i; });
 
 
 
