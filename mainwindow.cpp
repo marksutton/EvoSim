@@ -124,6 +124,7 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_layout->addWidget(environment_label);
 
     QGridLayout *settings_grid = new QGridLayout;
+    settings_grid->setAlignment(Qt::AlignTop);
 
     QHBoxLayout *environment_rate_layout = new QHBoxLayout;
     QLabel *environment_rate_label = new QLabel("Environment refresh rate:");
@@ -146,8 +147,8 @@ MainWindow::MainWindow(QWidget *parent) :
     gridX_spin->setMinimum(1);
     gridX_spin->setMaximum(256);
     gridX_spin->setValue(gridX);
-    settings_grid->addWidget(gridX_label,1,1);
-    settings_grid->addWidget(gridX_spin,1,2);
+    settings_grid->addWidget(gridX_label,2,1);
+    settings_grid->addWidget(gridX_spin,2,2);
     //gridX_layout->addWidget(gridX_label);
     //gridX_layout->addWidget(gridX_spin);
     //settings_layout->addLayout(gridX_layout);
