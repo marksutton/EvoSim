@@ -123,20 +123,44 @@ MainWindow::MainWindow(QWidget *parent) :
     environment_label->setStyleSheet("font-weight: bold");
     settings_layout->addWidget(environment_label);
 
+    QGridLayout *settings_grid = new QGridLayout;
+
     QHBoxLayout *environment_rate_layout = new QHBoxLayout;
     QLabel *environment_rate_label = new QLabel("Environment refresh rate:");
     QSpinBox *environment_rate_spin = new QSpinBox;
     environment_rate_spin->setMinimum(0);
     environment_rate_spin->setMaximum(100000);
     environment_rate_spin->setValue(envchangerate);
-    environment_rate_layout->addWidget(environment_rate_label);
-    environment_rate_layout->addWidget(environment_rate_spin);
-    settings_layout->addLayout(environment_rate_layout);
+    settings_grid->addWidget(environment_rate_label,1,1);
+    settings_grid->addWidget(environment_rate_spin,1,2);
+    //environment_rate_layout->addWidget(environment_rate_label);
+    //environment_rate_layout->addWidget(environment_rate_spin);
+    //settings_layout->addLayout(environment_rate_layout);
+
     //----RJG - Note in order to use a lamda not only do you need to use C++11, but there are two valueCHanged signals for spinbox - and int and a string. Need to cast it to an int
-    connect(environment_rate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &rate_value ) { envchangerate=rate_value; });
+    connect(environment_rate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i ) { envchangerate=i; });
+
+    QHBoxLayout *gridX_layout = new QHBoxLayout;
+    QLabel *gridX_label = new QLabel("Grid X:");
+    QSpinBox *gridX_spin = new QSpinBox;
+    gridX_spin->setMinimum(1);
+    gridX_spin->setMaximum(256);
+    gridX_spin->setValue(gridX);
+    settings_grid->addWidget(gridX_label,1,1);
+    settings_grid->addWidget(gridX_spin,1,2);
+    //gridX_layout->addWidget(gridX_label);
+    //gridX_layout->addWidget(gridX_spin);
+    //settings_layout->addLayout(gridX_layout);
+    //----RJG - Note in order to use a lamda not only do you need to use C++11, but there are two valueCHanged signals for spinbox - and int and a string. Need to cast it to an int
+    connect(gridX_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { gridX=i; });
+
+
+
+
 
     QWidget *settings_layout_widget = new QWidget;
-    settings_layout_widget->setLayout(settings_layout);
+    //settings_layout_widget->setLayout(settings_layout);
+    settings_layout_widget->setLayout(settings_grid);
     settings_layout_widget->setMinimumWidth(300);
     settings_dock->setWidget(settings_layout_widget);
 
