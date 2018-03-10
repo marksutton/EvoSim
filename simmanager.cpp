@@ -53,6 +53,7 @@ bool asexual=false;
 bool variableBreed=false;
 bool variableMutate=false;
 bool sexual=true;
+bool logging=false;
 bool speciesLogging=false;
 bool speciesLoggingToFile=false;
 bool fitnessLoggingToFile=false;

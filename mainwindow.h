@@ -86,7 +86,6 @@ private slots:
     void on_actionRun_for_triggered();
     void on_actionBatch_triggered();
     void on_actionPause_Sim_triggered();
-    void on_actionRefresh_Rate_triggered();
     void on_actionSettings_triggered();
     void on_actionCount_Peaks_triggered();
     void on_actionMisc_triggered();

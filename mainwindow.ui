@@ -830,7 +830,6 @@ p, li { white-space: pre-wrap; }
     <addaction name="menuSave_images"/>
     <addaction name="separator"/>
     <addaction name="actionSettings"/>
-    <addaction name="actionRefresh_Rate"/>
     <addaction name="actionDon_t_update_gui"/>
    </widget>
    <widget class="QMenu" name="menuView">

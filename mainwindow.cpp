@@ -27,8 +27,14 @@
 SimManager *TheSimManager;
 MainWindow *MainWin;
 
-
 #include <QThread>
+
+/* To do:
+
+-- sort out logging - get rid of logging variables other than logging bool that I have created, and implement this in a sensible way
+
+ */
+
 
 class Sleeper : public QThread
 {
@@ -37,7 +43,6 @@ public:
     static void msleep(unsigned long msecs){QThread::msleep(msecs);}
     static void sleep(unsigned long secs){QThread::sleep(secs);}
 };
-
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -215,15 +220,35 @@ MainWindow::MainWindow(QWidget *parent) :
     QRadioButton *phylogeny_button = new QRadioButton("Phylogeny");
     QRadioButton *phylogeny_and_metrics_button = new QRadioButton("Phylogeny and metrics");
     QButtonGroup* phylogeny_button_group = new QButtonGroup;
-    phylogeny_button_group->addButton(phylogeny_off_button,0);
-    phylogeny_button_group->addButton(basic_phylogeny_button,1);
-    phylogeny_button_group->addButton(phylogeny_button,2);
-    phylogeny_button_group->addButton(phylogeny_and_metrics_button,3);
+    phylogeny_button_group->addButton(phylogeny_off_button,SPECIES_MODE_NONE);
+    phylogeny_button_group->addButton(basic_phylogeny_button,SPECIES_MODE_BASIC);
+    phylogeny_button_group->addButton(phylogeny_button,SPECIES_MODE_PHYLOGENY);
+    phylogeny_button_group->addButton(phylogeny_and_metrics_button,SPECIES_MODE_PHYLOGENY_AND_METRICS);
+    basic_phylogeny_button->setChecked(true);
     settings_grid->addWidget(phylogeny_off_button,13,1,1,2);
     settings_grid->addWidget(basic_phylogeny_button,14,1,1,2);
     settings_grid->addWidget(phylogeny_button,15,1,1,2);
     settings_grid->addWidget(phylogeny_and_metrics_button,16,1,1,2);
     connect(phylogeny_button_group, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i) { species_mode_changed(i); });
+
+    QLabel *output_settings_label= new QLabel("Output settings");
+    output_settings_label->setStyleSheet("font-weight: bold");
+    settings_grid->addWidget(output_settings_label,17,1,1,2);
+
+    QCheckBox *logging_checkbox = new QCheckBox("Logging");
+    logging_checkbox->setChecked(logging);
+    settings_grid->addWidget(recalcFitness_checkbox,18,1,1,2);
+    connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
+
+    RefreshRate=50;
+    QLabel *RefreshRate_label = new QLabel("Refresh rate:");
+    QSpinBox *RefreshRate_spin = new QSpinBox;
+    RefreshRate_spin->setMinimum(1);
+    RefreshRate_spin->setMaximum(10000);
+    RefreshRate_spin->setValue(RefreshRate);
+    settings_grid->addWidget(RefreshRate_label,19,1);
+    settings_grid->addWidget(RefreshRate_spin,19,2);
+    connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
 
     QWidget *settings_layout_widget = new QWidget;
     settings_layout_widget->setLayout(settings_grid);
@@ -316,7 +341,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     FinishRun();//sets up enabling
     TheSimManager->SetupRun();
-    RefreshRate=50;
     NextRefresh=0;
     Report();
 
@@ -561,15 +585,6 @@ void MainWindow::on_actionBatch_triggered()
     runs=0;
     }
     batch_running=false;
-}
-
-void MainWindow::on_actionRefresh_Rate_triggered()
-{
-    bool ok;
-    int i = QInputDialog::getInt(this, "",
-                                 tr("Refresh rate: "), RefreshRate, 1, 10000, 1, &ok);
-    if (!ok) return;
-    RefreshRate=i;
 }
 
 void MainWindow::RunSetUp()
