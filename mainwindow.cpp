@@ -137,12 +137,11 @@ MainWindow::MainWindow(QWidget *parent) :
     QCheckBox *toroidal_checkbox = new QCheckBox("Toroidal");
     toroidal_checkbox->setChecked(toroidal);
     settings_grid->addWidget(toroidal_checkbox,2,1,1,2);
-
+    connect(toroidal_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { toroidal=i; });
 
     QLabel *simulation_size_label= new QLabel("Simulation size");
     simulation_size_label->setStyleSheet("font-weight: bold");
     settings_grid->addWidget(simulation_size_label,3,1,1,2);
-    //NEED TO CONNECT SIGNAL TO SLOT HERE
 
     QLabel *gridX_label = new QLabel("Grid X:");
     QSpinBox *gridX_spin = new QSpinBox;
@@ -162,11 +161,57 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_grid->addWidget(gridY_spin,5,2);
     connect(gridY_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { gridY=i; });
 
+    QLabel *slots_label = new QLabel("Slots:");
+    QSpinBox *slots_spin = new QSpinBox;
+    slots_spin->setMinimum(1);
+    slots_spin->setMaximum(256);
+    slots_spin->setValue(slotsPerSq);
+    settings_grid->addWidget(slots_label,6,1);
+    settings_grid->addWidget(slots_spin,6,2);
+    connect(slots_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { slotsPerSq=i; });
 
+    QLabel *simulation_settings_label= new QLabel("Simulation settings");
+    simulation_settings_label->setStyleSheet("font-weight: bold");
+    settings_grid->addWidget(simulation_settings_label,7,1,1,2);
+
+    QLabel *target_label = new QLabel("Fitness target:");
+    QSpinBox *target_spin = new QSpinBox;
+    target_spin->setMinimum(1);
+    target_spin->setMaximum(96);
+    target_spin->setValue(target);
+    settings_grid->addWidget(target_label,8,1);
+    settings_grid->addWidget(target_spin,8,2);
+    connect(target_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { target=i; });
+
+    QLabel *energy_label = new QLabel("Energy input:");
+    QSpinBox *energy_spin = new QSpinBox;
+    energy_spin->setMinimum(1);
+    energy_spin->setMaximum(20000);
+    energy_spin->setValue(food);
+    settings_grid->addWidget(energy_label,9,1);
+    settings_grid->addWidget(energy_spin,9,2);
+    connect(energy_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { food=i; });
+
+    QLabel *settleTolerance_label = new QLabel("Settle tolerance:");
+    QSpinBox *settleTolerance_spin = new QSpinBox;
+    settleTolerance_spin->setMinimum(1);
+    settleTolerance_spin->setMaximum(30);
+    settleTolerance_spin->setValue(settleTolerance);
+    settings_grid->addWidget(settleTolerance_label,10,1);
+    settings_grid->addWidget(settleTolerance_spin,10,2);
+    connect(settleTolerance_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { settleTolerance=i; });
+
+    QCheckBox *recalcFitness_checkbox = new QCheckBox("Recalculate fitness");
+    recalcFitness_checkbox->setChecked(toroidal);
+    settings_grid->addWidget(recalcFitness_checkbox,11,1,1,2);
+    connect(recalcFitness_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { recalcFitness=i; });
+
+    QLabel *phylogeny_settings_label= new QLabel("Phylogeny settings");
+    phylogeny_settings_label->setStyleSheet("font-weight: bold");
+    settings_grid->addWidget(phylogeny_settings_label,12,1,1,2);
 
 
     QWidget *settings_layout_widget = new QWidget;
-    //settings_layout_widget->setLayout(settings_layout);
     settings_layout_widget->setLayout(settings_grid);
     settings_layout_widget->setMinimumWidth(300);
     settings_dock->setWidget(settings_layout_widget);
