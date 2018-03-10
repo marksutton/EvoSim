@@ -109,7 +109,7 @@ private slots:
     void on_actionStasis_triggered();
     void on_actionLoad_Random_Numbers_triggered();
     void on_SelectLogFile_pressed();
-    void species_mode_changed(QAction *temp2);
+    void species_mode_changed(int change_species_mode);
     void on_actionGenerate_NWK_tree_file_triggered();
     void on_actionSpecies_sizes_triggered();
     void changepath_triggered();

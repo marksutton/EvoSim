@@ -210,6 +210,20 @@ MainWindow::MainWindow(QWidget *parent) :
     phylogeny_settings_label->setStyleSheet("font-weight: bold");
     settings_grid->addWidget(phylogeny_settings_label,12,1,1,2);
 
+    QRadioButton *phylogeny_off_button = new QRadioButton("Off");
+    QRadioButton *basic_phylogeny_button = new QRadioButton("Basic");
+    QRadioButton *phylogeny_button = new QRadioButton("Phylogeny");
+    QRadioButton *phylogeny_and_metrics_button = new QRadioButton("Phylogeny and metrics");
+    QButtonGroup* phylogeny_button_group = new QButtonGroup;
+    phylogeny_button_group->addButton(phylogeny_off_button,0);
+    phylogeny_button_group->addButton(basic_phylogeny_button,1);
+    phylogeny_button_group->addButton(phylogeny_button,2);
+    phylogeny_button_group->addButton(phylogeny_and_metrics_button,3);
+    settings_grid->addWidget(phylogeny_off_button,13,1,1,2);
+    settings_grid->addWidget(basic_phylogeny_button,14,1,1,2);
+    settings_grid->addWidget(phylogeny_button,15,1,1,2);
+    settings_grid->addWidget(phylogeny_and_metrics_button,16,1,1,2);
+    connect(phylogeny_button_group, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i) { species_mode_changed(i); });
 
     QWidget *settings_layout_widget = new QWidget;
     settings_layout_widget->setLayout(settings_grid);
@@ -230,13 +244,6 @@ MainWindow::MainWindow(QWidget *parent) :
     frwLayout->addWidget(FRW);
     ui->fossRecDockContents->setLayout(frwLayout);
     ui->reportViewerDock->hide();
-
-    speciesgroup = new QActionGroup(this);
-    speciesgroup->addAction(ui->actionBasic);
-    speciesgroup->addAction(ui->actionOff);
-    speciesgroup->addAction(ui->actionPhylogeny);
-    speciesgroup->addAction(ui->actionPhylogeny_metrics);
-    QObject::connect(speciesgroup, SIGNAL(triggered(QAction *)), this, SLOT(species_mode_changed(QAction *)));
 
     viewgroup = new QActionGroup(this);
     // These actions were created via qt designer
@@ -1270,12 +1277,12 @@ void MainWindow::view_mode_changed(QAction *temp2)
     RefreshPopulations();
 }
 
-void MainWindow::species_mode_changed(QAction *temp2)
+void MainWindow::species_mode_changed(int change_species_mode)
 {
     int new_species_mode=SPECIES_MODE_NONE;
-    if (ui->actionPhylogeny->isChecked()) new_species_mode=SPECIES_MODE_PHYLOGENY;
-    if (ui->actionPhylogeny_metrics->isChecked()) new_species_mode=SPECIES_MODE_PHYLOGENY_AND_METRICS;
-    if (ui->actionBasic->isChecked()) new_species_mode=SPECIES_MODE_BASIC;
+    if (change_species_mode==SPECIES_MODE_PHYLOGENY) new_species_mode=SPECIES_MODE_PHYLOGENY;
+    if (change_species_mode==SPECIES_MODE_PHYLOGENY_AND_METRICS) new_species_mode=SPECIES_MODE_PHYLOGENY_AND_METRICS;
+    if (change_species_mode==SPECIES_MODE_BASIC) new_species_mode=SPECIES_MODE_BASIC;
 
     //some changes not allowed
     if (generation!=0)
@@ -1305,7 +1312,7 @@ void MainWindow::species_mode_changed(QAction *temp2)
     }
 
     //uncheck species visualisation if needbe
-    if (ui->actionOff->isChecked())
+    if (change_species_mode==SPECIES_MODE_NONE)
     {
         if (ui->actionSpecies->isChecked()) ui->actionGenome_as_colour->setChecked(true);
         ui->actionSpecies->setEnabled(false);
