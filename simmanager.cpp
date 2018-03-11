@@ -63,6 +63,7 @@ bool reseedKnown=false;
 bool reseedDual=false;
 bool breedspecies=false, breeddiff=true;
 bool path_on=false;
+bool gui=false;
 
 //File handling
 QStringList EnvFiles;

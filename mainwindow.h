@@ -5,7 +5,7 @@
 #include <QActionGroup>
 #include <QAction>
 #include <QStandardPaths>
-
+#include <QCheckBox>
 
 #include "simmanager.h"
 #include "populationscene.h"
@@ -58,6 +58,7 @@ private:
     QActionGroup *viewgroup, *viewgroup2, *speciesgroup;
     QActionGroup *envgroup;
     QLineEdit *path;
+    QCheckBox *gui_checkbox;
 
     //RJG - options for batching
     bool batch_running;
@@ -91,6 +92,7 @@ private slots:
     void on_actionMisc_triggered();
     void view_mode_changed(QAction *);
     void report_mode_changed(QAction *);
+    void gui_checkbox_state_changed(bool);
     bool on_actionEnvironment_Files_triggered();
     void on_actionSave_triggered();
     void on_actionLoad_triggered();

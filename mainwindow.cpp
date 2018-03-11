@@ -250,6 +250,12 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_grid->addWidget(RefreshRate_spin,19,2);
     connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
 
+    gui_checkbox = new QCheckBox("Don't update GUI");
+    gui_checkbox->setChecked(gui);
+    settings_grid->addWidget(gui_checkbox,20,1,1,2);
+    QObject::connect(gui_checkbox ,SIGNAL (toggled(bool)), this, SLOT(gui_checkbox_state_changed(bool)));
+      //SET BOOL GUI and do warning
+
     QWidget *settings_layout_widget = new QWidget;
     settings_layout_widget->setLayout(settings_grid);
     settings_layout_widget->setMinimumWidth(300);
@@ -710,8 +716,8 @@ void MainWindow::Report()
     RefreshReport();
 
     //do species stuff
-    if(!ui->actionDon_t_update_gui->isChecked())RefreshPopulations();
-    if(!ui->actionDon_t_update_gui->isChecked())RefreshEnvironment();
+    if(!gui)RefreshPopulations();
+    if(!gui)RefreshEnvironment();
     FRW->RefreshMe();
     FRW->WriteFiles();
 
@@ -1290,6 +1296,13 @@ void MainWindow::view_mode_changed(QAction *temp2)
 {
     UpdateTitles();
     RefreshPopulations();
+}
+
+void MainWindow::gui_checkbox_state_changed(bool dont_update)
+{
+    if(dont_update && QMessageBox::question(0, "Heads up", "If you don't update the GUI, images will also not be saved. OK?", QMessageBox::Yes|QMessageBox::No, QMessageBox::Yes)==QMessageBox::No) {gui_checkbox->setChecked(false);return;}
+
+    gui=dont_update;
 }
 
 void MainWindow::species_mode_changed(int change_species_mode)
