@@ -32,6 +32,7 @@ MainWindow *MainWin;
 /* To do:
 
 -- sort out logging - get rid of logging variables other than logging bool that I have created, and implement this in a sensible way
+-- Programme logo
 
  */
 
@@ -122,12 +123,10 @@ MainWindow::MainWindow(QWidget *parent) :
     addDockWidget(Qt::RightDockWidgetArea, settings_dock);
 
     QGridLayout *settings_grid = new QGridLayout;
-    settings_grid->setAlignment(Qt::AlignTop);
 
     QLabel *environment_label= new QLabel("Environmental Settings");
     environment_label->setStyleSheet("font-weight: bold");
     settings_grid->addWidget(environment_label,0,1,1,2);
-
 
     QLabel *environment_rate_label = new QLabel("Environment refresh rate:");
     QSpinBox *environment_rate_spin = new QSpinBox;
@@ -213,8 +212,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QLabel *phylogeny_settings_label= new QLabel("Phylogeny settings");
     phylogeny_settings_label->setStyleSheet("font-weight: bold");
-    settings_grid->addWidget(phylogeny_settings_label,12,1,1,2);
+    settings_grid->addWidget(phylogeny_settings_label,12,1,1,1);
 
+    QGridLayout *phylogeny_grid = new QGridLayout;
     QRadioButton *phylogeny_off_button = new QRadioButton("Off");
     QRadioButton *basic_phylogeny_button = new QRadioButton("Basic");
     QRadioButton *phylogeny_button = new QRadioButton("Phylogeny");
@@ -225,20 +225,43 @@ MainWindow::MainWindow(QWidget *parent) :
     phylogeny_button_group->addButton(phylogeny_button,SPECIES_MODE_PHYLOGENY);
     phylogeny_button_group->addButton(phylogeny_and_metrics_button,SPECIES_MODE_PHYLOGENY_AND_METRICS);
     basic_phylogeny_button->setChecked(true);
-    settings_grid->addWidget(phylogeny_off_button,13,1,1,2);
-    settings_grid->addWidget(basic_phylogeny_button,14,1,1,2);
-    settings_grid->addWidget(phylogeny_button,15,1,1,2);
-    settings_grid->addWidget(phylogeny_and_metrics_button,16,1,1,2);
+    phylogeny_grid->addWidget(phylogeny_off_button,1,1,1,2);
+    phylogeny_grid->addWidget(basic_phylogeny_button,1,2,1,2);
+    phylogeny_grid->addWidget(phylogeny_button,2,1,1,2);
+    phylogeny_grid->addWidget(phylogeny_and_metrics_button,2,2,1,2);
     connect(phylogeny_button_group, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i) { species_mode_changed(i); });
+    settings_grid->addLayout(phylogeny_grid,13,1,1,2);
 
     QLabel *output_settings_label= new QLabel("Output settings");
     output_settings_label->setStyleSheet("font-weight: bold");
-    settings_grid->addWidget(output_settings_label,17,1,1,2);
+    settings_grid->addWidget(output_settings_label,14,1,1,2);
 
-    QCheckBox *logging_checkbox = new QCheckBox("Logging");
-    logging_checkbox->setChecked(logging);
-    settings_grid->addWidget(recalcFitness_checkbox,18,1,1,2);
-    connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
+    QGridLayout *images_grid = new QGridLayout;
+
+    QLabel *images_label= new QLabel("Save Images:");
+    images_grid->addWidget(images_label,1,1,1,1);
+
+    QCheckBox *save_all_images_checkbox = new QCheckBox("All");
+    images_grid->addWidget(save_all_images_checkbox,1,2,1,1);
+    QObject::connect(save_all_images_checkbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
+
+    save_population_count = new QCheckBox("Population count");
+    images_grid->addWidget(save_population_count,2,1,1,1);
+    save_mean_fitness = new QCheckBox("Mean fitness");
+    images_grid->addWidget(save_mean_fitness,2,2,1,1);
+    save_coding_genome_as_colour = new QCheckBox("Coding genome");
+    images_grid->addWidget(save_coding_genome_as_colour,3,1,1,1);
+    save_non_coding_genome_as_colour = new QCheckBox("Noncoding genome");
+    images_grid->addWidget(save_non_coding_genome_as_colour,3,2,1,1);
+    save_species = new QCheckBox("Species");
+    images_grid->addWidget(save_species,4,1,1,1);
+    save_gene_frequencies = new QCheckBox("Gene frequencies");
+    images_grid->addWidget(save_gene_frequencies,4,2,1,1);
+    save_settles = new QCheckBox("Settles");
+    images_grid->addWidget(save_settles,5,1,1,1);
+    save_fails_settles = new QCheckBox("Fails + settles");
+    images_grid->addWidget(save_fails_settles,5,2,1,1);
+    settings_grid->addLayout(images_grid,15,1,1,2);
 
     RefreshRate=50;
     QLabel *RefreshRate_label = new QLabel("Refresh rate:");
@@ -246,20 +269,25 @@ MainWindow::MainWindow(QWidget *parent) :
     RefreshRate_spin->setMinimum(1);
     RefreshRate_spin->setMaximum(10000);
     RefreshRate_spin->setValue(RefreshRate);
-    settings_grid->addWidget(RefreshRate_label,19,1);
-    settings_grid->addWidget(RefreshRate_spin,19,2);
+    settings_grid->addWidget(RefreshRate_label,16,1);
+    settings_grid->addWidget(RefreshRate_spin,16,2);
     connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
+
+    QCheckBox *logging_checkbox = new QCheckBox("Logging");
+    logging_checkbox->setChecked(logging);
+    settings_grid->addWidget(logging_checkbox,17,1,1,1);
+    connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
 
     gui_checkbox = new QCheckBox("Don't update GUI");
     gui_checkbox->setChecked(gui);
-    settings_grid->addWidget(gui_checkbox,20,1,1,2);
+    settings_grid->addWidget(gui_checkbox,17,2,1,1);
     QObject::connect(gui_checkbox ,SIGNAL (toggled(bool)), this, SLOT(gui_checkbox_state_changed(bool)));
-      //SET BOOL GUI and do warning
 
     QWidget *settings_layout_widget = new QWidget;
     settings_layout_widget->setLayout(settings_grid);
     settings_layout_widget->setMinimumWidth(300);
     settings_dock->setWidget(settings_layout_widget);
+    settings_dock->adjustSize();
 
     //---- ARTS: Add Genome Comparison UI
     ui->genomeComparisonDock->hide();
@@ -1303,6 +1331,18 @@ void MainWindow::gui_checkbox_state_changed(bool dont_update)
     if(dont_update && QMessageBox::question(0, "Heads up", "If you don't update the GUI, images will also not be saved. OK?", QMessageBox::Yes|QMessageBox::No, QMessageBox::Yes)==QMessageBox::No) {gui_checkbox->setChecked(false);return;}
 
     gui=dont_update;
+}
+
+void MainWindow::save_all_checkbox_state_changed(bool all)
+{
+    save_population_count->setChecked(all);
+    save_mean_fitness->setChecked(all);
+    save_coding_genome_as_colour->setChecked(all);
+    save_non_coding_genome_as_colour->setChecked(all);
+    save_species->setChecked(all);
+    save_gene_frequencies->setChecked(all);
+    save_settles->setChecked(all);
+    save_fails_settles->setChecked(all);
 }
 
 void MainWindow::species_mode_changed(int change_species_mode)
