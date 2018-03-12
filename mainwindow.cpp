@@ -116,10 +116,15 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(aboutButton, SIGNAL (triggered()), this, SLOT (about_triggered()));
 
     //----RJG - set up settings docker.
-    QDockWidget *settings_dock = new QDockWidget("Settings", this);
+    QDockWidget *settings_dock = new QDockWidget("Simulation", this);
     settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
     settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
+    //RJG - avoid having a useless title at the top of the tab. This also means it's not actually floatable.
+    QWidget *titleWidgetBlank = new QWidget(this);
+    settings_dock->setTitleBarWidget(titleWidgetBlank);
+
+    //settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::RightDockWidgetArea, settings_dock);
 
     QGridLayout *settings_grid = new QGridLayout;
@@ -241,10 +246,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QLabel *images_label= new QLabel("Save Images:");
     images_grid->addWidget(images_label,1,1,1,1);
 
-    QCheckBox *save_all_images_checkbox = new QCheckBox("All");
-    images_grid->addWidget(save_all_images_checkbox,1,2,1,1);
-    QObject::connect(save_all_images_checkbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
-
     save_population_count = new QCheckBox("Population count");
     images_grid->addWidget(save_population_count,2,1,1,1);
     save_mean_fitness = new QCheckBox("Mean fitness");
@@ -261,6 +262,14 @@ MainWindow::MainWindow(QWidget *parent) :
     images_grid->addWidget(save_settles,5,1,1,1);
     save_fails_settles = new QCheckBox("Fails + settles");
     images_grid->addWidget(save_fails_settles,5,2,1,1);
+    save_environment = new QCheckBox("Environment");
+    images_grid->addWidget(save_environment,6,1,1,1);
+
+    QCheckBox *save_all_images_checkbox = new QCheckBox("All");
+    save_all_images_checkbox->setStyleSheet("font-style: italic");
+    images_grid->addWidget(save_all_images_checkbox,6,2,1,1);
+    QObject::connect(save_all_images_checkbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
+
     settings_grid->addLayout(images_grid,15,1,1,2);
 
     RefreshRate=50;
@@ -288,6 +297,53 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_layout_widget->setMinimumWidth(300);
     settings_dock->setWidget(settings_layout_widget);
     settings_dock->adjustSize();
+
+    //----RJG - second settings docker.
+    QDockWidget *org_settings_dock = new QDockWidget("Organism settings", this);
+    org_settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    org_settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
+    org_settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
+    QWidget *titleWidgetBlankOrg = new QWidget(this);
+    org_settings_dock->setTitleBarWidget(titleWidgetBlankOrg);
+    addDockWidget(Qt::RightDockWidgetArea, org_settings_dock);
+
+    QGridLayout *org_settings_grid = new QGridLayout;
+
+    QLabel *org_settings_label= new QLabel("Organism settings");
+    org_settings_label->setStyleSheet("font-weight: bold");
+    org_settings_grid->addWidget(org_settings_label,1,1,1,2);
+
+    QLabel *mutate_label = new QLabel("Chance of mutation:");
+    mutate_spin = new QSpinBox;
+    mutate_spin->setMinimum(0);
+    mutate_spin->setMaximum(255);
+    mutate_spin->setValue(mutate);
+    org_settings_grid->addWidget(mutate_label,2,1);
+    org_settings_grid->addWidget(mutate_spin,2,2);
+    connect(mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {mutate=i;});
+
+    QCheckBox *variable_checkbox = new QCheckBox("Variable mutation");
+    org_settings_grid->addWidget(variable_checkbox,3,1,1,1);
+    variable_checkbox->setChecked(variableMutate);
+    connect(variable_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { variableMutate=i; mutate_spin->setEnabled(!i); });
+
+    QLabel *startAge_label = new QLabel("Chance of mutation:");
+    QSpinBox *startAge_spin = new QSpinBox;
+    startAge_spin->setMinimum(1);
+    startAge_spin->setMaximum(1000);
+    startAge_spin->setValue(startAge);
+    org_settings_grid->addWidget(startAge_label,4,1);
+    org_settings_grid->addWidget(startAge_spin,4,2);
+    connect(startAge_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {startAge=i;});
+
+
+
+    QWidget *org_settings_layout_widget = new QWidget;
+    org_settings_layout_widget->setLayout(org_settings_grid);
+    org_settings_dock->setWidget(org_settings_layout_widget);
+
+    tabifyDockWidget(settings_dock,org_settings_dock);
+    MainWin->setTabPosition(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea,QTabWidget::North);
 
     //---- ARTS: Add Genome Comparison UI
     ui->genomeComparisonDock->hide();
@@ -902,7 +958,7 @@ void MainWindow::RefreshPopulations()
     QDir save_dir(save_path);
 
     //check to see what the mode is
-    if (ui->actionPopulation_Count->isChecked()||ui->save_population_count->isChecked())
+    if (ui->actionPopulation_Count->isChecked()||save_population_count->isChecked())
     {
         //Popcount
         int bigcount=0;
@@ -920,12 +976,12 @@ void MainWindow::RefreshPopulations()
             pop_image->setPixel(n,m,count);
         }
         if (ui->actionPopulation_Count->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
-        if (ui->save_population_count->isChecked())
+        if (save_population_count->isChecked())
                  if(save_dir.mkpath("population/"))
                              pop_image_colour->save(QString(save_dir.path()+"/population/EvoSim_population_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
-    if (ui->actionMean_fitness->isChecked()||ui->save_mean_fitness->isChecked())
+    if (ui->actionMean_fitness->isChecked()||save_mean_fitness->isChecked())
     {
         //Popcount
         int multiplier=255/settleTolerance;
@@ -944,13 +1000,12 @@ void MainWindow::RefreshPopulations()
 
         }
         if (ui->actionMean_fitness->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
-        if (ui->save_mean_fitness->isChecked())
+        if (save_mean_fitness->isChecked())
                  if(save_dir.mkpath("fitness/"))
                              pop_image_colour->save(QString(save_dir.path()+"/fitness/EvoSim_mean_fitness_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
-
-    if (ui->actionGenome_as_colour->isChecked()||ui->save_coding_genome_as_colour->isChecked())
+    if (ui->actionGenome_as_colour->isChecked()||save_coding_genome_as_colour->isChecked())
     {
         //find modal genome in each square, convert to colour
         for (int n=0; n<gridX; n++)
@@ -1014,13 +1069,12 @@ void MainWindow::RefreshPopulations()
        }
 
        if (ui->actionGenome_as_colour->isChecked()) pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
-       if (ui->save_coding_genome_as_colour->isChecked())
+       if (save_coding_genome_as_colour->isChecked())
                 if(save_dir.mkpath("coding/"))
                             pop_image_colour->save(QString(save_dir.path()+"/coding/EvoSim_coding_genome_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
-
-    if (ui->actionSpecies->isChecked()||ui->save_species->isChecked()) //do visualisation if necessary
+    if (ui->actionSpecies->isChecked()||save_species->isChecked()) //do visualisation if necessary
     {
         for (int n=0; n<gridX; n++)
         for (int m=0; m<gridY; m++)
@@ -1043,13 +1097,13 @@ void MainWindow::RefreshPopulations()
             }
         }
          if (ui->actionSpecies->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
-         if (ui->save_species->isChecked())
+         if (save_species->isChecked())
                   if(save_dir.mkpath("species/"))
                               pop_image_colour->save(QString(save_dir.path()+"/species/EvoSim_species_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
     }
 
-    if (ui->actionNonCoding_genome_as_colour->isChecked()||ui->save_non_coding_genome_as_colour->isChecked())
+    if (ui->actionNonCoding_genome_as_colour->isChecked()||save_non_coding_genome_as_colour->isChecked())
     {
         //find modal genome in each square, convert non-coding to colour
         for (int n=0; n<gridX; n++)
@@ -1112,13 +1166,13 @@ void MainWindow::RefreshPopulations()
             }
        }
         if(ui->actionNonCoding_genome_as_colour->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
-        if(ui->save_non_coding_genome_as_colour->isChecked())
+        if(save_non_coding_genome_as_colour->isChecked())
                  if(save_dir.mkpath("non_coding/"))
                              pop_image_colour->save(QString(save_dir.path()+"/non_coding/EvoSim_non_coding_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
     }
 
-    if (ui->actionGene_Frequencies_012->isChecked()||ui->save_gene_frequencies->isChecked())
+    if (ui->actionGene_Frequencies_012->isChecked()||save_gene_frequencies->isChecked())
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -1148,7 +1202,7 @@ void MainWindow::RefreshPopulations()
             }
           }
           if (ui->actionGene_Frequencies_012->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
-          if(ui->save_gene_frequencies->isChecked())
+          if(save_gene_frequencies->isChecked())
                  if(save_dir.mkpath("gene_freq/"))
                              pop_image_colour->save(QString(save_dir.path()+"/gene_freq/EvoSim_gene_freq_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
@@ -1185,8 +1239,7 @@ void MainWindow::RefreshPopulations()
         pop_item->setPixmap(QPixmap::fromImage(*pop_image));
     }
 
-
-    if (ui->actionSettles->isChecked()||ui->save_settles->isChecked())
+    if (ui->actionSettles->isChecked()||save_settles->isChecked())
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -1197,14 +1250,14 @@ void MainWindow::RefreshPopulations()
             pop_image->setPixel(n,m,value);
         }
 
-       if (ui->actionSettles->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
-       if(ui->save_settles->isChecked())
+       if(ui->actionSettles->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+       if(save_settles->isChecked())
                if(save_dir.mkpath("settles/"))
                            pop_image_colour->save(QString(save_dir.path()+"/settles/EvoSim_settles_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
     }
 
-    if (ui->actionSettle_Fails->isChecked()||ui->save_fails_settles->isChecked())
+    if (ui->actionSettle_Fails->isChecked()||save_fails_settles->isChecked())
     //this now combines breed fails (red) and settle fails (green)
     {
         //work out max and ratios
@@ -1235,8 +1288,8 @@ void MainWindow::RefreshPopulations()
             int g=ScaleFails(settlefails[n][m],gens);
             pop_image_colour->setPixel(n,m,qRgb(r, g, 0));
         }
-        if (ui->actionSettle_Fails->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
-        if(ui->save_fails_settles->isChecked())
+        if(ui->actionSettle_Fails->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if(save_fails_settles->isChecked())
                 if(save_dir.mkpath("settles_fails/"))
                             pop_image_colour->save(QString(save_dir.path()+"/settles_fails/EvoSim_settles_fails_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
@@ -1343,6 +1396,7 @@ void MainWindow::save_all_checkbox_state_changed(bool all)
     save_gene_frequencies->setChecked(all);
     save_settles->setChecked(all);
     save_fails_settles->setChecked(all);
+    save_environment->setChecked(all);
 }
 
 void MainWindow::species_mode_changed(int change_species_mode)

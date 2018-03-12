@@ -6,6 +6,7 @@
 #include <QAction>
 #include <QStandardPaths>
 #include <QCheckBox>
+#include <QSpinBox>
 
 #include "simmanager.h"
 #include "populationscene.h"
@@ -63,7 +64,8 @@ private:
 
     //RJG - GUI buttons and settings docker options which need to be accessible via slots.
     QAction *startButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton, *aboutButton;
-    QCheckBox *gui_checkbox, *save_population_count, *save_mean_fitness, *save_coding_genome_as_colour, *save_species, *save_non_coding_genome_as_colour, *save_gene_frequencies, *save_settles, *save_fails_settles;
+    QCheckBox *gui_checkbox, *save_population_count, *save_mean_fitness, *save_coding_genome_as_colour, *save_species, *save_non_coding_genome_as_colour, *save_gene_frequencies, *save_settles, *save_fails_settles, *save_environment;
+    QSpinBox *mutate_spin;
     QLineEdit *path;
 
     //RJG - options for batching
