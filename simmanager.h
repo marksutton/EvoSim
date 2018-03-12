@@ -111,6 +111,8 @@ extern bool speciesLoggingToFile;
 extern QString SpeciesLoggingFile;
 extern bool fitnessLoggingToFile;
 //extern QString FitnessLoggingFile;
+extern bool logging;
+extern bool gui;
 
 extern QStringList EnvFiles;
 extern int CurrentEnvFile;

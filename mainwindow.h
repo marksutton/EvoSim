@@ -5,7 +5,8 @@
 #include <QActionGroup>
 #include <QAction>
 #include <QStandardPaths>
-
+#include <QCheckBox>
+#include <QSpinBox>
 
 #include "simmanager.h"
 #include "populationscene.h"
@@ -51,12 +52,20 @@ private:
     void RefreshPopulations();
     void UpdateTitles();
 
+    //RJG - some imporant variables
     bool pauseflag;
     int NextRefresh;
+
+    //RJG - GUI stuff
     EnvironmentScene *envscene;
     PopulationScene *popscene;
     QActionGroup *viewgroup, *viewgroup2, *speciesgroup;
     QActionGroup *envgroup;
+
+    //RJG - GUI buttons and settings docker options which need to be accessible via slots.
+    QAction *startButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton, *aboutButton;
+    QCheckBox *gui_checkbox, *save_population_count, *save_mean_fitness, *save_coding_genome_as_colour, *save_species, *save_non_coding_genome_as_colour, *save_gene_frequencies, *save_settles, *save_fails_settles, *save_environment;
+    QSpinBox *mutate_spin;
     QLineEdit *path;
 
     //RJG - options for batching
@@ -77,8 +86,6 @@ private:
 
     QString print_settings();
 
-    QAction *startButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton, *aboutButton;
-
 private slots:
     void on_actionReset_triggered();
     void on_actionReseed_triggered();
@@ -86,12 +93,14 @@ private slots:
     void on_actionRun_for_triggered();
     void on_actionBatch_triggered();
     void on_actionPause_Sim_triggered();
-    void on_actionRefresh_Rate_triggered();
     void on_actionSettings_triggered();
     void on_actionCount_Peaks_triggered();
     void on_actionMisc_triggered();
     void view_mode_changed(QAction *);
     void report_mode_changed(QAction *);
+    void gui_checkbox_state_changed(bool);
+    void save_all_checkbox_state_changed(bool);
+    void redoImages(int oldrows, int oldcols);
     bool on_actionEnvironment_Files_triggered();
     void on_actionSave_triggered();
     void on_actionLoad_triggered();
@@ -109,7 +118,7 @@ private slots:
     void on_actionStasis_triggered();
     void on_actionLoad_Random_Numbers_triggered();
     void on_SelectLogFile_pressed();
-    void species_mode_changed(QAction *temp2);
+    void species_mode_changed(int change_species_mode);
     void on_actionGenerate_NWK_tree_file_triggered();
     void on_actionSpecies_sizes_triggered();
     void changepath_triggered();

@@ -786,7 +786,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>1148</width>
-     <height>23</height>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCommands">
@@ -830,7 +830,6 @@ p, li { white-space: pre-wrap; }
     <addaction name="menuSave_images"/>
     <addaction name="separator"/>
     <addaction name="actionSettings"/>
-    <addaction name="actionRefresh_Rate"/>
     <addaction name="actionDon_t_update_gui"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -887,15 +886,6 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>Species and Logging</string>
     </property>
-    <widget class="QMenu" name="menuSpecies_tracking_mode">
-     <property name="title">
-      <string>Species tracking mode</string>
-     </property>
-     <addaction name="actionOff"/>
-     <addaction name="actionBasic"/>
-     <addaction name="actionPhylogeny"/>
-     <addaction name="actionPhylogeny_metrics"/>
-    </widget>
     <widget class="QMenu" name="menuFitness_logging">
      <property name="title">
       <string>Logging</string>
@@ -905,7 +895,6 @@ p, li { white-space: pre-wrap; }
      <addaction name="actionWrite_phylogeny"/>
      <addaction name="actionRecombination_logging"/>
     </widget>
-    <addaction name="menuSpecies_tracking_mode"/>
     <addaction name="menuFitness_logging"/>
    </widget>
    <widget class="QMenu" name="menuAnalysis_Tools">
