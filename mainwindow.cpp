@@ -159,7 +159,7 @@ MainWindow::MainWindow(QWidget *parent) :
     gridX_spin->setValue(gridX);
     settings_grid->addWidget(gridX_label,4,1);
     settings_grid->addWidget(gridX_spin,4,2);
-    connect(gridX_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { gridX=i; });
+    connect(gridX_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { int oldrows=gridX; gridX=i;redoImages(oldrows,gridY);});
 
     QLabel *gridY_label = new QLabel("Grid Y:");
     QSpinBox *gridY_spin = new QSpinBox;
@@ -168,7 +168,7 @@ MainWindow::MainWindow(QWidget *parent) :
     gridY_spin->setValue(gridY);
     settings_grid->addWidget(gridY_label,5,1);
     settings_grid->addWidget(gridY_spin,5,2);
-    connect(gridY_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { gridY=i; });
+    connect(gridY_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {int oldcols=gridY; gridY=i;redoImages(gridX,oldcols);});
 
     QLabel *slots_label = new QLabel("Slots:");
     QSpinBox *slots_spin = new QSpinBox;
@@ -177,7 +177,7 @@ MainWindow::MainWindow(QWidget *parent) :
     slots_spin->setValue(slotsPerSq);
     settings_grid->addWidget(slots_label,6,1);
     settings_grid->addWidget(slots_spin,6,2);
-    connect(slots_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { slotsPerSq=i; });
+    connect(slots_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { slotsPerSq=i;redoImages(gridX,gridY); });
 
     QLabel *simulation_settings_label= new QLabel("Simulation settings");
     simulation_settings_label->setStyleSheet("font-weight: bold");
@@ -243,6 +243,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QGridLayout *images_grid = new QGridLayout;
 
+    QCheckBox *logging_checkbox = new QCheckBox("Logging");
+    logging_checkbox->setChecked(logging);
+    images_grid->addWidget(logging_checkbox,0,1,1,1);
+    connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
+
+    gui_checkbox = new QCheckBox("Don't update GUI");
+    gui_checkbox->setChecked(gui);
+    images_grid->addWidget(gui_checkbox,0,2,1,1);
+    QObject::connect(gui_checkbox ,SIGNAL (toggled(bool)), this, SLOT(gui_checkbox_state_changed(bool)));
+
     QLabel *images_label= new QLabel("Save Images:");
     images_grid->addWidget(images_label,1,1,1,1);
 
@@ -273,7 +283,7 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_grid->addLayout(images_grid,15,1,1,2);
 
     RefreshRate=50;
-    QLabel *RefreshRate_label = new QLabel("Refresh rate:");
+    QLabel *RefreshRate_label = new QLabel("Refresh/polling rate:");
     QSpinBox *RefreshRate_spin = new QSpinBox;
     RefreshRate_spin->setMinimum(1);
     RefreshRate_spin->setMaximum(10000);
@@ -282,16 +292,6 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_grid->addWidget(RefreshRate_spin,16,2);
     connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
 
-    QCheckBox *logging_checkbox = new QCheckBox("Logging");
-    logging_checkbox->setChecked(logging);
-    settings_grid->addWidget(logging_checkbox,17,1,1,1);
-    connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
-
-    gui_checkbox = new QCheckBox("Don't update GUI");
-    gui_checkbox->setChecked(gui);
-    settings_grid->addWidget(gui_checkbox,17,2,1,1);
-    QObject::connect(gui_checkbox ,SIGNAL (toggled(bool)), this, SLOT(gui_checkbox_state_changed(bool)));
-
     QWidget *settings_layout_widget = new QWidget;
     settings_layout_widget->setLayout(settings_grid);
     settings_layout_widget->setMinimumWidth(300);
@@ -299,7 +299,7 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_dock->adjustSize();
 
     //----RJG - second settings docker.
-    QDockWidget *org_settings_dock = new QDockWidget("Organism settings", this);
+    QDockWidget *org_settings_dock = new QDockWidget("Organism", this);
     org_settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     org_settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
     org_settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
@@ -322,10 +322,10 @@ MainWindow::MainWindow(QWidget *parent) :
     org_settings_grid->addWidget(mutate_spin,2,2);
     connect(mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {mutate=i;});
 
-    QCheckBox *variable_checkbox = new QCheckBox("Variable mutation");
-    org_settings_grid->addWidget(variable_checkbox,3,1,1,1);
-    variable_checkbox->setChecked(variableMutate);
-    connect(variable_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { variableMutate=i; mutate_spin->setEnabled(!i); });
+    QCheckBox *variable_mutation_checkbox = new QCheckBox("Variable mutation");
+    org_settings_grid->addWidget(variable_mutation_checkbox,3,1,1,1);
+    variable_mutation_checkbox->setChecked(variableMutate);
+    connect(variable_mutation_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { variableMutate=i; mutate_spin->setEnabled(!i); });
 
     QLabel *startAge_label = new QLabel("Chance of mutation:");
     QSpinBox *startAge_spin = new QSpinBox;
@@ -336,13 +336,120 @@ MainWindow::MainWindow(QWidget *parent) :
     org_settings_grid->addWidget(startAge_spin,4,2);
     connect(startAge_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {startAge=i;});
 
+    QLabel *breed_settings_label= new QLabel("Breed settings");
+    breed_settings_label->setStyleSheet("font-weight: bold");
+    org_settings_grid->addWidget(breed_settings_label,5,1,1,2);
 
+    QLabel *breedThreshold_label = new QLabel("Breed threshold:");
+    QSpinBox *breedThreshold_spin = new QSpinBox;
+    breedThreshold_spin->setMinimum(1);
+    breedThreshold_spin->setMaximum(5000);
+    breedThreshold_spin->setValue(breedThreshold);
+    org_settings_grid->addWidget(breedThreshold_label,6,1);
+    org_settings_grid->addWidget(breedThreshold_spin,6,2);
+    connect(breedThreshold_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {breedThreshold=i;});
+
+    QLabel *breedCost_label = new QLabel("Breed cost:");
+    QSpinBox *breedCost_spin = new QSpinBox;
+    breedCost_spin->setMinimum(1);
+    breedCost_spin->setMaximum(10000);
+    breedCost_spin->setValue(breedCost);
+    org_settings_grid->addWidget(breedCost_label,7,1);
+    org_settings_grid->addWidget(breedCost_spin,7,2);
+    connect(breedCost_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {breedCost=i;});
+
+    QLabel *maxDiff_label = new QLabel("Max difference to breed:");
+    QSpinBox *maxDiff_spin = new QSpinBox;
+    maxDiff_spin->setMinimum(1);
+    maxDiff_spin->setMaximum(31);
+    maxDiff_spin->setValue(maxDiff);
+    org_settings_grid->addWidget(maxDiff_label,8,1);
+    org_settings_grid->addWidget(maxDiff_spin,8,2);
+    connect(maxDiff_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {maxDiff=i;});
+
+    QCheckBox *breeddiff_checkbox = new QCheckBox("Use max diff to breed");
+    org_settings_grid->addWidget(breeddiff_checkbox,9,1,1,1);
+    breeddiff_checkbox->setChecked(breeddiff);
+    connect(breeddiff_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { breeddiff=i;});
+
+    QCheckBox *breedspecies_checkbox = new QCheckBox("Breed only within species");
+    org_settings_grid->addWidget(breedspecies_checkbox,10,1,1,1);
+    breeddiff_checkbox->setChecked(breedspecies);
+    connect(breedspecies_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { breedspecies=i;});
+
+    QLabel *breed_mode_label= new QLabel("Breed mode:");
+    org_settings_grid->addWidget(breed_mode_label,11,1,1,2);
+    QRadioButton *sexual_radio = new QRadioButton("Sexual");
+    QRadioButton *asexual_radio = new QRadioButton("Asexual");
+    QRadioButton *variableBreed_radio = new QRadioButton("Variable");
+    QButtonGroup *breeding_button_group = new QButtonGroup;
+    breeding_button_group->addButton(sexual_radio,0);
+    breeding_button_group->addButton(asexual_radio,1);
+    breeding_button_group->addButton(variableBreed_radio,2);
+    sexual_radio->setChecked(sexual);
+    asexual_radio->setChecked(asexual);
+    variableBreed_radio->setChecked(variableBreed);
+    org_settings_grid->addWidget(sexual_radio,12,1,1,2);
+    org_settings_grid->addWidget(asexual_radio,13,1,1,2);
+    org_settings_grid->addWidget(variableBreed_radio,14,1,1,2);
+    connect(breeding_button_group, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i)
+        {
+        if(i==0){sexual=true;asexual=false;variableBreed=false;}
+        if(i==1){sexual=false;asexual=true;variableBreed=false;}
+        if(i==2){sexual=false;asexual=false;variableBreed=true;}
+        });
+
+    QLabel *settle_settings_label= new QLabel("Settle settings");
+    settle_settings_label->setStyleSheet("font-weight: bold");
+    org_settings_grid->addWidget(settle_settings_label,15,1,1,2);
+
+    QLabel *dispersal_label = new QLabel("Dispersal:");
+    QSpinBox *dispersal_spin = new QSpinBox;
+    dispersal_spin->setMinimum(1);
+    dispersal_spin->setMaximum(200);
+    dispersal_spin->setValue(dispersal);
+    org_settings_grid->addWidget(dispersal_label,16,1);
+    org_settings_grid->addWidget(dispersal_spin,16,2);
+    connect(dispersal_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {dispersal=i;});
+
+    QCheckBox *nonspatial_checkbox = new QCheckBox("Nonspatial settling");
+    org_settings_grid->addWidget(nonspatial_checkbox,17,1,1,2);
+    nonspatial_checkbox->setChecked(nonspatial);
+    connect(nonspatial_checkbox,&QCheckBox::stateChanged,[=](const bool &i) {nonspatial=i;});
+
+    QLabel *pathogen_settings_label= new QLabel("Pathogen settings");
+    pathogen_settings_label->setStyleSheet("font-weight: bold");
+    org_settings_grid->addWidget(pathogen_settings_label,18,1,1,2);
+
+    QCheckBox *pathogens_checkbox = new QCheckBox("Pathogens layer");
+    org_settings_grid->addWidget(pathogens_checkbox,19,1,1,2);
+    pathogens_checkbox->setChecked(path_on);
+    connect(pathogens_checkbox,&QCheckBox::stateChanged,[=](const bool &i) {path_on=i;});
+
+    QLabel *path_mutate_label = new QLabel("Pathogen mutation:");
+    QSpinBox *path_mutate_spin = new QSpinBox;
+    path_mutate_spin->setMinimum(1);
+    path_mutate_spin->setMaximum(255);
+    path_mutate_spin->setValue(path_mutate);
+    org_settings_grid->addWidget(path_mutate_label,20,1);
+    org_settings_grid->addWidget(path_mutate_spin,20,2);
+    connect(path_mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {path_mutate=i;});
+
+    QLabel *path_frequency_label = new QLabel("Pathogen frequency:");
+    QSpinBox *path_frequency_spin = new QSpinBox;
+    path_frequency_spin->setMinimum(1);
+    path_frequency_spin->setMaximum(1000);
+    path_frequency_spin->setValue(path_frequency);
+    org_settings_grid->addWidget(path_frequency_label,21,1);
+    org_settings_grid->addWidget(path_frequency_spin,21,2);
+    connect(path_frequency_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {path_frequency=i;});
 
     QWidget *org_settings_layout_widget = new QWidget;
     org_settings_layout_widget->setLayout(org_settings_grid);
     org_settings_dock->setWidget(org_settings_layout_widget);
 
-    tabifyDockWidget(settings_dock,org_settings_dock);
+    //RJG - Make docks tabbed
+    tabifyDockWidget(org_settings_dock,settings_dock);
     MainWin->setTabPosition(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea,QTabWidget::North);
 
     //---- ARTS: Add Genome Comparison UI
@@ -1477,6 +1584,33 @@ void MainWindow::ResizeImageObjects()
     env_image=new QImage(gridX, gridY, QImage::Format_RGB32);
 
     pop_image_colour=new QImage(gridX, gridY, QImage::Format_RGB32);
+}
+
+void MainWindow::redoImages(int oldrows, int oldcols)
+{
+
+    //check that the maxused's are in the new range
+     for (int n=0; n<gridX; n++)
+     for (int m=0; m<gridY; m++)
+         if (maxused[n][m]>=slotsPerSq) maxused[n][m]=slotsPerSq-1;
+
+     //If either rows or cols are bigger - make sure age is set to 0 in all critters in new bit!
+    if (gridX>oldrows)
+    {
+        for (int n=oldrows; n<gridX; n++) for (int m=0; m<gridY; m++)
+            ResetSquare(n,m);
+    }
+    if (gridY>oldcols)
+    {
+        for (int n=0; n<gridX; n++) for (int m=oldcols; m<gridY; m++)
+            ResetSquare(n,m);
+    }
+
+    ResizeImageObjects();
+
+    RefreshPopulations();
+    RefreshEnvironment();
+    Resize();
 }
 
 void MainWindow::on_actionSettings_triggered()
