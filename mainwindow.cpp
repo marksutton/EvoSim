@@ -24,6 +24,10 @@
 #include "version.h"
 #include "math.h"
 
+#ifndef M_SQRT1_2 //not defined in all versions
+#define M_SQRT1_2 0.7071067811865475
+#endif
+
 SimManager *TheSimManager;
 MainWindow *MainWin;
 
