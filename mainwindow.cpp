@@ -125,8 +125,9 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
     settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
     //RJG - avoid having a useless title at the top of the tab. This also means it's not actually floatable.
-    QWidget *titleWidgetBlank = new QWidget(this);
-    settings_dock->setTitleBarWidget(titleWidgetBlank);
+    //QWidget *titleWidgetBlank = new QWidget(this);
+    //titleWidgetBlank->setWindowTitle("Simulation settings");
+    //settings_dock->setTitleBarWidget(titleWidgetBlank);
 
     //settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::RightDockWidgetArea, settings_dock);
@@ -307,8 +308,6 @@ MainWindow::MainWindow(QWidget *parent) :
     org_settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     org_settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
     org_settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
-    QWidget *titleWidgetBlankOrg = new QWidget(this);
-    org_settings_dock->setTitleBarWidget(titleWidgetBlankOrg);
     addDockWidget(Qt::RightDockWidgetArea, org_settings_dock);
 
     QGridLayout *org_settings_grid = new QGridLayout;
@@ -454,7 +453,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //RJG - Make docks tabbed
     tabifyDockWidget(org_settings_dock,settings_dock);
-    MainWin->setTabPosition(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea,QTabWidget::North);
 
     //---- ARTS: Add Genome Comparison UI
     ui->genomeComparisonDock->hide();
@@ -556,7 +554,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //RJG - Output version, but also date compiled for clarity
     QString vstring;
     vstring.sprintf("%d.%03d",MAJORVERSION,MINORVERSION);
-    this->setWindowTitle("EVOSIM v"+vstring+" - compiled - "+__DATE__);
+    this->setWindowTitle("REVOSIM v"+vstring+" - compiled - "+__DATE__);
 
     //RJG - seed pseudorandom numbers
     qsrand(QTime::currentTime().msec());
