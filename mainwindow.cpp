@@ -124,12 +124,6 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
     settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
-    //RJG - avoid having a useless title at the top of the tab. This also means it's not actually floatable.
-    //QWidget *titleWidgetBlank = new QWidget(this);
-    //titleWidgetBlank->setWindowTitle("Simulation settings");
-    //settings_dock->setTitleBarWidget(titleWidgetBlank);
-
-    //settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::RightDockWidgetArea, settings_dock);
 
     QGridLayout *settings_grid = new QGridLayout;
