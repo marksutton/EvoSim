@@ -37,6 +37,57 @@ MainWindow *MainWin;
 
 -- sort out logging - get rid of logging variables other than logging bool that I have created, and implement this in a sensible way
 -- Programme logo
+-- Save path needs to go in there as well (not toolbar) - and button on toolbar needs to show/hide the docker, not the old window.
+
+1.  Tidy GUI  - RG
+2. Remove bits that are not for release  - RG
+3. Document GUI   - RG
+4. Write introduction - MS
+5. Tidy how it works section - MS
+6. Write discussion and applications stuff
+
+To do coding:
+To remove
+
+Dual reseed
+reseed with known genome menu command needs ellipsis
+
+Documentation of gui required!
+
+Load and Save don't include everything - they need to!
+Option to load/save without critter data also needed
+
+Separate out polling rates - what are they used for? Should probably be in settings anyway. Settings should probably also be in a docker.
+
+Environment menu - all fine
+Species and logging - recombination logging remove, others document
+
+Check how species logging actually works with analysis dock
+
+Visualisation:
+Settles - does it work at all?
+Fails - green scaling
+
+Fossil record
+- what does it do, does it actually work, is logging compatible with newer systems
+
+Genome comparison
+- say which is noncoding half
+- just document
+
+Rationalise and rethink how output and analysis file interface works
+
+Remove stasis, rates of change, extinction and origination
+
+Separate refreshing and polling and species etc.
+
+Logging
+This should have a single option to turn logging on for whole grid stuff - species and other data too. Just log the lot. This can be in settings, but also can have a icon on toolbar.
+
+Species tracking - need a menu item for Species/Phylogeny. Includes tracking options, also a 'generate tree now' and a 'generate tree after batch' option, which trigger the Generate NWK tree item.
+
+We entirely lose the Analysis Tools menu, dock turns into the settings dock. Count Peaks goes to command - and it should ask for rgb values in an input box. Phylogeny settings will become part of settings.
+
 
  */
 
