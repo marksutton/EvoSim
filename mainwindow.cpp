@@ -120,14 +120,17 @@ MainWindow::MainWindow(QWidget *parent) :
     //---- RJG add further Toolbar options - May 17.
     reseedButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton_knowngenome-Enabled.png")), QString("Reseed"), this);
     runForBatchButton = new QAction(QIcon(QPixmap(":/toolbar/runForBatchButton-Enabled.png")), QString("Batch..."), this);
-    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled.png")), QString("Settings"), this);
+    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/globesettingsButton-Enabled.png")), QString("Simulation"), this);
+    settingsButton->setCheckable(true);
+
+    orgSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled.png")), QString("Organism"), this);
+    orgSettingsButton ->setCheckable(true);
 
     startButton->setEnabled(false);
     runForButton->setEnabled(false);
     pauseButton->setEnabled(false);
     reseedButton->setEnabled(false);
     runForBatchButton->setEnabled(false);
-    settingsButton ->setEnabled(false);
 
     ui->toolBar->addAction(startButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(runForButton);ui->toolBar->addSeparator();
@@ -135,7 +138,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->toolBar->addAction(pauseButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(resetButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(reseedButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(orgSettingsButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(settingsButton);
+
 
     //----RJG - Connect button signals to slot. Note for clarity: Reset = start again with random individual. Reseed = start again with user defined genome
     QObject::connect(startButton, SIGNAL(triggered()), this, SLOT(on_actionStart_Sim_triggered()));
@@ -145,6 +150,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(reseedButton, SIGNAL(triggered()), this, SLOT(on_actionReseed_triggered()));
     QObject::connect(runForBatchButton, SIGNAL(triggered()), this, SLOT(on_actionBatch_triggered()));
     QObject::connect(settingsButton, SIGNAL(triggered()), this, SLOT(on_actionSettings_triggered()));
+    QObject::connect(orgSettingsButton, SIGNAL(triggered()), this, SLOT(orgSettings_triggered()));
     QObject::connect(ui->save_all, SIGNAL(toggled(bool)), this, SLOT(save_all(bool)));
 
     //---- RJG - add savepath for all functions, and allow this to be changed. Also add about. Spt 17.
@@ -171,7 +177,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(aboutButton, SIGNAL (triggered()), this, SLOT (about_triggered()));
 
     //----RJG - set up settings docker.
-    QDockWidget *settings_dock = new QDockWidget("Simulation", this);
+    settings_dock = new QDockWidget("Simulation", this);
     settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
     settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
@@ -349,7 +355,7 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_dock->adjustSize();
 
     //----RJG - second settings docker.
-    QDockWidget *org_settings_dock = new QDockWidget("Organism", this);
+    org_settings_dock = new QDockWidget("Organism", this);
     org_settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     org_settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
     org_settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
@@ -498,6 +504,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //RJG - Make docks tabbed
     tabifyDockWidget(org_settings_dock,settings_dock);
+    org_settings_dock->hide();
+    settings_dock->hide();
 
     //---- ARTS: Add Genome Comparison UI
     ui->genomeComparisonDock->hide();
@@ -852,7 +860,6 @@ void MainWindow::RunSetUp()
 
     reseedButton->setEnabled(false);
     runForBatchButton->setEnabled(false);
-    settingsButton->setEnabled(false);
 
     timer.restart();
     NextRefresh=RefreshRate;
@@ -875,7 +882,6 @@ void MainWindow::FinishRun()
 
     reseedButton->setEnabled(true);
     runForBatchButton->setEnabled(true);
-    settingsButton->setEnabled(true);
 
     //----RJG disabled this to stop getting automatic logging at end of run, thus removing variability making analysis harder.
     //NextRefresh=0;
@@ -1662,42 +1668,33 @@ void MainWindow::redoImages(int oldrows, int oldcols)
 
 void MainWindow::on_actionSettings_triggered()
 {
-    //AutoMarkers options tab
-    //Something like:
-
-    int oldrows, oldcols;
-    oldrows=gridX; oldcols=gridY;
-    SettingsImpl Dialog;
-    Dialog.exec();
-
-
-    if (Dialog.RedoImages)
-    {
-
-        //check that the maxused's are in the new range
-         for (int n=0; n<gridX; n++)
-         for (int m=0; m<gridY; m++)
-             if (maxused[n][m]>=slotsPerSq) maxused[n][m]=slotsPerSq-1;
-
-         //If either rows or cols are bigger - make sure age is set to 0 in all critters in new bit!
-        if (gridX>oldrows)
+    if(settings_dock->isVisible())
         {
-            for (int n=oldrows; n<gridX; n++) for (int m=0; m<gridY; m++)
-                ResetSquare(n,m);
+        settings_dock->hide();
+        settingsButton->setChecked(false);
         }
-        if (gridY>oldcols)
+    else
         {
-            for (int n=0; n<gridX; n++) for (int m=oldcols; m<gridY; m++)
-                ResetSquare(n,m);
+        settings_dock->show();
+        settingsButton->setChecked(true);
         }
-
-        ResizeImageObjects();
-
-        RefreshPopulations();
-        RefreshEnvironment();
-        Resize();
-    }
 }
+
+
+void MainWindow::orgSettings_triggered()
+{
+    if(org_settings_dock->isVisible())
+        {
+        org_settings_dock->hide();
+        orgSettingsButton->setChecked(false);
+        }
+    else
+        {
+        org_settings_dock->show();
+        orgSettingsButton->setChecked(true);
+        }
+}
+
 
 
 void MainWindow::on_actionMisc_triggered()
