@@ -7,6 +7,7 @@
 #include <QStandardPaths>
 #include <QCheckBox>
 #include <QSpinBox>
+#include <QShortcut>
 
 #include "simmanager.h"
 #include "populationscene.h"

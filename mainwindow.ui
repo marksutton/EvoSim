@@ -827,6 +827,7 @@ p, li { white-space: pre-wrap; }
     <addaction name="separator"/>
     <addaction name="actionSave"/>
     <addaction name="actionLoad"/>
+    <addaction name="actionCount_peaks"/>
     <addaction name="menuSave_images"/>
     <addaction name="separator"/>
     <addaction name="actionSettings"/>
@@ -1588,6 +1589,11 @@ p, li { white-space: pre-wrap; }
    </property>
    <property name="text">
     <string>Recombination logging</string>
+   </property>
+  </action>
+  <action name="actionCount_peaks">
+   <property name="text">
+    <string>Count peaks...</string>
    </property>
   </action>
  </widget>

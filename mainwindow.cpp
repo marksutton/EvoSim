@@ -141,7 +141,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->toolBar->addAction(orgSettingsButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(settingsButton);
 
-
     //----RJG - Connect button signals to slot. Note for clarity: Reset = start again with random individual. Reseed = start again with user defined genome
     QObject::connect(startButton, SIGNAL(triggered()), this, SLOT(on_actionStart_Sim_triggered()));
     QObject::connect(runForButton, SIGNAL(triggered()), this, SLOT(on_actionRun_for_triggered()));
@@ -506,6 +505,10 @@ MainWindow::MainWindow(QWidget *parent) :
     tabifyDockWidget(org_settings_dock,settings_dock);
     org_settings_dock->hide();
     settings_dock->hide();
+
+    //RJG - Set up counts shortcut
+    new QShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_P), this, SLOT(on_actionCount_Peaks_triggered()));
+    QObject::connect(ui->actionCount_peaks, SIGNAL(triggered()), this, SLOT(on_actionCount_Peaks_triggered()));
 
     //---- ARTS: Add Genome Comparison UI
     ui->genomeComparisonDock->hide();
@@ -2680,8 +2683,17 @@ void MainWindow::HandleAnalysisTool(int code)
             break;
 
         case ANALYSIS_TOOL_CODE_COUNT_PEAKS:
-            OutputString = a.CountPeaks(ui->PeaksRed->value(),ui->PeaksGreen->value(),ui->PeaksBlue->value());
+            {
+            bool ok;
+            int red = QInputDialog::getInt(this, "Count peaks...","Red level?", 128, 0, 255, 1, &ok);
+            if(!ok)return;
+            int green= QInputDialog::getInt(this, "Count peaks...","Green level?", 128, 0, 255, 1, &ok);
+            if(!ok)return;
+            int blue= QInputDialog::getInt(this, "Count peaks...","Green level?", 128, 0, 255, 1, &ok);
+            if(!ok)return;
+            OutputString = a.CountPeaks(red,green,blue);
             break;
+            }
 
         case ANALYSIS_TOOL_CODE_MAKE_NEWICK:
             if (ui->actionPhylogeny_metrics->isChecked()||ui->actionPhylogeny->isChecked())OutputString = a.MakeNewick(rootspecies, ui->minSpeciesSize->value(), ui->chkExcludeWithChildren->isChecked());
