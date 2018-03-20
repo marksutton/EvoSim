@@ -183,6 +183,7 @@ MainWindow::MainWindow(QWidget *parent) :
     addDockWidget(Qt::RightDockWidgetArea, settings_dock);
 
     QGridLayout *settings_grid = new QGridLayout;
+    settings_grid->setAlignment(Qt::AlignTop);
 
     QLabel *environment_label= new QLabel("Environmental Settings");
     environment_label->setStyleSheet("font-weight: bold");
@@ -361,6 +362,7 @@ MainWindow::MainWindow(QWidget *parent) :
     addDockWidget(Qt::RightDockWidgetArea, org_settings_dock);
 
     QGridLayout *org_settings_grid = new QGridLayout;
+    org_settings_grid->setAlignment(Qt::AlignTop);
 
     QLabel *org_settings_label= new QLabel("Organism settings");
     org_settings_label->setStyleSheet("font-weight: bold");
@@ -802,10 +804,6 @@ void MainWindow::on_actionBatch_triggered()
 
     QString save_path(path->text());
 
-    for (int i=15;i<260;i+=5)
-    {
-
-    mutate=i;
     do{
 
         QString new_path(save_path);
@@ -838,7 +836,7 @@ void MainWindow::on_actionBatch_triggered()
        }while(runs<batch_target_runs);
     path->setText(save_path);
     runs=0;
-    }
+
     batch_running=false;
 }
 
