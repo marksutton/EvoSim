@@ -47,46 +47,22 @@ MainWindow *MainWin;
 6. Write discussion and applications stuff
 
 To do coding:
-To remove
-
-Dual reseed
-reseed with known genome menu command needs ellipsis
-
-Documentation of gui required!
-
-Load and Save don't include everything - they need to!
 Option to load/save without critter data also needed
-
-Separate out polling rates - what are they used for? Should probably be in settings anyway. Settings should probably also be in a docker.
-
-Environment menu - all fine
-Species and logging - recombination logging remove, others document
-
-Check how species logging actually works with analysis dock
+Load and Save don't include everything - they need to!
+Check how species logging actually works with analysis dock / do logging
+-->Logging should have a single option to turn logging on for whole grid stuff - species and other data too. Just log the lot. This can be in settings, but also can have a icon on toolbar.
+Species tracking - need a menu item for Species/Phylogeny. Includes tracking options, also a 'generate tree now' and a 'generate tree after batch' option, which trigger the Generate NWK tree item.
+Genome comparison - say which is noncoding half / document
 
 Visualisation:
 Settles - does it work at all?
 Fails - green scaling
 
-Fossil record
-- what does it do, does it actually work, is logging compatible with newer systems
-
-Genome comparison
-- say which is noncoding half
-- just document
-
-Rationalise and rethink how output and analysis file interface works
-
-Remove stasis, rates of change, extinction and origination
-
-Separate refreshing and polling and species etc.
-
-Logging
-This should have a single option to turn logging on for whole grid stuff - species and other data too. Just log the lot. This can be in settings, but also can have a icon on toolbar.
-
-Species tracking - need a menu item for Species/Phylogeny. Includes tracking options, also a 'generate tree now' and a 'generate tree after batch' option, which trigger the Generate NWK tree item.
-
-We entirely lose the Analysis Tools menu, dock turns into the settings dock. Count Peaks goes to command - and it should ask for rgb values in an input box. Phylogeny settings will become part of settings.
+To remove:
+Dual reseed
+Species and logging - recombination logging remove, others document
+Fossil record - what does it do, does it actually work, is logging compatible with newer systems - just remove from release?
+We entirely lose the Analysis Tools menu. Phylogeny settings will become part of settings.
 
 
  */

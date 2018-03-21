@@ -962,7 +962,7 @@ p, li { white-space: pre-wrap; }
   </action>
   <action name="actionRun_for">
    <property name="text">
-    <string>Run for ...</string>
+    <string>Run for...</string>
    </property>
    <property name="toolTip">
     <string>Run for</string>
@@ -1434,7 +1434,7 @@ p, li { white-space: pre-wrap; }
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Reseed with known genome</string>
+    <string>Reseed with known genome...</string>
    </property>
   </action>
   <action name="actionBatch">
