@@ -1,7 +1,6 @@
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "settings.h"
 #include "reseed.h"
 #include "analyser.h"
 #include "fossrecwidget.h"
@@ -100,7 +99,10 @@ MainWindow::MainWindow(QWidget *parent) :
     settingsButton->setCheckable(true);
 
     orgSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled.png")), QString("Organism"), this);
-    orgSettingsButton ->setCheckable(true);
+    orgSettingsButton->setCheckable(true);
+
+    logSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/logButton-Enabled.png")), QString("Output"), this);
+    logSettingsButton->setCheckable(true);
 
     startButton->setEnabled(false);
     runForButton->setEnabled(false);
@@ -115,7 +117,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->toolBar->addAction(resetButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(reseedButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(orgSettingsButton);ui->toolBar->addSeparator();
-    ui->toolBar->addAction(settingsButton);
+    ui->toolBar->addAction(settingsButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(logSettingsButton);
 
     //----RJG - Connect button signals to slot. Note for clarity: Reset = start again with random individual. Reseed = start again with user defined genome
     QObject::connect(startButton, SIGNAL(triggered()), this, SLOT(on_actionStart_Sim_triggered()));
@@ -126,6 +129,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(runForBatchButton, SIGNAL(triggered()), this, SLOT(on_actionBatch_triggered()));
     QObject::connect(settingsButton, SIGNAL(triggered()), this, SLOT(on_actionSettings_triggered()));
     QObject::connect(orgSettingsButton, SIGNAL(triggered()), this, SLOT(orgSettings_triggered()));
+    QObject::connect(logSettingsButton, SIGNAL(triggered()), this, SLOT(logSettings_triggered()));
     QObject::connect(ui->save_all, SIGNAL(toggled(bool)), this, SLOT(save_all(bool)));
 
     //---- RJG - add savepath for all functions, and allow this to be changed. Also add about. Spt 17.
@@ -269,61 +273,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(phylogeny_button_group, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i) { species_mode_changed(i); });
     settings_grid->addLayout(phylogeny_grid,13,1,1,2);
 
-    QLabel *output_settings_label= new QLabel("Output settings");
-    output_settings_label->setStyleSheet("font-weight: bold");
-    settings_grid->addWidget(output_settings_label,14,1,1,2);
-
-    QGridLayout *images_grid = new QGridLayout;
-
-    QCheckBox *logging_checkbox = new QCheckBox("Logging");
-    logging_checkbox->setChecked(logging);
-    images_grid->addWidget(logging_checkbox,0,1,1,1);
-    connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
-
-    gui_checkbox = new QCheckBox("Don't update GUI");
-    gui_checkbox->setChecked(gui);
-    images_grid->addWidget(gui_checkbox,0,2,1,1);
-    QObject::connect(gui_checkbox ,SIGNAL (toggled(bool)), this, SLOT(gui_checkbox_state_changed(bool)));
-
-    QLabel *images_label= new QLabel("Save Images:");
-    images_grid->addWidget(images_label,1,1,1,1);
-
-    save_population_count = new QCheckBox("Population count");
-    images_grid->addWidget(save_population_count,2,1,1,1);
-    save_mean_fitness = new QCheckBox("Mean fitness");
-    images_grid->addWidget(save_mean_fitness,2,2,1,1);
-    save_coding_genome_as_colour = new QCheckBox("Coding genome");
-    images_grid->addWidget(save_coding_genome_as_colour,3,1,1,1);
-    save_non_coding_genome_as_colour = new QCheckBox("Noncoding genome");
-    images_grid->addWidget(save_non_coding_genome_as_colour,3,2,1,1);
-    save_species = new QCheckBox("Species");
-    images_grid->addWidget(save_species,4,1,1,1);
-    save_gene_frequencies = new QCheckBox("Gene frequencies");
-    images_grid->addWidget(save_gene_frequencies,4,2,1,1);
-    save_settles = new QCheckBox("Settles");
-    images_grid->addWidget(save_settles,5,1,1,1);
-    save_fails_settles = new QCheckBox("Fails + settles");
-    images_grid->addWidget(save_fails_settles,5,2,1,1);
-    save_environment = new QCheckBox("Environment");
-    images_grid->addWidget(save_environment,6,1,1,1);
-
-    QCheckBox *save_all_images_checkbox = new QCheckBox("All");
-    save_all_images_checkbox->setStyleSheet("font-style: italic");
-    images_grid->addWidget(save_all_images_checkbox,6,2,1,1);
-    QObject::connect(save_all_images_checkbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
-
-    settings_grid->addLayout(images_grid,15,1,1,2);
-
-    RefreshRate=50;
-    QLabel *RefreshRate_label = new QLabel("Refresh/polling rate:");
-    QSpinBox *RefreshRate_spin = new QSpinBox;
-    RefreshRate_spin->setMinimum(1);
-    RefreshRate_spin->setMaximum(10000);
-    RefreshRate_spin->setValue(RefreshRate);
-    settings_grid->addWidget(RefreshRate_label,16,1);
-    settings_grid->addWidget(RefreshRate_spin,16,2);
-    connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
-
     QWidget *settings_layout_widget = new QWidget;
     settings_layout_widget->setLayout(settings_grid);
     settings_layout_widget->setMinimumWidth(300);
@@ -457,32 +406,103 @@ MainWindow::MainWindow(QWidget *parent) :
     pathogens_checkbox->setChecked(path_on);
     connect(pathogens_checkbox,&QCheckBox::stateChanged,[=](const bool &i) {path_on=i;});
 
-    QLabel *path_mutate_label = new QLabel("Pathogen mutation:");
-    QSpinBox *path_mutate_spin = new QSpinBox;
-    path_mutate_spin->setMinimum(1);
-    path_mutate_spin->setMaximum(255);
-    path_mutate_spin->setValue(path_mutate);
-    org_settings_grid->addWidget(path_mutate_label,20,1);
-    org_settings_grid->addWidget(path_mutate_spin,20,2);
-    connect(path_mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {path_mutate=i;});
+    QLabel *pathogen_mutate_label = new QLabel("Pathogen mutation:");
+    QSpinBox *pathogen_mutate_spin = new QSpinBox;
+    pathogen_mutate_spin->setMinimum(1);
+    pathogen_mutate_spin->setMaximum(255);
+    pathogen_mutate_spin->setValue(pathogen_mutate);
+    org_settings_grid->addWidget(pathogen_mutate_label,20,1);
+    org_settings_grid->addWidget(pathogen_mutate_spin,20,2);
+    connect(pathogen_mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {pathogen_mutate=i;});
 
-    QLabel *path_frequency_label = new QLabel("Pathogen frequency:");
-    QSpinBox *path_frequency_spin = new QSpinBox;
-    path_frequency_spin->setMinimum(1);
-    path_frequency_spin->setMaximum(1000);
-    path_frequency_spin->setValue(path_frequency);
-    org_settings_grid->addWidget(path_frequency_label,21,1);
-    org_settings_grid->addWidget(path_frequency_spin,21,2);
-    connect(path_frequency_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {path_frequency=i;});
+    QLabel *pathogen_frequency_label = new QLabel("Pathogen frequency:");
+    QSpinBox *pathogen_frequency_spin = new QSpinBox;
+    pathogen_frequency_spin->setMinimum(1);
+    pathogen_frequency_spin->setMaximum(1000);
+    pathogen_frequency_spin->setValue(pathogen_frequency);
+    org_settings_grid->addWidget(pathogen_frequency_label,21,1);
+    org_settings_grid->addWidget(pathogen_frequency_spin,21,2);
+    connect(pathogen_frequency_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {pathogen_frequency=i;});
 
     QWidget *org_settings_layout_widget = new QWidget;
     org_settings_layout_widget->setLayout(org_settings_grid);
     org_settings_dock->setWidget(org_settings_layout_widget);
 
+    //RJG Third settings docker
+    output_settings_dock = new QDockWidget("Output", this);
+    output_settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    output_settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
+    output_settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
+    addDockWidget(Qt::RightDockWidgetArea, output_settings_dock);
+
+    QGridLayout *output_settings_grid = new QGridLayout;
+    output_settings_grid->setAlignment(Qt::AlignTop);
+
+    QLabel *output_settings_label= new QLabel("Output settings");
+    output_settings_label->setStyleSheet("font-weight: bold");
+    output_settings_grid->addWidget(output_settings_label,14,1,1,2);
+
+    QGridLayout *images_grid = new QGridLayout;
+
+    QCheckBox *logging_checkbox = new QCheckBox("Logging");
+    logging_checkbox->setChecked(logging);
+    images_grid->addWidget(logging_checkbox,0,1,1,1);
+    connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
+
+    gui_checkbox = new QCheckBox("Don't update GUI");
+    gui_checkbox->setChecked(gui);
+    images_grid->addWidget(gui_checkbox,0,2,1,1);
+    QObject::connect(gui_checkbox ,SIGNAL (toggled(bool)), this, SLOT(gui_checkbox_state_changed(bool)));
+
+    QLabel *images_label= new QLabel("Save Images:");
+    images_grid->addWidget(images_label,1,1,1,1);
+
+    save_population_count = new QCheckBox("Population count");
+    images_grid->addWidget(save_population_count,2,1,1,1);
+    save_mean_fitness = new QCheckBox("Mean fitness");
+    images_grid->addWidget(save_mean_fitness,2,2,1,1);
+    save_coding_genome_as_colour = new QCheckBox("Coding genome");
+    images_grid->addWidget(save_coding_genome_as_colour,3,1,1,1);
+    save_non_coding_genome_as_colour = new QCheckBox("Noncoding genome");
+    images_grid->addWidget(save_non_coding_genome_as_colour,3,2,1,1);
+    save_species = new QCheckBox("Species");
+    images_grid->addWidget(save_species,4,1,1,1);
+    save_gene_frequencies = new QCheckBox("Gene frequencies");
+    images_grid->addWidget(save_gene_frequencies,4,2,1,1);
+    save_settles = new QCheckBox("Settles");
+    images_grid->addWidget(save_settles,5,1,1,1);
+    save_fails_settles = new QCheckBox("Fails + settles");
+    images_grid->addWidget(save_fails_settles,5,2,1,1);
+    save_environment = new QCheckBox("Environment");
+    images_grid->addWidget(save_environment,6,1,1,1);
+
+    QCheckBox *save_all_images_checkbox = new QCheckBox("All");
+    save_all_images_checkbox->setStyleSheet("font-style: italic");
+    images_grid->addWidget(save_all_images_checkbox,6,2,1,1);
+    QObject::connect(save_all_images_checkbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
+
+    output_settings_grid->addLayout(images_grid,15,1,1,2);
+
+    RefreshRate=50;
+    QLabel *RefreshRate_label = new QLabel("Refresh/polling rate:");
+    QSpinBox *RefreshRate_spin = new QSpinBox;
+    RefreshRate_spin->setMinimum(1);
+    RefreshRate_spin->setMaximum(10000);
+    RefreshRate_spin->setValue(RefreshRate);
+    output_settings_grid->addWidget(RefreshRate_label,16,1);
+    output_settings_grid->addWidget(RefreshRate_spin,16,2);
+    connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
+
+    QWidget *output_settings_layout_widget = new QWidget;
+    output_settings_layout_widget->setLayout(output_settings_grid);
+    output_settings_dock->setWidget(output_settings_layout_widget);
+
     //RJG - Make docks tabbed
     tabifyDockWidget(org_settings_dock,settings_dock);
+    tabifyDockWidget(settings_dock,output_settings_dock);
     org_settings_dock->hide();
     settings_dock->hide();
+    output_settings_dock->hide();
 
     //RJG - Set up counts shortcut
     new QShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_P), this, SLOT(on_actionCount_Peaks_triggered()));
@@ -1672,6 +1692,20 @@ void MainWindow::orgSettings_triggered()
         }
 }
 
+void MainWindow::logSettings_triggered()
+{
+    if(output_settings_dock->isVisible())
+        {
+        output_settings_dock->hide();
+        logSettingsButton->setChecked(false);
+        }
+    else
+        {
+        output_settings_dock->show();
+        logSettingsButton->setChecked(true);
+        }
+}
+
 
 
 void MainWindow::on_actionMisc_triggered()
@@ -2739,8 +2773,8 @@ QString MainWindow::print_settings()
     settings_out<<"; Food: "<<food;
     settings_out<<"; Breed cost: "<<breedCost;
     settings_out<<"; Mutate: "<<mutate;
-    settings_out<<"; Pathogen mutate: "<<path_mutate;
-    settings_out<<"; Pathogen frequency: "<<path_frequency;
+    settings_out<<"; Pathogen mutate: "<<pathogen_mutate;
+    settings_out<<"; Pathogen frequency: "<<pathogen_frequency;
     settings_out<<"; Max diff to breed: "<<maxDiff;
     settings_out<<"; Breed threshold: "<<breedThreshold;
     settings_out<<"; Slots per square: "<<slotsPerSq;

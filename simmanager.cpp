@@ -38,8 +38,8 @@ int breedThreshold = 500;
 int breedCost = 500;
 int maxDiff = 2;
 int mutate = 10;
-int path_mutate = 5;
-int path_frequency =5;
+int pathogen_mutate = 5;
+int pathogen_frequency =5;
 int envchangerate=100;
 int yearsPerIteration=1;
 int speciesSamples=1;
@@ -813,7 +813,7 @@ bool SimManager::iterate(int emode, bool interpolate)
 
     if (regenerateEnvironment(emode, interpolate)==true) return true;
 
-    if(generation%path_frequency==0&&path_on)temp_path_on=true;
+    if(generation%pathogen_frequency==0&&path_on)temp_path_on=true;
     else temp_path_on=false;
 
     //New parallelised version
@@ -894,7 +894,7 @@ bool SimManager::iterate(int emode, bool interpolate)
         for (int n=0; n<gridX; n++)
                 for (int m=0; m<gridY; m++)
                         //----RJG: User defined prob of mutation each iteration
-                        if(Rand8()<path_mutate)
+                        if(Rand8()<pathogen_mutate)
                                   //----RJG: Flip a bit.
                                   pathogens[n][m] ^= tweakers64[portable_rand()/(PORTABLE_RAND_MAX/64)];
 

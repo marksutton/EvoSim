@@ -62,10 +62,10 @@ private:
     PopulationScene *popscene;
     QActionGroup *viewgroup, *viewgroup2, *speciesgroup;
     QActionGroup *envgroup;
-    QDockWidget *settings_dock, *org_settings_dock;
+    QDockWidget *settings_dock, *org_settings_dock, *output_settings_dock;
 
     //RJG - GUI buttons and settings docker options which need to be accessible via slots.
-    QAction *startButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton, *orgSettingsButton, *aboutButton;
+    QAction *startButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton, *orgSettingsButton, *logSettingsButton, *aboutButton;
     QCheckBox *gui_checkbox, *save_population_count, *save_mean_fitness, *save_coding_genome_as_colour, *save_species, *save_non_coding_genome_as_colour, *save_gene_frequencies, *save_settles, *save_fails_settles, *save_environment;
     QSpinBox *mutate_spin;
     QLineEdit *path;
@@ -97,6 +97,7 @@ private slots:
     void on_actionPause_Sim_triggered();
     void on_actionSettings_triggered();
     void orgSettings_triggered();
+    void logSettings_triggered();
     void on_actionCount_Peaks_triggered();
     void on_actionMisc_triggered();
     void view_mode_changed(QAction *);
