@@ -63,8 +63,13 @@ Species and logging - recombination logging remove, others document
 Fossil record - what does it do, does it actually work, is logging compatible with newer systems - just remove from release?
 We entirely lose the Analysis Tools menu. Phylogeny settings will become part of settings.
 
+To do long term:
+Add variable mutation rate depent on population density:
+-- Count number of filled slots (do as percentage of filled slots)
+-- Use percentage to dictate probability of mutation (between 0 and 1), following standard normal distribution
+-- But do this both ways around so really full mutation rate can be either very high, or very low
 
- */
+*/
 
 
 class Sleeper : public QThread
