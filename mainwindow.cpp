@@ -137,23 +137,12 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(logSettingsButton, SIGNAL(triggered()), this, SLOT(logSettings_triggered()));
     QObject::connect(ui->save_all, SIGNAL(toggled(bool)), this, SLOT(save_all(bool)));
 
-    //---- RJG - add savepath for all functions, and allow this to be changed. Also add about. Spt 17.
-    ui->toolBar->addSeparator();
-    QLabel *spath = new QLabel("Save path: ", this);
-    ui->toolBar->addWidget(spath);
-    QString program_path(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
-    program_path.append("/");
-    path = new QLineEdit(program_path,this);
-    ui->toolBar->addWidget(path);
     //Spacer
     QWidget* empty = new QWidget();
     empty->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
     empty->setMaximumWidth(10);
     empty->setMaximumHeight(5);
     ui->toolBar->addWidget(empty);
-    QPushButton *cpath = new QPushButton("&Change", this);
-    ui->toolBar->addWidget(cpath);
-    connect(cpath, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
 
     ui->toolBar->addSeparator();
     aboutButton = new QAction(QIcon(QPixmap(":/toolbar/aboutButton-Enabled.png")), QString("About"), this);
@@ -433,7 +422,7 @@ MainWindow::MainWindow(QWidget *parent) :
     org_settings_layout_widget->setLayout(org_settings_grid);
     org_settings_dock->setWidget(org_settings_layout_widget);
 
-    //RJG Third settings docker
+    //---- RJG Third settings docker
     output_settings_dock = new QDockWidget("Output", this);
     output_settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     output_settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
@@ -486,7 +475,7 @@ MainWindow::MainWindow(QWidget *parent) :
     images_grid->addWidget(save_all_images_checkbox,6,2,1,1);
     QObject::connect(save_all_images_checkbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
 
-    output_settings_grid->addLayout(images_grid,15,1,1,2);
+    output_settings_grid->addLayout(images_grid,0,1,1,2);
 
     RefreshRate=50;
     QLabel *RefreshRate_label = new QLabel("Refresh/polling rate:");
@@ -494,9 +483,21 @@ MainWindow::MainWindow(QWidget *parent) :
     RefreshRate_spin->setMinimum(1);
     RefreshRate_spin->setMaximum(10000);
     RefreshRate_spin->setValue(RefreshRate);
-    output_settings_grid->addWidget(RefreshRate_label,16,1);
-    output_settings_grid->addWidget(RefreshRate_spin,16,2);
+    output_settings_grid->addWidget(RefreshRate_label,1,1);
+    output_settings_grid->addWidget(RefreshRate_spin,1,2);
     connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
+
+    //---- RJG - savepath for all functions.
+    QLabel *save_path_label = new QLabel("Save path: ");
+    output_settings_grid->addWidget(save_path_label,2,1,1,2);
+    QString program_path(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
+    program_path.append("/");
+    path = new QLineEdit(program_path);
+    output_settings_grid->addWidget(path,3,1,1,2);
+    QPushButton *change_path = new QPushButton("&Change");
+    output_settings_grid->addWidget(change_path,3,1,1,2);
+    connect(change_path, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
+
 
     QWidget *output_settings_layout_widget = new QWidget;
     output_settings_layout_widget->setLayout(output_settings_grid);
