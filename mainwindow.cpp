@@ -432,9 +432,9 @@ MainWindow::MainWindow(QWidget *parent) :
     QGridLayout *output_settings_grid = new QGridLayout;
     output_settings_grid->setAlignment(Qt::AlignTop);
 
-    QLabel *output_settings_label= new QLabel("Output settings");
+    QLabel *output_settings_label= new QLabel("Output/GUI");
     output_settings_label->setStyleSheet("font-weight: bold");
-    output_settings_grid->addWidget(output_settings_label,14,1,1,2);
+    output_settings_grid->addWidget(output_settings_label,0,1,1,2);
 
     QGridLayout *images_grid = new QGridLayout;
 
@@ -448,7 +448,8 @@ MainWindow::MainWindow(QWidget *parent) :
     images_grid->addWidget(gui_checkbox,0,2,1,1);
     QObject::connect(gui_checkbox ,SIGNAL (toggled(bool)), this, SLOT(gui_checkbox_state_changed(bool)));
 
-    QLabel *images_label= new QLabel("Save Images:");
+    QLabel *images_label= new QLabel("Save Images");
+    images_label->setStyleSheet("font-weight: bold");
     images_grid->addWidget(images_label,1,1,1,1);
 
     save_population_count = new QCheckBox("Population count");
@@ -475,7 +476,7 @@ MainWindow::MainWindow(QWidget *parent) :
     images_grid->addWidget(save_all_images_checkbox,6,2,1,1);
     QObject::connect(save_all_images_checkbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
 
-    output_settings_grid->addLayout(images_grid,0,1,1,2);
+    output_settings_grid->addLayout(images_grid,1,1,1,2);
 
     RefreshRate=50;
     QLabel *RefreshRate_label = new QLabel("Refresh/polling rate:");
@@ -483,21 +484,21 @@ MainWindow::MainWindow(QWidget *parent) :
     RefreshRate_spin->setMinimum(1);
     RefreshRate_spin->setMaximum(10000);
     RefreshRate_spin->setValue(RefreshRate);
-    output_settings_grid->addWidget(RefreshRate_label,1,1);
-    output_settings_grid->addWidget(RefreshRate_spin,1,2);
+    output_settings_grid->addWidget(RefreshRate_label,2,1);
+    output_settings_grid->addWidget(RefreshRate_spin,2,2);
     connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
 
     //---- RJG - savepath for all functions.
-    QLabel *save_path_label = new QLabel("Save path: ");
-    output_settings_grid->addWidget(save_path_label,2,1,1,2);
+    QLabel *save_path_label = new QLabel("Save path");
+    save_path_label->setStyleSheet("font-weight: bold");
+    output_settings_grid->addWidget(save_path_label,3,1,1,2);
     QString program_path(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
     program_path.append("/");
     path = new QLineEdit(program_path);
-    output_settings_grid->addWidget(path,3,1,1,2);
+    output_settings_grid->addWidget(path,4,1,2,2);
     QPushButton *change_path = new QPushButton("&Change");
-    output_settings_grid->addWidget(change_path,3,1,1,2);
+    output_settings_grid->addWidget(change_path,6,1,1,2);
     connect(change_path, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
-
 
     QWidget *output_settings_layout_widget = new QWidget;
     output_settings_layout_widget->setLayout(output_settings_grid);
@@ -753,7 +754,7 @@ void MainWindow::on_actionRun_for_triggered()
         }
     }
 
-    bool ok;
+    bool ok = false;
     int i;
     if(batch_running)
                 {

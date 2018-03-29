@@ -235,8 +235,6 @@ void SimManager::loadEnvironmentFromFile(int emode)
 // Load current envirnonment from file
 {
     //Use make qimage from file method
-
-
     //Load the image
     if (CurrentEnvFile>=EnvFiles.count())
     {
@@ -482,7 +480,9 @@ void SimManager::SetupRun()
                     int flag=0;
                     do{
                         flag=0;
-                        do critters[n][m][0].initialise(Rand64(), environment[n][m], n,m,0,nextspeciesid);
+                        do {
+                            critters[n][m][0].initialise(Rand64(), environment[n][m], n,m,0,nextspeciesid);
+                            }
                             while (critters[n][m][0].fitness<1);
                         quint64 gen=critters[n][m][0].genome;
                         critters[n2][m][0].initialise(gen, environment[n2][m],n2,m,0,nextspeciesid);
