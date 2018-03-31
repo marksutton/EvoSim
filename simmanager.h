@@ -56,9 +56,9 @@ extern bool sexual;
 //---- RJG: Pathogens on/off
 extern bool path_on;
 //Pathogen to mutate any given iteration out of 255
-extern int path_mutate;
+extern int pathogen_mutate;
 //Frequency of applying pathogens
-extern int path_frequency;
+extern int pathogen_frequency;
 
 //----MDS: toroidal geography and non-spatial settling
 extern bool nonspatial, toroidal;

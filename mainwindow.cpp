@@ -1,7 +1,6 @@
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "settings.h"
 #include "reseed.h"
 #include "analyser.h"
 #include "fossrecwidget.h"
@@ -37,8 +36,40 @@ MainWindow *MainWin;
 
 -- sort out logging - get rid of logging variables other than logging bool that I have created, and implement this in a sensible way
 -- Programme logo
+-- Save path needs to go in there as well (not toolbar) - and button on toolbar needs to show/hide the docker, not the old window.
 
- */
+1.  Tidy GUI  - RG
+2. Remove bits that are not for release  - RG
+3. Document GUI   - RG
+4. Write introduction - MS
+5. Tidy how it works section - MS
+6. Write discussion and applications stuff
+
+To do coding:
+Option to load/save without critter data also needed
+Load and Save don't include everything - they need to!
+Check how species logging actually works with analysis dock / do logging
+-->Logging should have a single option to turn logging on for whole grid stuff - species and other data too. Just log the lot. This can be in settings, but also can have a icon on toolbar.
+Species tracking - need a menu item for Species/Phylogeny. Includes tracking options, also a 'generate tree now' and a 'generate tree after batch' option, which trigger the Generate NWK tree item.
+Genome comparison - say which is noncoding half / document
+
+Visualisation:
+Settles - does it work at all?
+Fails - green scaling
+
+To remove:
+Dual reseed
+Species and logging - recombination logging remove, others document
+Fossil record - what does it do, does it actually work, is logging compatible with newer systems - just remove from release?
+We entirely lose the Analysis Tools menu. Phylogeny settings will become part of settings.
+
+To do long term:
+Add variable mutation rate depent on population density:
+-- Count number of filled slots (do as percentage of filled slots)
+-- Use percentage to dictate probability of mutation (between 0 and 1), following standard normal distribution
+-- But do this both ways around so really full mutation rate can be either very high, or very low
+
+*/
 
 
 class Sleeper : public QThread
@@ -66,17 +97,24 @@ MainWindow::MainWindow(QWidget *parent) :
     runForButton = new QAction(QIcon(QPixmap(":/toolbar/runForButton-Enabled.png")), QString("Run for..."), this);
     pauseButton = new QAction(QIcon(QPixmap(":/toolbar/pauseButton-Enabled.png")), QString("Pause"), this);
     resetButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton-Enabled.png")), QString("Reset"), this);
+
     //---- RJG add further Toolbar options - May 17.
     reseedButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton_knowngenome-Enabled.png")), QString("Reseed"), this);
     runForBatchButton = new QAction(QIcon(QPixmap(":/toolbar/runForBatchButton-Enabled.png")), QString("Batch..."), this);
-    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled.png")), QString("Settings"), this);
 
     startButton->setEnabled(false);
     runForButton->setEnabled(false);
     pauseButton->setEnabled(false);
     reseedButton->setEnabled(false);
     runForBatchButton->setEnabled(false);
-    settingsButton ->setEnabled(false);
+
+    //---- RJG docker toggles - Mar 17.
+    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/globesettingsButton-Enabled.png")), QString("Simulation"), this);
+    settingsButton->setCheckable(true);
+    orgSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled.png")), QString("Organism"), this);
+    orgSettingsButton->setCheckable(true);
+    logSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/logButton-Enabled.png")), QString("Output"), this);
+    logSettingsButton->setCheckable(true);
 
     ui->toolBar->addAction(startButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(runForButton);ui->toolBar->addSeparator();
@@ -84,7 +122,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->toolBar->addAction(pauseButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(resetButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(reseedButton);ui->toolBar->addSeparator();
-    ui->toolBar->addAction(settingsButton);
+    ui->toolBar->addAction(orgSettingsButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(settingsButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(logSettingsButton);
 
     //----RJG - Connect button signals to slot. Note for clarity: Reset = start again with random individual. Reseed = start again with user defined genome
     QObject::connect(startButton, SIGNAL(triggered()), this, SLOT(on_actionStart_Sim_triggered()));
@@ -94,25 +134,15 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(reseedButton, SIGNAL(triggered()), this, SLOT(on_actionReseed_triggered()));
     QObject::connect(runForBatchButton, SIGNAL(triggered()), this, SLOT(on_actionBatch_triggered()));
     QObject::connect(settingsButton, SIGNAL(triggered()), this, SLOT(on_actionSettings_triggered()));
-    QObject::connect(ui->save_all, SIGNAL(toggled(bool)), this, SLOT(save_all(bool)));
+    QObject::connect(orgSettingsButton, SIGNAL(triggered()), this, SLOT(orgSettings_triggered()));
+    QObject::connect(logSettingsButton, SIGNAL(triggered()), this, SLOT(logSettings_triggered()));
 
-    //---- RJG - add savepath for all functions, and allow this to be changed. Also add about. Spt 17.
-    ui->toolBar->addSeparator();
-    QLabel *spath = new QLabel("Save path: ", this);
-    ui->toolBar->addWidget(spath);
-    QString program_path(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
-    program_path.append("/");
-    path = new QLineEdit(program_path,this);
-    ui->toolBar->addWidget(path);
     //Spacer
     QWidget* empty = new QWidget();
     empty->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Preferred);
     empty->setMaximumWidth(10);
     empty->setMaximumHeight(5);
     ui->toolBar->addWidget(empty);
-    QPushButton *cpath = new QPushButton("&Change", this);
-    ui->toolBar->addWidget(cpath);
-    connect(cpath, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
 
     ui->toolBar->addSeparator();
     aboutButton = new QAction(QIcon(QPixmap(":/toolbar/aboutButton-Enabled.png")), QString("About"), this);
@@ -120,18 +150,14 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(aboutButton, SIGNAL (triggered()), this, SLOT (about_triggered()));
 
     //----RJG - set up settings docker.
-    QDockWidget *settings_dock = new QDockWidget("Simulation", this);
+    settings_dock = new QDockWidget("Simulation", this);
     settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
     settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
-    //RJG - avoid having a useless title at the top of the tab. This also means it's not actually floatable.
-    QWidget *titleWidgetBlank = new QWidget(this);
-    settings_dock->setTitleBarWidget(titleWidgetBlank);
-
-    //settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
     addDockWidget(Qt::RightDockWidgetArea, settings_dock);
 
     QGridLayout *settings_grid = new QGridLayout;
+    settings_grid->setAlignment(Qt::AlignTop);
 
     QLabel *environment_label= new QLabel("Environmental Settings");
     environment_label->setStyleSheet("font-weight: bold");
@@ -241,61 +267,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(phylogeny_button_group, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i) { species_mode_changed(i); });
     settings_grid->addLayout(phylogeny_grid,13,1,1,2);
 
-    QLabel *output_settings_label= new QLabel("Output settings");
-    output_settings_label->setStyleSheet("font-weight: bold");
-    settings_grid->addWidget(output_settings_label,14,1,1,2);
-
-    QGridLayout *images_grid = new QGridLayout;
-
-    QCheckBox *logging_checkbox = new QCheckBox("Logging");
-    logging_checkbox->setChecked(logging);
-    images_grid->addWidget(logging_checkbox,0,1,1,1);
-    connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
-
-    gui_checkbox = new QCheckBox("Don't update GUI");
-    gui_checkbox->setChecked(gui);
-    images_grid->addWidget(gui_checkbox,0,2,1,1);
-    QObject::connect(gui_checkbox ,SIGNAL (toggled(bool)), this, SLOT(gui_checkbox_state_changed(bool)));
-
-    QLabel *images_label= new QLabel("Save Images:");
-    images_grid->addWidget(images_label,1,1,1,1);
-
-    save_population_count = new QCheckBox("Population count");
-    images_grid->addWidget(save_population_count,2,1,1,1);
-    save_mean_fitness = new QCheckBox("Mean fitness");
-    images_grid->addWidget(save_mean_fitness,2,2,1,1);
-    save_coding_genome_as_colour = new QCheckBox("Coding genome");
-    images_grid->addWidget(save_coding_genome_as_colour,3,1,1,1);
-    save_non_coding_genome_as_colour = new QCheckBox("Noncoding genome");
-    images_grid->addWidget(save_non_coding_genome_as_colour,3,2,1,1);
-    save_species = new QCheckBox("Species");
-    images_grid->addWidget(save_species,4,1,1,1);
-    save_gene_frequencies = new QCheckBox("Gene frequencies");
-    images_grid->addWidget(save_gene_frequencies,4,2,1,1);
-    save_settles = new QCheckBox("Settles");
-    images_grid->addWidget(save_settles,5,1,1,1);
-    save_fails_settles = new QCheckBox("Fails + settles");
-    images_grid->addWidget(save_fails_settles,5,2,1,1);
-    save_environment = new QCheckBox("Environment");
-    images_grid->addWidget(save_environment,6,1,1,1);
-
-    QCheckBox *save_all_images_checkbox = new QCheckBox("All");
-    save_all_images_checkbox->setStyleSheet("font-style: italic");
-    images_grid->addWidget(save_all_images_checkbox,6,2,1,1);
-    QObject::connect(save_all_images_checkbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
-
-    settings_grid->addLayout(images_grid,15,1,1,2);
-
-    RefreshRate=50;
-    QLabel *RefreshRate_label = new QLabel("Refresh/polling rate:");
-    QSpinBox *RefreshRate_spin = new QSpinBox;
-    RefreshRate_spin->setMinimum(1);
-    RefreshRate_spin->setMaximum(10000);
-    RefreshRate_spin->setValue(RefreshRate);
-    settings_grid->addWidget(RefreshRate_label,16,1);
-    settings_grid->addWidget(RefreshRate_spin,16,2);
-    connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
-
     QWidget *settings_layout_widget = new QWidget;
     settings_layout_widget->setLayout(settings_grid);
     settings_layout_widget->setMinimumWidth(300);
@@ -303,15 +274,14 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_dock->adjustSize();
 
     //----RJG - second settings docker.
-    QDockWidget *org_settings_dock = new QDockWidget("Organism", this);
+    org_settings_dock = new QDockWidget("Organism", this);
     org_settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     org_settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
     org_settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
-    QWidget *titleWidgetBlankOrg = new QWidget(this);
-    org_settings_dock->setTitleBarWidget(titleWidgetBlankOrg);
     addDockWidget(Qt::RightDockWidgetArea, org_settings_dock);
 
     QGridLayout *org_settings_grid = new QGridLayout;
+    org_settings_grid->setAlignment(Qt::AlignTop);
 
     QLabel *org_settings_label= new QLabel("Organism settings");
     org_settings_label->setStyleSheet("font-weight: bold");
@@ -378,7 +348,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QCheckBox *breedspecies_checkbox = new QCheckBox("Breed only within species");
     org_settings_grid->addWidget(breedspecies_checkbox,10,1,1,1);
-    breeddiff_checkbox->setChecked(breedspecies);
+    breedspecies_checkbox->setChecked(breedspecies);
     connect(breedspecies_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { breedspecies=i;});
 
     QLabel *breed_mode_label= new QLabel("Breed mode:");
@@ -430,31 +400,120 @@ MainWindow::MainWindow(QWidget *parent) :
     pathogens_checkbox->setChecked(path_on);
     connect(pathogens_checkbox,&QCheckBox::stateChanged,[=](const bool &i) {path_on=i;});
 
-    QLabel *path_mutate_label = new QLabel("Pathogen mutation:");
-    QSpinBox *path_mutate_spin = new QSpinBox;
-    path_mutate_spin->setMinimum(1);
-    path_mutate_spin->setMaximum(255);
-    path_mutate_spin->setValue(path_mutate);
-    org_settings_grid->addWidget(path_mutate_label,20,1);
-    org_settings_grid->addWidget(path_mutate_spin,20,2);
-    connect(path_mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {path_mutate=i;});
+    QLabel *pathogen_mutate_label = new QLabel("Pathogen mutation:");
+    QSpinBox *pathogen_mutate_spin = new QSpinBox;
+    pathogen_mutate_spin->setMinimum(1);
+    pathogen_mutate_spin->setMaximum(255);
+    pathogen_mutate_spin->setValue(pathogen_mutate);
+    org_settings_grid->addWidget(pathogen_mutate_label,20,1);
+    org_settings_grid->addWidget(pathogen_mutate_spin,20,2);
+    connect(pathogen_mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {pathogen_mutate=i;});
 
-    QLabel *path_frequency_label = new QLabel("Pathogen frequency:");
-    QSpinBox *path_frequency_spin = new QSpinBox;
-    path_frequency_spin->setMinimum(1);
-    path_frequency_spin->setMaximum(1000);
-    path_frequency_spin->setValue(path_frequency);
-    org_settings_grid->addWidget(path_frequency_label,21,1);
-    org_settings_grid->addWidget(path_frequency_spin,21,2);
-    connect(path_frequency_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {path_frequency=i;});
+    QLabel *pathogen_frequency_label = new QLabel("Pathogen frequency:");
+    QSpinBox *pathogen_frequency_spin = new QSpinBox;
+    pathogen_frequency_spin->setMinimum(1);
+    pathogen_frequency_spin->setMaximum(1000);
+    pathogen_frequency_spin->setValue(pathogen_frequency);
+    org_settings_grid->addWidget(pathogen_frequency_label,21,1);
+    org_settings_grid->addWidget(pathogen_frequency_spin,21,2);
+    connect(pathogen_frequency_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {pathogen_frequency=i;});
 
     QWidget *org_settings_layout_widget = new QWidget;
     org_settings_layout_widget->setLayout(org_settings_grid);
     org_settings_dock->setWidget(org_settings_layout_widget);
 
+    //---- RJG Third settings docker
+    output_settings_dock = new QDockWidget("Output", this);
+    output_settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    output_settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
+    output_settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
+    addDockWidget(Qt::RightDockWidgetArea, output_settings_dock);
+
+    QGridLayout *output_settings_grid = new QGridLayout;
+    output_settings_grid->setAlignment(Qt::AlignTop);
+
+    QGridLayout *images_grid = new QGridLayout;
+
+    QLabel *images_label= new QLabel("Save Images");
+    images_label->setStyleSheet("font-weight: bold");
+    images_grid->addWidget(images_label,1,1,1,1);
+
+    save_population_count = new QCheckBox("Population count");
+    images_grid->addWidget(save_population_count,2,1,1,1);
+    save_mean_fitness = new QCheckBox("Mean fitness");
+    images_grid->addWidget(save_mean_fitness,2,2,1,1);
+    save_coding_genome_as_colour = new QCheckBox("Coding genome");
+    images_grid->addWidget(save_coding_genome_as_colour,3,1,1,1);
+    save_non_coding_genome_as_colour = new QCheckBox("Noncoding genome");
+    images_grid->addWidget(save_non_coding_genome_as_colour,3,2,1,1);
+    save_species = new QCheckBox("Species");
+    images_grid->addWidget(save_species,4,1,1,1);
+    save_gene_frequencies = new QCheckBox("Gene frequencies");
+    images_grid->addWidget(save_gene_frequencies,4,2,1,1);
+    save_settles = new QCheckBox("Settles");
+    images_grid->addWidget(save_settles,5,1,1,1);
+    save_fails_settles = new QCheckBox("Fails + settles");
+    images_grid->addWidget(save_fails_settles,5,2,1,1);
+    save_environment = new QCheckBox("Environment");
+    images_grid->addWidget(save_environment,6,1,1,1);
+
+    QCheckBox *save_all_images_checkbox = new QCheckBox("All");
+    save_all_images_checkbox->setStyleSheet("font-style: italic");
+    images_grid->addWidget(save_all_images_checkbox,6,2,1,1);
+    QObject::connect(save_all_images_checkbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
+
+    QLabel *output_settings_label= new QLabel("Output/GUI");
+    output_settings_label->setStyleSheet("font-weight: bold");
+    images_grid->addWidget(output_settings_label,7,1,1,2);
+
+    QCheckBox *logging_checkbox = new QCheckBox("Logging");
+    logging_checkbox->setChecked(logging);
+    images_grid->addWidget(logging_checkbox,8,1,1,1);
+    connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
+
+    gui_checkbox = new QCheckBox("Don't update GUI");
+    gui_checkbox->setChecked(gui);
+    images_grid->addWidget(gui_checkbox,8,2,1,1);
+    QObject::connect(gui_checkbox ,SIGNAL (toggled(bool)), this, SLOT(gui_checkbox_state_changed(bool)));
+
+    output_settings_grid->addLayout(images_grid,1,1,1,2);
+
+    RefreshRate=50;
+    QLabel *RefreshRate_label = new QLabel("Refresh/polling rate:");
+    QSpinBox *RefreshRate_spin = new QSpinBox;
+    RefreshRate_spin->setMinimum(1);
+    RefreshRate_spin->setMaximum(10000);
+    RefreshRate_spin->setValue(RefreshRate);
+    output_settings_grid->addWidget(RefreshRate_label,2,1);
+    output_settings_grid->addWidget(RefreshRate_spin,2,2);
+    connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
+
+    //---- RJG - savepath for all functions.
+    QLabel *save_path_label = new QLabel("Save path");
+    save_path_label->setStyleSheet("font-weight: bold");
+    output_settings_grid->addWidget(save_path_label,3,1,1,2);
+    QString program_path(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
+    program_path.append("/");
+    path = new QLineEdit(program_path);
+    output_settings_grid->addWidget(path,4,1,2,2);
+    QPushButton *change_path = new QPushButton("&Change");
+    output_settings_grid->addWidget(change_path,6,1,1,2);
+    connect(change_path, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
+
+    QWidget *output_settings_layout_widget = new QWidget;
+    output_settings_layout_widget->setLayout(output_settings_grid);
+    output_settings_dock->setWidget(output_settings_layout_widget);
+
     //RJG - Make docks tabbed
     tabifyDockWidget(org_settings_dock,settings_dock);
-    MainWin->setTabPosition(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea,QTabWidget::North);
+    tabifyDockWidget(settings_dock,output_settings_dock);
+    org_settings_dock->hide();
+    settings_dock->hide();
+    output_settings_dock->hide();
+
+    //RJG - Set up counts shortcut
+    new QShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_P), this, SLOT(on_actionCount_Peaks_triggered()));
+    QObject::connect(ui->actionCount_peaks, SIGNAL(triggered()), this, SLOT(on_actionCount_Peaks_triggered()));
 
     //---- ARTS: Add Genome Comparison UI
     ui->genomeComparisonDock->hide();
@@ -556,7 +615,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //RJG - Output version, but also date compiled for clarity
     QString vstring;
     vstring.sprintf("%d.%03d",MAJORVERSION,MINORVERSION);
-    this->setWindowTitle("EVOSIM v"+vstring+" - compiled - "+__DATE__);
+    this->setWindowTitle("REVOSIM v"+vstring+" - compiled - "+__DATE__);
 
     //RJG - seed pseudorandom numbers
     qsrand(QTime::currentTime().msec());
@@ -656,7 +715,6 @@ void MainWindow::changeEvent(QEvent *e)
 
 void MainWindow::on_actionStart_Sim_triggered()
 {
-
     if (CurrentEnvFile==-1)
     {
         QMessageBox::critical(0,"","Cannot start simulation without environment");
@@ -695,7 +753,7 @@ void MainWindow::on_actionRun_for_triggered()
         }
     }
 
-    bool ok;
+    bool ok = false;
     int i;
     if(batch_running)
                 {
@@ -748,10 +806,6 @@ void MainWindow::on_actionBatch_triggered()
 
     QString save_path(path->text());
 
-    for (int i=15;i<260;i+=5)
-    {
-
-    mutate=i;
     do{
 
         QString new_path(save_path);
@@ -784,7 +838,7 @@ void MainWindow::on_actionBatch_triggered()
        }while(runs<batch_target_runs);
     path->setText(save_path);
     runs=0;
-    }
+
     batch_running=false;
 }
 
@@ -809,7 +863,6 @@ void MainWindow::RunSetUp()
 
     reseedButton->setEnabled(false);
     runForBatchButton->setEnabled(false);
-    settingsButton->setEnabled(false);
 
     timer.restart();
     NextRefresh=RefreshRate;
@@ -832,7 +885,6 @@ void MainWindow::FinishRun()
 
     reseedButton->setEnabled(true);
     runForBatchButton->setEnabled(true);
-    settingsButton->setEnabled(true);
 
     //----RJG disabled this to stop getting automatic logging at end of run, thus removing variability making analysis harder.
     //NextRefresh=0;
@@ -1436,40 +1488,11 @@ void MainWindow::RefreshEnvironment()
         env_image->setPixel(n,m,qRgb(environment[n][m][0], environment[n][m][1], environment[n][m][2]));
 
     env_item->setPixmap(QPixmap::fromImage(*env_image));
-    if(ui->save_environment->isChecked())
+    if(save_environment->isChecked())
         if(save_dir.mkpath("environment/"))
                     env_image->save(QString(save_dir.path()+"/environment/EvoSim_environment_it_%1.png").arg(generation, 7, 10, QChar('0')));
-
     //Draw on fossil records
     envscene->DrawLocations(FRW->FossilRecords,ui->actionShow_positions->isChecked());
-}
-
-void MainWindow::save_all(bool toggled)
-{
-    if (toggled)
-    {
-        ui->save_coding_genome_as_colour->setChecked(true);
-        ui->save_environment->setChecked(true);
-        ui->save_fails_settles->setChecked(true);
-        ui->save_gene_frequencies->setChecked(true);
-        ui->save_mean_fitness->setChecked(true);
-        ui->save_non_coding_genome_as_colour->setChecked(true);
-        ui->save_population_count->setChecked(true);
-        ui->save_settles->setChecked(true);
-        ui->save_species->setChecked(true);
-    }
-    else
-    {
-        ui->save_coding_genome_as_colour->setChecked(false);
-        ui->save_environment->setChecked(false);
-        ui->save_fails_settles->setChecked(false);
-        ui->save_gene_frequencies->setChecked(false);
-        ui->save_mean_fitness->setChecked(false);
-        ui->save_non_coding_genome_as_colour->setChecked(false);
-        ui->save_population_count->setChecked(false);
-        ui->save_settles->setChecked(false);
-        ui->save_species->setChecked(false);
-    }
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)
@@ -1619,42 +1642,47 @@ void MainWindow::redoImages(int oldrows, int oldcols)
 
 void MainWindow::on_actionSettings_triggered()
 {
-    //AutoMarkers options tab
-    //Something like:
-
-    int oldrows, oldcols;
-    oldrows=gridX; oldcols=gridY;
-    SettingsImpl Dialog;
-    Dialog.exec();
-
-
-    if (Dialog.RedoImages)
-    {
-
-        //check that the maxused's are in the new range
-         for (int n=0; n<gridX; n++)
-         for (int m=0; m<gridY; m++)
-             if (maxused[n][m]>=slotsPerSq) maxused[n][m]=slotsPerSq-1;
-
-         //If either rows or cols are bigger - make sure age is set to 0 in all critters in new bit!
-        if (gridX>oldrows)
+    if(settings_dock->isVisible())
         {
-            for (int n=oldrows; n<gridX; n++) for (int m=0; m<gridY; m++)
-                ResetSquare(n,m);
+        settings_dock->hide();
+        settingsButton->setChecked(false);
         }
-        if (gridY>oldcols)
+    else
         {
-            for (int n=0; n<gridX; n++) for (int m=oldcols; m<gridY; m++)
-                ResetSquare(n,m);
+        settings_dock->show();
+        settingsButton->setChecked(true);
         }
-
-        ResizeImageObjects();
-
-        RefreshPopulations();
-        RefreshEnvironment();
-        Resize();
-    }
 }
+
+
+void MainWindow::orgSettings_triggered()
+{
+    if(org_settings_dock->isVisible())
+        {
+        org_settings_dock->hide();
+        orgSettingsButton->setChecked(false);
+        }
+    else
+        {
+        org_settings_dock->show();
+        orgSettingsButton->setChecked(true);
+        }
+}
+
+void MainWindow::logSettings_triggered()
+{
+    if(output_settings_dock->isVisible())
+        {
+        output_settings_dock->hide();
+        logSettingsButton->setChecked(false);
+        }
+    else
+        {
+        output_settings_dock->show();
+        logSettingsButton->setChecked(true);
+        }
+}
+
 
 
 void MainWindow::on_actionMisc_triggered()
@@ -2640,8 +2668,17 @@ void MainWindow::HandleAnalysisTool(int code)
             break;
 
         case ANALYSIS_TOOL_CODE_COUNT_PEAKS:
-            OutputString = a.CountPeaks(ui->PeaksRed->value(),ui->PeaksGreen->value(),ui->PeaksBlue->value());
+            {
+            bool ok;
+            int red = QInputDialog::getInt(this, "Count peaks...","Red level?", 128, 0, 255, 1, &ok);
+            if(!ok)return;
+            int green= QInputDialog::getInt(this, "Count peaks...","Green level?", 128, 0, 255, 1, &ok);
+            if(!ok)return;
+            int blue= QInputDialog::getInt(this, "Count peaks...","Green level?", 128, 0, 255, 1, &ok);
+            if(!ok)return;
+            OutputString = a.CountPeaks(red,green,blue);
             break;
+            }
 
         case ANALYSIS_TOOL_CODE_MAKE_NEWICK:
             if (ui->actionPhylogeny_metrics->isChecked()||ui->actionPhylogeny->isChecked())OutputString = a.MakeNewick(rootspecies, ui->minSpeciesSize->value(), ui->chkExcludeWithChildren->isChecked());
@@ -2713,8 +2750,8 @@ QString MainWindow::print_settings()
     settings_out<<"; Food: "<<food;
     settings_out<<"; Breed cost: "<<breedCost;
     settings_out<<"; Mutate: "<<mutate;
-    settings_out<<"; Pathogen mutate: "<<path_mutate;
-    settings_out<<"; Pathogen frequency: "<<path_frequency;
+    settings_out<<"; Pathogen mutate: "<<pathogen_mutate;
+    settings_out<<"; Pathogen frequency: "<<pathogen_frequency;
     settings_out<<"; Max diff to breed: "<<maxDiff;
     settings_out<<"; Breed threshold: "<<breedThreshold;
     settings_out<<"; Slots per square: "<<slotsPerSq;
@@ -2727,6 +2764,7 @@ QString MainWindow::print_settings()
     settings_out<<"; Enforce max diff to breed:"<<breeddiff;
     settings_out<<"; Only breed within species:"<<breedspecies;
     settings_out<<"; Pathogens enabled:"<<path_on;
+    settings_out<<"; Variable mutate:"<<variableMutate;
     settings_out<<"; Breeding:";
     if(sexual)settings_out<<" sexual.";
     else if (asexual)settings_out<<" asexual.";

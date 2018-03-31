@@ -10,7 +10,6 @@ SOURCES += main.cpp \
     critter.cpp \
     populationscene.cpp \
     environmentscene.cpp \
-    settings.cpp \
     sortablegenome.cpp \
     analyser.cpp \
     genomecomparison.cpp \
@@ -27,7 +26,6 @@ HEADERS += mainwindow.h \
     critter.h \
     populationscene.h \
     environmentscene.h \
-    settings.h \
     sortablegenome.h \
     analyser.h \
     genomecomparison.h \
@@ -41,7 +39,6 @@ HEADERS += mainwindow.h \
     logspeciesdataitem.h \
     about.h
 FORMS += mainwindow.ui \
-    dialog.ui \
     fossrecwidget.ui \
     genomecomparison.ui \
     reseed.ui \

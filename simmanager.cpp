@@ -38,8 +38,8 @@ int breedThreshold = 500;
 int breedCost = 500;
 int maxDiff = 2;
 int mutate = 10;
-int path_mutate = 5;
-int path_frequency =5;
+int pathogen_mutate = 5;
+int pathogen_frequency =5;
 int envchangerate=100;
 int yearsPerIteration=1;
 int speciesSamples=1;
@@ -61,7 +61,8 @@ bool nonspatial=false;
 bool toroidal=false;
 bool reseedKnown=false;
 bool reseedDual=false;
-bool breedspecies=false, breeddiff=true;
+bool breedspecies=false;
+bool breeddiff=true;
 bool path_on=false;
 bool gui=false;
 
@@ -235,8 +236,6 @@ void SimManager::loadEnvironmentFromFile(int emode)
 // Load current envirnonment from file
 {
     //Use make qimage from file method
-
-
     //Load the image
     if (CurrentEnvFile>=EnvFiles.count())
     {
@@ -482,7 +481,9 @@ void SimManager::SetupRun()
                     int flag=0;
                     do{
                         flag=0;
-                        do critters[n][m][0].initialise(Rand64(), environment[n][m], n,m,0,nextspeciesid);
+                        do {
+                            critters[n][m][0].initialise(Rand64(), environment[n][m], n,m,0,nextspeciesid);
+                            }
                             while (critters[n][m][0].fitness<1);
                         quint64 gen=critters[n][m][0].genome;
                         critters[n2][m][0].initialise(gen, environment[n2][m],n2,m,0,nextspeciesid);
@@ -813,7 +814,7 @@ bool SimManager::iterate(int emode, bool interpolate)
 
     if (regenerateEnvironment(emode, interpolate)==true) return true;
 
-    if(generation%path_frequency==0&&path_on)temp_path_on=true;
+    if(generation%pathogen_frequency==0&&path_on)temp_path_on=true;
     else temp_path_on=false;
 
     //New parallelised version
@@ -894,7 +895,7 @@ bool SimManager::iterate(int emode, bool interpolate)
         for (int n=0; n<gridX; n++)
                 for (int m=0; m<gridY; m++)
                         //----RJG: User defined prob of mutation each iteration
-                        if(Rand8()<path_mutate)
+                        if(Rand8()<pathogen_mutate)
                                   //----RJG: Flip a bit.
                                   pathogens[n][m] ^= tweakers64[portable_rand()/(PORTABLE_RAND_MAX/64)];
 
