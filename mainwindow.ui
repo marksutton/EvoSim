@@ -799,23 +799,6 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>Commands</string>
     </property>
-    <widget class="QMenu" name="menuSave_images">
-     <property name="title">
-      <string>Save images</string>
-     </property>
-     <addaction name="save_population_count"/>
-     <addaction name="save_mean_fitness"/>
-     <addaction name="save_coding_genome_as_colour"/>
-     <addaction name="save_non_coding_genome_as_colour"/>
-     <addaction name="save_gene_frequencies"/>
-     <addaction name="save_fails_settles"/>
-     <addaction name="save_settles"/>
-     <addaction name="save_species"/>
-     <addaction name="separator"/>
-     <addaction name="save_environment"/>
-     <addaction name="separator"/>
-     <addaction name="save_all"/>
-    </widget>
     <addaction name="actionLoad_Random_Numbers"/>
     <addaction name="actionStart_Sim"/>
     <addaction name="actionRun_for"/>
@@ -829,11 +812,8 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionLoad"/>
     <addaction name="actionSave_settings"/>
     <addaction name="actionLoad_settings"/>
-    <addaction name="actionCount_peaks"/>
-    <addaction name="menuSave_images"/>
     <addaction name="separator"/>
-    <addaction name="actionSettings"/>
-    <addaction name="actionDon_t_update_gui"/>
+    <addaction name="actionCount_peaks"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">

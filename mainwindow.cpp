@@ -97,23 +97,24 @@ MainWindow::MainWindow(QWidget *parent) :
     runForButton = new QAction(QIcon(QPixmap(":/toolbar/runForButton-Enabled.png")), QString("Run for..."), this);
     pauseButton = new QAction(QIcon(QPixmap(":/toolbar/pauseButton-Enabled.png")), QString("Pause"), this);
     resetButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton-Enabled.png")), QString("Reset"), this);
+
     //---- RJG add further Toolbar options - May 17.
     reseedButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton_knowngenome-Enabled.png")), QString("Reseed"), this);
     runForBatchButton = new QAction(QIcon(QPixmap(":/toolbar/runForBatchButton-Enabled.png")), QString("Batch..."), this);
-    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/globesettingsButton-Enabled.png")), QString("Simulation"), this);
-    settingsButton->setCheckable(true);
-
-    orgSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled.png")), QString("Organism"), this);
-    orgSettingsButton->setCheckable(true);
-
-    logSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/logButton-Enabled.png")), QString("Output"), this);
-    logSettingsButton->setCheckable(true);
 
     startButton->setEnabled(false);
     runForButton->setEnabled(false);
     pauseButton->setEnabled(false);
     reseedButton->setEnabled(false);
     runForBatchButton->setEnabled(false);
+
+    //---- RJG docker toggles - Mar 17.
+    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/globesettingsButton-Enabled.png")), QString("Simulation"), this);
+    settingsButton->setCheckable(true);
+    orgSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled.png")), QString("Organism"), this);
+    orgSettingsButton->setCheckable(true);
+    logSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/logButton-Enabled.png")), QString("Output"), this);
+    logSettingsButton->setCheckable(true);
 
     ui->toolBar->addAction(startButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(runForButton);ui->toolBar->addSeparator();
@@ -135,7 +136,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(settingsButton, SIGNAL(triggered()), this, SLOT(on_actionSettings_triggered()));
     QObject::connect(orgSettingsButton, SIGNAL(triggered()), this, SLOT(orgSettings_triggered()));
     QObject::connect(logSettingsButton, SIGNAL(triggered()), this, SLOT(logSettings_triggered()));
-    QObject::connect(ui->save_all, SIGNAL(toggled(bool)), this, SLOT(save_all(bool)));
 
     //Spacer
     QWidget* empty = new QWidget();
@@ -432,21 +432,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QGridLayout *output_settings_grid = new QGridLayout;
     output_settings_grid->setAlignment(Qt::AlignTop);
 
-    QLabel *output_settings_label= new QLabel("Output/GUI");
-    output_settings_label->setStyleSheet("font-weight: bold");
-    output_settings_grid->addWidget(output_settings_label,0,1,1,2);
-
     QGridLayout *images_grid = new QGridLayout;
-
-    QCheckBox *logging_checkbox = new QCheckBox("Logging");
-    logging_checkbox->setChecked(logging);
-    images_grid->addWidget(logging_checkbox,0,1,1,1);
-    connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
-
-    gui_checkbox = new QCheckBox("Don't update GUI");
-    gui_checkbox->setChecked(gui);
-    images_grid->addWidget(gui_checkbox,0,2,1,1);
-    QObject::connect(gui_checkbox ,SIGNAL (toggled(bool)), this, SLOT(gui_checkbox_state_changed(bool)));
 
     QLabel *images_label= new QLabel("Save Images");
     images_label->setStyleSheet("font-weight: bold");
@@ -475,6 +461,20 @@ MainWindow::MainWindow(QWidget *parent) :
     save_all_images_checkbox->setStyleSheet("font-style: italic");
     images_grid->addWidget(save_all_images_checkbox,6,2,1,1);
     QObject::connect(save_all_images_checkbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
+
+    QLabel *output_settings_label= new QLabel("Output/GUI");
+    output_settings_label->setStyleSheet("font-weight: bold");
+    images_grid->addWidget(output_settings_label,7,1,1,2);
+
+    QCheckBox *logging_checkbox = new QCheckBox("Logging");
+    logging_checkbox->setChecked(logging);
+    images_grid->addWidget(logging_checkbox,8,1,1,1);
+    connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
+
+    gui_checkbox = new QCheckBox("Don't update GUI");
+    gui_checkbox->setChecked(gui);
+    images_grid->addWidget(gui_checkbox,8,2,1,1);
+    QObject::connect(gui_checkbox ,SIGNAL (toggled(bool)), this, SLOT(gui_checkbox_state_changed(bool)));
 
     output_settings_grid->addLayout(images_grid,1,1,1,2);
 
@@ -1489,40 +1489,11 @@ void MainWindow::RefreshEnvironment()
         env_image->setPixel(n,m,qRgb(environment[n][m][0], environment[n][m][1], environment[n][m][2]));
 
     env_item->setPixmap(QPixmap::fromImage(*env_image));
-    if(ui->save_environment->isChecked())
+    if(save_environment->isChecked())
         if(save_dir.mkpath("environment/"))
                     env_image->save(QString(save_dir.path()+"/environment/EvoSim_environment_it_%1.png").arg(generation, 7, 10, QChar('0')));
-
     //Draw on fossil records
     envscene->DrawLocations(FRW->FossilRecords,ui->actionShow_positions->isChecked());
-}
-
-void MainWindow::save_all(bool toggled)
-{
-    if (toggled)
-    {
-        ui->save_coding_genome_as_colour->setChecked(true);
-        ui->save_environment->setChecked(true);
-        ui->save_fails_settles->setChecked(true);
-        ui->save_gene_frequencies->setChecked(true);
-        ui->save_mean_fitness->setChecked(true);
-        ui->save_non_coding_genome_as_colour->setChecked(true);
-        ui->save_population_count->setChecked(true);
-        ui->save_settles->setChecked(true);
-        ui->save_species->setChecked(true);
-    }
-    else
-    {
-        ui->save_coding_genome_as_colour->setChecked(false);
-        ui->save_environment->setChecked(false);
-        ui->save_fails_settles->setChecked(false);
-        ui->save_gene_frequencies->setChecked(false);
-        ui->save_mean_fitness->setChecked(false);
-        ui->save_non_coding_genome_as_colour->setChecked(false);
-        ui->save_population_count->setChecked(false);
-        ui->save_settles->setChecked(false);
-        ui->save_species->setChecked(false);
-    }
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)
