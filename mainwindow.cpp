@@ -348,7 +348,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QCheckBox *breedspecies_checkbox = new QCheckBox("Breed only within species");
     org_settings_grid->addWidget(breedspecies_checkbox,10,1,1,1);
-    breeddiff_checkbox->setChecked(breedspecies);
+    breedspecies_checkbox->setChecked(breedspecies);
     connect(breedspecies_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { breedspecies=i;});
 
     QLabel *breed_mode_label= new QLabel("Breed mode:");
@@ -715,7 +715,6 @@ void MainWindow::changeEvent(QEvent *e)
 
 void MainWindow::on_actionStart_Sim_triggered()
 {
-
     if (CurrentEnvFile==-1)
     {
         QMessageBox::critical(0,"","Cannot start simulation without environment");
@@ -2765,6 +2764,7 @@ QString MainWindow::print_settings()
     settings_out<<"; Enforce max diff to breed:"<<breeddiff;
     settings_out<<"; Only breed within species:"<<breedspecies;
     settings_out<<"; Pathogens enabled:"<<path_on;
+    settings_out<<"; Variable mutate:"<<variableMutate;
     settings_out<<"; Breeding:";
     if(sexual)settings_out<<" sexual.";
     else if (asexual)settings_out<<" asexual.";

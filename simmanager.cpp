@@ -61,7 +61,8 @@ bool nonspatial=false;
 bool toroidal=false;
 bool reseedKnown=false;
 bool reseedDual=false;
-bool breedspecies=false, breeddiff=true;
+bool breedspecies=false;
+bool breeddiff=true;
 bool path_on=false;
 bool gui=false;
 
