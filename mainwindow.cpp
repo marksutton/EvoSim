@@ -8,11 +8,15 @@
 
 #include <QTextStream>
 #include <QInputDialog>
+#include <QComboBox>
+#include <QDialogButtonBox>
+#include <QFormLayout>
 #include <QGraphicsPixmapItem>
 #include <QDockWidget>
 #include <QDebug>
 #include <QTimer>
 #include <QFileDialog>
+#include <QFormLayout>
 #include <QStringList>
 #include <QMessageBox>
 #include <QActionGroup>
@@ -781,31 +785,79 @@ void MainWindow::on_actionRun_for_triggered()
 }
 
 //RJG - Batch - primarily intended to allow repeats of runs with the same settings, rather than allowing these to be changed between runs
+//ARTS - Condensed the Batch Setup multiple dialogs into one popup dialog to make it easier to explain in the User Manual.
 void MainWindow::on_actionBatch_triggered()
 {
+    //ARTS - set default vaules
     batch_running=true;
     runs=0;
-
     int environment_start = CurrentEnvFile;
-
-    bool ok;
-    batch_iterations=QInputDialog::getInt(this, "",tr("How many iterations would you like each run to go for?"), 1000, 1, 10000000, 1, &ok);
-    batch_target_runs=QInputDialog::getInt(this, "",tr("And how many runs?"), 1000, 1, 10000000, 1, &ok);
-
-    QStringList options;
-    options << tr("Yes") << tr("No");
-
-    QString environment = QInputDialog::getItem(this, tr("Environment"),
-                                            tr("Would you like the environment to repeat with each bacth?"), options, 0, false, &ok);
-
-    if (!ok) {QMessageBox::warning(this,"Woah...","Looks like you cancelled. Batch won't run.");return;}
-
     bool repeat_environment;
-    if (environment=="Yes")repeat_environment=true;
-    else repeat_environment=false;
-
     QString save_path(path->text());
 
+    //ARTS - batch setup default and maxium values
+    int maxIterations = 10000000;
+    int defaultIterations = 1000;
+    int maxRuns = 10000000;
+    int defaultRuns = 1000;
+
+    //ARTS - start of batch setup dialog form
+    QDialog dialog(this);
+    dialog.setMinimumSize(480,150);
+    dialog.setWindowTitle(tr("Batch Run Setup"));
+
+    QFormLayout form(&dialog);
+    // Add some text above the fields
+    form.addRow(new QLabel("You may: 1) set the number of runs you require; 2) set the number of iterations per run; and 3) chose to repeat or not to repeat the environment each run."));
+
+    QSpinBox *iterationsSpinBox = new QSpinBox(&dialog);
+    iterationsSpinBox->setRange(1, maxIterations);
+    iterationsSpinBox->setSingleStep(1);
+    iterationsSpinBox->setValue(defaultIterations);
+    QString iterationsLabel = QString(tr("How many iterations would you like each run to go for (max = %1)?")).arg(maxIterations);
+    form.addRow(iterationsLabel, iterationsSpinBox);
+
+    QSpinBox *runsSpinBox = new QSpinBox(&dialog);
+    runsSpinBox->setRange(1, maxRuns);
+    runsSpinBox->setSingleStep(1);
+    runsSpinBox->setValue(defaultRuns);
+    QString runsLabel = QString(tr("And how many runs (max = %1)?")).arg(maxRuns);
+    form.addRow(runsLabel, runsSpinBox);
+
+    QComboBox *environmentComboBox = new QComboBox(&dialog);
+    environmentComboBox->addItem("Yes", 1);
+    environmentComboBox->addItem("No", 0);
+    int index = environmentComboBox->findData(1);
+    if ( index != -1 ) { // -1 for not found
+       environmentComboBox->setCurrentIndex(index);
+    }
+    QString environmentLabel = QString(tr("Would you like the environment to repeat with each batch?"));
+    form.addRow(environmentLabel, environmentComboBox);
+
+    // Add some standard buttons (Cancel/Ok) at the bottom of the dialog
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,Qt::Horizontal, &dialog);
+    form.addRow(&buttonBox);
+    QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    QObject::connect(&buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    //ARTS - end of batch setup dialog form
+
+    //ARTS - if OK has been pressed take values and update the defaults, else return false without running batch
+    if (dialog.exec() == QDialog::Accepted) {
+        batch_iterations=iterationsSpinBox->value();
+        batch_target_runs=runsSpinBox->value();
+        if(environmentComboBox->itemData(environmentComboBox->currentIndex()) == 1) repeat_environment = true;
+            else repeat_environment = false;
+
+        //qDebug() << batch_iterations;
+        //qDebug() << batch_target_runs;
+        //qDebug() << repeat_environment;
+
+    } else {
+        //qDebug() << "Batch Setup Canceled";
+        return;
+    }
+
+    //ARTS - run the batch
     do{
 
         QString new_path(save_path);
