@@ -99,7 +99,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //---- ARTS: Add Toolbar
     startButton = new QAction(QIcon(QPixmap(":/toolbar/startButton-Enabled.png")), QString("Run"), this);
     runForButton = new QAction(QIcon(QPixmap(":/toolbar/runForButton-Enabled.png")), QString("Run for..."), this);
-    pauseButton = new QAction(QIcon(QPixmap(":/toolbar/pauseButton-Enabled.png")), QString("Pause"), this);
+    stopButton = new QAction(QIcon(QPixmap(":/toolbar/stopButton-Enabled.png")), QString("Stop"), this);
     resetButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton-Enabled.png")), QString("Reset"), this);
 
     //---- RJG add further Toolbar options - May 17.
@@ -108,7 +108,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     startButton->setEnabled(false);
     runForButton->setEnabled(false);
-    pauseButton->setEnabled(false);
+    stopButton->setEnabled(false);
     reseedButton->setEnabled(false);
     runForBatchButton->setEnabled(false);
 
@@ -123,7 +123,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->toolBar->addAction(startButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(runForButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(runForBatchButton);ui->toolBar->addSeparator();
-    ui->toolBar->addAction(pauseButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(stopButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(resetButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(reseedButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(orgSettingsButton);ui->toolBar->addSeparator();
@@ -133,7 +133,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //----RJG - Connect button signals to slot. Note for clarity: Reset = start again with random individual. Reseed = start again with user defined genome
     QObject::connect(startButton, SIGNAL(triggered()), this, SLOT(on_actionStart_Sim_triggered()));
     QObject::connect(runForButton, SIGNAL(triggered()), this, SLOT(on_actionRun_for_triggered()));
-    QObject::connect(pauseButton, SIGNAL(triggered()), this, SLOT(on_actionPause_Sim_triggered()));
+    QObject::connect(stopButton, SIGNAL(triggered()), this, SLOT(on_actionStop_Sim_triggered()));
     QObject::connect(resetButton, SIGNAL(triggered()), this, SLOT(on_actionReset_triggered()));
     QObject::connect(reseedButton, SIGNAL(triggered()), this, SLOT(on_actionReseed_triggered()));
     QObject::connect(runForBatchButton, SIGNAL(triggered()), this, SLOT(on_actionBatch_triggered()));
@@ -729,7 +729,7 @@ void MainWindow::on_actionStart_Sim_triggered()
     RunSetUp();
     ui->LabelBatch->setText(tr("1/1"));
 
-    while (pauseflag==false)
+    while (stopflag==false)
     {
         Report();
         qApp->processEvents();
@@ -738,16 +738,16 @@ void MainWindow::on_actionStart_Sim_triggered()
         if (ui->actionOnce->isChecked()) environment_mode=1;
         if (ui->actionBounce->isChecked()) environment_mode=3;
         if (ui->actionLoop->isChecked()) environment_mode=2;
-        //ARTS - set pause flag to returns true if reached end
-        if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) pauseflag=true;
+        //ARTS - set Stop flag to returns true if reached end
+        if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) stopflag=true;
         FRW->MakeRecords();
     }
     FinishRun();
 }
 
-void MainWindow::on_actionPause_Sim_triggered()
+void MainWindow::on_actionStop_Sim_triggered()
 {
-    pauseflag=true;
+    stopflag=true;
 }
 
 void MainWindow::on_actionRun_for_triggered()
@@ -776,7 +776,7 @@ void MainWindow::on_actionRun_for_triggered()
     //ARTS - issue with pausing a batched run...
     RunSetUp();
 
-    while (pauseflag==false && i>0)
+    while (stopflag==false && i>0)
     {
         Report();
         qApp->processEvents();
@@ -784,15 +784,18 @@ void MainWindow::on_actionRun_for_triggered()
         if (ui->actionOnce->isChecked()) environment_mode=1;
         if (ui->actionBounce->isChecked()) environment_mode=3;
         if (ui->actionLoop->isChecked()) environment_mode=2;
-        if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) pauseflag=true;
+        if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) stopflag=true;
         FRW->MakeRecords();
         i--;
     }
 
-    if (!batch_running) {
-        //ARTS Show finish message and run FinshRun()
-        FinishRun();
+    //ARTS Show finish message and run FinshRun()
+    if (!batch_running && stopflag==false) {
         QMessageBox::information(0,tr("Run For... Finished"),tr("The run for %1 iterations has finished.").arg(num_iterations));
+        FinishRun();
+    } else if(!batch_running) {
+        QMessageBox::information(0,tr("Run For... Stopped"),tr("The run for %1 iterations has been stopped at iteration %2.").arg(num_iterations).arg(i));
+        FinishRun();
     }
 }
 
@@ -917,13 +920,13 @@ void MainWindow::on_actionBatch_triggered()
 void MainWindow::RunSetUp()
 {
     //RJG - Sort out GUI at start of run
-    pauseflag=false;
+    stopflag=false;
     ui->actionStart_Sim->setEnabled(false);
     startButton->setEnabled(false);
     ui->actionRun_for->setEnabled(false);
     runForButton->setEnabled(false);
-    ui->actionPause_Sim->setEnabled(true);
-    pauseButton->setEnabled(true);
+    ui->actionStop_Sim->setEnabled(true);
+    stopButton->setEnabled(true);
 
     if(ui->actionWrite_phylogeny->isChecked()||ui->actionSpecies_logging->isChecked())ui->actionPhylogeny_metrics->setChecked(true);
 
@@ -949,8 +952,8 @@ void MainWindow::FinishRun()
     //Reseed or reset
     ui->actionReset->setEnabled(true);
     resetButton->setEnabled(true);
-    ui->actionPause_Sim->setEnabled(false);
-    pauseButton->setEnabled(false);
+    ui->actionStop_Sim->setEnabled(false);
+    stopButton->setEnabled(false);
     ui->actionSettings->setEnabled(true);
     ui->actionEnvironment_Files->setEnabled(true);
 
@@ -2042,7 +2045,7 @@ void MainWindow::on_actionLoad_triggered()
 
     if (filename.length()==0) return;
 
-    if (pauseflag==false) pauseflag=true;
+    if (stopflag==false) stopflag=true;
 
 
     //Otherwise - serialise all my crap

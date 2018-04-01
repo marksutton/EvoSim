@@ -817,7 +817,7 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionStart_Sim"/>
     <addaction name="actionRun_for"/>
     <addaction name="actionBatch"/>
-    <addaction name="actionPause_Sim"/>
+    <addaction name="actionStop_Sim"/>
     <addaction name="actionReset"/>
     <addaction name="actionReseed"/>
     <addaction name="actionGo_Slow"/>
@@ -945,12 +945,12 @@ p, li { white-space: pre-wrap; }
     <string>Alt+S</string>
    </property>
   </action>
-  <action name="actionPause_Sim">
+  <action name="actionStop_Sim">
    <property name="text">
-    <string>Pause</string>
+    <string>Stop</string>
    </property>
    <property name="toolTip">
-    <string>Pause</string>
+    <string>Stop</string>
    </property>
    <property name="shortcut">
     <string>Alt+P</string>
