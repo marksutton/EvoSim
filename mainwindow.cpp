@@ -948,9 +948,6 @@ void MainWindow::on_actionBatch_triggered()
     }
 
     path->setText(save_path);
-      
-    } while(runs<batch_target_runs);
-
     runs=0;
     batch_running=false;
     FinishRun();
