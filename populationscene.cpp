@@ -29,7 +29,7 @@ void PopulationScene::DoMouse(int x, int y, int button)
         mw->RefreshReport();
     }
 
-    //---- ARTS: Genome Comparison UI
+    //ARTS - Genome Comparison Dock uses right mouse button for selection of grid cell
     if (button==2 && x>=0 && x<gridX && y>=0 && y<gridY){
         selectedx=x;
         selectedy=y;
