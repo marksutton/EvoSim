@@ -927,6 +927,8 @@ void MainWindow::on_actionBatch_triggered()
     //ARTS Show finish message and reset batch counter
     QMessageBox::information(0,tr("Batch Finished"),tr("The batch of %1 runs with %2 iterations has finished.").arg(batch_target_runs).arg(batch_iterations));
     ui->LabelBatch->setText(tr("1/1"));
+
+    FinishRun();
 }
 
 void MainWindow::RunSetUp()
