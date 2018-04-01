@@ -488,16 +488,35 @@ MainWindow::MainWindow(QWidget *parent) :
     output_settings_grid->addWidget(RefreshRate_spin,2,2);
     connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
 
+    QPushButton *dump_nwk = new QPushButton("Write newick tree for current run");
+    output_settings_grid->addWidget(dump_nwk,3,1,1,2);
+    //connect(dump_nwk, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
+
+    QCheckBox *exclude_without_issue_checkbox = new QCheckBox("Exclude species without issue");
+    exclude_without_issue_checkbox->setChecked(exclude_species_without_issue);
+    output_settings_grid->addWidget(exclude_without_issue_checkbox,4,1,1,1);
+    connect(exclude_without_issue_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { exclude_species_without_issue=i; });
+
+    QLabel *Min_species_size_label = new QLabel("Minimum species size:");
+    QSpinBox *Min_species_size_spin = new QSpinBox;
+    Min_species_size_spin->setMinimum(0);
+    Min_species_size_spin->setMaximum(10000);
+    Min_species_size_spin->setValue(minimum_species_size);
+    output_settings_grid->addWidget(Min_species_size_label,5,1);
+    output_settings_grid->addWidget(Min_species_size_spin,5,2);
+    connect(Min_species_size_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { minimum_species_size=i; });
+
+
     //---- RJG - savepath for all functions.
     QLabel *save_path_label = new QLabel("Save path");
     save_path_label->setStyleSheet("font-weight: bold");
-    output_settings_grid->addWidget(save_path_label,3,1,1,2);
+    output_settings_grid->addWidget(save_path_label,6,1,1,2);
     QString program_path(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
     program_path.append("/");
     path = new QLineEdit(program_path);
-    output_settings_grid->addWidget(path,4,1,2,2);
+    output_settings_grid->addWidget(path,7,1,1,2);
     QPushButton *change_path = new QPushButton("&Change");
-    output_settings_grid->addWidget(change_path,6,1,1,2);
+    output_settings_grid->addWidget(change_path,8,1,1,2);
     connect(change_path, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
 
     QWidget *output_settings_layout_widget = new QWidget;
@@ -788,34 +807,22 @@ void MainWindow::on_actionBatch_triggered()
 
     int environment_start = CurrentEnvFile;
 
-    bool ok;
+    bool ok = false;
     batch_iterations=QInputDialog::getInt(this, "",tr("How many iterations would you like each run to go for?"), 1000, 1, 10000000, 1, &ok);
+    if (!ok)    return;
     batch_target_runs=QInputDialog::getInt(this, "",tr("And how many runs?"), 1000, 1, 10000000, 1, &ok);
-
+    if (!ok) return;
     QStringList options;
     options << tr("Yes") << tr("No");
 
     QString environment = QInputDialog::getItem(this, tr("Environment"),
                                             tr("Would you like the environment to repeat with each bacth?"), options, 0, false, &ok);
+    if (!ok) return;
 
-    if (!ok) {QMessageBox::warning(this,"Woah...","Looks like you cancelled. Batch won't run.");return;}
-
-    bool repeat_environment;
+    bool repeat_environment = false;
     if (environment=="Yes")repeat_environment=true;
-    else repeat_environment=false;
-
-    QString save_path(path->text());
 
     do{
-
-        QString new_path(save_path);
-        new_path.append(QString("mutate_%1_run_%2/").arg(mutate).arg(runs, 4, 10, QChar('0')));
-        path->setText(new_path);
-
-        QDir save_dir(path->text());
-
-        save_dir.mkpath("Fitness/");
-
         //RJG - Sort environment so it repeats
         if(repeat_environment)
                 {
@@ -835,8 +842,9 @@ void MainWindow::on_actionBatch_triggered()
 
         on_actionReset_triggered();
         runs++;
+
        }while(runs<batch_target_runs);
-    path->setText(save_path);
+
     runs=0;
 
     batch_running=false;
@@ -2681,13 +2689,13 @@ void MainWindow::HandleAnalysisTool(int code)
             }
 
         case ANALYSIS_TOOL_CODE_MAKE_NEWICK:
-            if (ui->actionPhylogeny_metrics->isChecked()||ui->actionPhylogeny->isChecked())OutputString = a.MakeNewick(rootspecies, ui->minSpeciesSize->value(), ui->chkExcludeWithChildren->isChecked());
+            if (ui->actionPhylogeny_metrics->isChecked()||ui->actionPhylogeny->isChecked())OutputString = a.MakeNewick(rootspecies, minimum_species_size, exclude_species_without_issue);
             else OutputString = "Species tracking is not enabled.";
             FilenameString = "_newick";
             break;
 
         case ANALYSIS_TOOL_CODE_DUMP_DATA:
-            if (ui->actionPhylogeny_metrics->isChecked())OutputString = a.DumpData(rootspecies, ui->minSpeciesSize->value(), ui->chkExcludeWithChildren->isChecked());
+            if (ui->actionPhylogeny_metrics->isChecked())OutputString = a.DumpData(rootspecies, minimum_species_size, exclude_species_without_issue);
             else OutputString = "Species tracking is not enabled.";
             FilenameString = "_specieslog";
             break;
@@ -2765,6 +2773,8 @@ QString MainWindow::print_settings()
     settings_out<<"; Only breed within species:"<<breedspecies;
     settings_out<<"; Pathogens enabled:"<<path_on;
     settings_out<<"; Variable mutate:"<<variableMutate;
+    settings_out<<"; Exclude species without issue:"<<exclude_species_without_issue;
+    settings_out<<"; minimum_species_size:"<<minimum_species_size;
     settings_out<<"; Breeding:";
     if(sexual)settings_out<<" sexual.";
     else if (asexual)settings_out<<" asexual.";
