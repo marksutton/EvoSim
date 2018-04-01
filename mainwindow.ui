@@ -353,6 +353,20 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
+          <widget class="QLabel" name="batchLabel">
+           <property name="text">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Batch:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="LabelBatch">
+           <property name="text">
+            <string>1/1</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QLabel" name="iterationLabel">
            <property name="text">
             <string>&lt;b&gt;Iteration:&lt;/b&gt;</string>
@@ -786,7 +800,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>1148</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCommands">

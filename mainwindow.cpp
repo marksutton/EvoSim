@@ -727,6 +727,8 @@ void MainWindow::on_actionStart_Sim_triggered()
         }
     }
     RunSetUp();
+    ui->LabelBatch->setText(tr("1/1"));
+
     while (pauseflag==false)
     {
         Report();
@@ -764,8 +766,10 @@ void MainWindow::on_actionRun_for_triggered()
     {
         i=batch_iterations;
         if(i>=2)ok=true; //ARTS needs >=2 else you can't run an iteration value of 2
+    } else {
+        i= QInputDialog::getInt(this, "",tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
+        ui->LabelBatch->setText(tr("1/1"));
     }
-    else i= QInputDialog::getInt(this, "",tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
     if (!ok) return;
 
     //ARTS - issue with pausing a batched run...
@@ -849,6 +853,8 @@ void MainWindow::on_actionBatch_triggered()
         if(environmentComboBox->itemData(environmentComboBox->currentIndex()) == 1) repeat_environment = true;
             else repeat_environment = false;
 
+        ui->LabelBatch->setText(tr("%1/%2").arg(1).arg(batch_target_runs));
+
         //qDebug() << batch_iterations;
         //qDebug() << batch_target_runs;
         //qDebug() << repeat_environment;
@@ -880,18 +886,24 @@ void MainWindow::on_actionBatch_triggered()
         }
 
         //And run...
+        ui->LabelBatch->setText(tr("%1/%2").arg((runs+1)).arg(batch_target_runs));
+
         on_actionRun_for_triggered();
 
         if(ui->actionSpecies_logging->isChecked())HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
         if(ui->actionWrite_phylogeny->isChecked())HandleAnalysisTool(ANALYSIS_TOOL_CODE_DUMP_DATA);
 
         on_actionReset_triggered();
+
         runs++;
     } while(runs<batch_target_runs);
 
     path->setText(save_path);
     runs=0;
     batch_running=false;
+
+    QMessageBox::information(0,tr("Batch Finished"),tr("The batch of %1 runs with %2 iterations has finished.").arg(batch_target_runs).arg(batch_iterations));
+    ui->LabelBatch->setText(tr("1/1"));
 }
 
 void MainWindow::RunSetUp()
