@@ -761,15 +761,16 @@ void MainWindow::on_actionRun_for_triggered()
     }
 
     bool ok = false;
-    int i;
+    int i, num_iterations;
     if(batch_running)
     {
-        i=batch_iterations;
-        if(i>=2)ok=true; //ARTS needs >=2 else you can't run an iteration value of 2
+        num_iterations=batch_iterations;
+        if(num_iterations>=2)ok=true; //ARTS needs >=2 else you can't run an iteration value of 2
     } else {
-        i= QInputDialog::getInt(this, "",tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
+        num_iterations = QInputDialog::getInt(this, "",tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
         ui->LabelBatch->setText(tr("1/1"));
     }
+    i = num_iterations;
     if (!ok) return;
 
     //ARTS - issue with pausing a batched run...
@@ -786,6 +787,12 @@ void MainWindow::on_actionRun_for_triggered()
         if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) pauseflag=true;
         FRW->MakeRecords();
         i--;
+    }
+
+    if (!batch_running) {
+        //ARTS Show finish message and run FinshRun()
+        FinishRun();
+        QMessageBox::information(0,tr("Run For... Finished"),tr("The run for %1 iterations has finished.").arg(num_iterations));
     }
 }
 
@@ -902,6 +909,7 @@ void MainWindow::on_actionBatch_triggered()
     runs=0;
     batch_running=false;
 
+    //ARTS Show finish message and reset batch counter
     QMessageBox::information(0,tr("Batch Finished"),tr("The batch of %1 runs with %2 iterations has finished.").arg(batch_target_runs).arg(batch_iterations));
     ui->LabelBatch->setText(tr("1/1"));
 }
