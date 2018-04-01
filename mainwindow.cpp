@@ -732,11 +732,12 @@ void MainWindow::on_actionStart_Sim_triggered()
         Report();
         qApp->processEvents();
         if (ui->actionGo_Slow->isChecked()) Sleeper::msleep(30);
-        int emode=0;
-        if (ui->actionOnce->isChecked()) emode=1;
-        if (ui->actionBounce->isChecked()) emode=3;
-        if (ui->actionLoop->isChecked()) emode=2;
-        if (TheSimManager->iterate(emode,ui->actionInterpolate->isChecked())) pauseflag=true; //returns true if reached end
+        int environment_mode=0;
+        if (ui->actionOnce->isChecked()) environment_mode=1;
+        if (ui->actionBounce->isChecked()) environment_mode=3;
+        if (ui->actionLoop->isChecked()) environment_mode=2;
+        //ARTS - set pause flag to returns true if reached end
+        if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) pauseflag=true;
         FRW->MakeRecords();
     }
     FinishRun();
@@ -760,28 +761,28 @@ void MainWindow::on_actionRun_for_triggered()
     bool ok = false;
     int i;
     if(batch_running)
-                {
-                i=batch_iterations;
-                if(i>2)ok=true;
-                }
+    {
+        i=batch_iterations;
+        if(i>=2)ok=true; //ARTS needs >=2 else you can't run an iteration value of 2
+    }
     else i= QInputDialog::getInt(this, "",tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
     if (!ok) return;
 
+    //ARTS - issue with pausing a batched run...
     RunSetUp();
 
     while (pauseflag==false && i>0)
     {
         Report();
         qApp->processEvents();
-        int emode=0;
-        if (ui->actionOnce->isChecked()) emode=1;
-        if (ui->actionBounce->isChecked()) emode=3;
-        if (ui->actionLoop->isChecked()) emode=2;
-        if (TheSimManager->iterate(emode,ui->actionInterpolate->isChecked())) pauseflag=true;
+        int environment_mode=0;
+        if (ui->actionOnce->isChecked()) environment_mode=1;
+        if (ui->actionBounce->isChecked()) environment_mode=3;
+        if (ui->actionLoop->isChecked()) environment_mode=2;
+        if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) pauseflag=true;
         FRW->MakeRecords();
         i--;
     }
-    FinishRun();
 }
 
 //RJG - Batch - primarily intended to allow repeats of runs with the same settings, rather than allowing these to be changed between runs
@@ -811,7 +812,7 @@ void MainWindow::on_actionBatch_triggered()
     form.addRow(new QLabel("You may: 1) set the number of runs you require; 2) set the number of iterations per run; and 3) chose to repeat or not to repeat the environment each run."));
 
     QSpinBox *iterationsSpinBox = new QSpinBox(&dialog);
-    iterationsSpinBox->setRange(1, maxIterations);
+    iterationsSpinBox->setRange(2, maxIterations);
     iterationsSpinBox->setSingleStep(1);
     iterationsSpinBox->setValue(defaultIterations);
     QString iterationsLabel = QString(tr("How many iterations would you like each run to go for (max = %1)?")).arg(maxIterations);
@@ -819,7 +820,7 @@ void MainWindow::on_actionBatch_triggered()
 
     QSpinBox *runsSpinBox = new QSpinBox(&dialog);
     runsSpinBox->setRange(1, maxRuns);
-    runsSpinBox->setSingleStep(1);
+    runsSpinBox->setSingleStep(2);
     runsSpinBox->setValue(defaultRuns);
     QString runsLabel = QString(tr("And how many runs (max = %1)?")).arg(maxRuns);
     form.addRow(runsLabel, runsSpinBox);
@@ -858,8 +859,7 @@ void MainWindow::on_actionBatch_triggered()
     }
 
     //ARTS - run the batch
-    do{
-
+    do {
         QString new_path(save_path);
         new_path.append(QString("mutate_%1_run_%2/").arg(mutate).arg(runs, 4, 10, QChar('0')));
         path->setText(new_path);
@@ -870,14 +870,14 @@ void MainWindow::on_actionBatch_triggered()
 
         //RJG - Sort environment so it repeats
         if(repeat_environment)
-                {
-                CurrentEnvFile=environment_start;
-                int emode=0;
-                if (ui->actionOnce->isChecked()) emode=1;
-                if (ui->actionBounce->isChecked()) emode=3;
-                if (ui->actionLoop->isChecked()) emode=2;
-                TheSimManager->loadEnvironmentFromFile(emode);
-                }
+        {
+            CurrentEnvFile=environment_start;
+            int emode=0;
+            if (ui->actionOnce->isChecked()) emode=1;
+            if (ui->actionBounce->isChecked()) emode=3;
+            if (ui->actionLoop->isChecked()) emode=2;
+            TheSimManager->loadEnvironmentFromFile(emode);
+        }
 
         //And run...
         on_actionRun_for_triggered();
@@ -887,10 +887,10 @@ void MainWindow::on_actionBatch_triggered()
 
         on_actionReset_triggered();
         runs++;
-       }while(runs<batch_target_runs);
+    } while(runs<batch_target_runs);
+
     path->setText(save_path);
     runs=0;
-
     batch_running=false;
 }
 
@@ -943,7 +943,7 @@ void MainWindow::FinishRun()
     //Report();
 }
 
-void MainWindow::closeEvent(QCloseEvent *event)
+void MainWindow::closeEvent(QCloseEvent * /* unused */)
 {
     exit(0);
 }
@@ -1547,7 +1547,7 @@ void MainWindow::RefreshEnvironment()
     envscene->DrawLocations(FRW->FossilRecords,ui->actionShow_positions->isChecked());
 }
 
-void MainWindow::resizeEvent(QResizeEvent *event)
+void MainWindow::resizeEvent(QResizeEvent * /* unused */)
 {
     //force a rescale of the graphic view
     Resize();
@@ -1559,7 +1559,7 @@ void MainWindow::Resize()
     ui->GV_Environment->fitInView(env_item,Qt::KeepAspectRatio);
 }
 
-void MainWindow::view_mode_changed(QAction *temp2)
+void MainWindow::view_mode_changed(QAction * /* unused */)
 {
     UpdateTitles();
     RefreshPopulations();
@@ -1630,7 +1630,7 @@ void MainWindow::species_mode_changed(int change_species_mode)
     species_mode=new_species_mode;
 }
 
-void MainWindow::report_mode_changed(QAction *temp2)
+void MainWindow::report_mode_changed(QAction * /* unused */)
 {
     RefreshReport();
 }
