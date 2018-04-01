@@ -106,6 +106,7 @@ extern int yearsPerIteration;
 extern int speciesSamples; //no longer used - keep for backwards compat of files
 extern int speciesSensitivity; //no longer used - keep for backwards compat of files
 extern int timeSliceConnect; //no longer used - keep for backwards compat of files
+extern int minimum_species_size;
 extern bool speciesLogging;
 extern bool speciesLoggingToFile;
 extern QString SpeciesLoggingFile;
@@ -113,6 +114,7 @@ extern bool fitnessLoggingToFile;
 //extern QString FitnessLoggingFile;
 extern bool logging;
 extern bool gui;
+extern bool exclude_species_without_issue;
 
 extern QStringList EnvFiles;
 extern int CurrentEnvFile;
