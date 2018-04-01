@@ -847,7 +847,7 @@ void MainWindow::on_actionBatch_triggered()
 
     QFormLayout form(&dialog);
     // Add some text above the fields
-    form.addRow(new QLabel("You may: 1) set the number of runs you require; 2) set the number of iterations per run; and 3) chose to repeat or not to repeat the environment each run."));
+    form.addRow(new QLabel("You may: 1) set the number of runs you require; 2) set the number of iterations per run; and 3) choose to repeat or not to repeat the environment each run."));
 
     QSpinBox *iterationsSpinBox = new QSpinBox(&dialog);
     iterationsSpinBox->setRange(2, maxIterations);
