@@ -676,17 +676,21 @@ void MainWindow::about_triggered()
     adialogue.exec();
 }
 
-// ---- RJG: Reset simulation (i.e. fill the centre pixel with a genome, then set up a run).
+//RJG - Reset simulation (i.e. fill the centre pixel with a genome (unless dual seed is selected), then set up a run).
 void MainWindow::on_actionReset_triggered()
 {
-    if ((ui->actionRecombination_logging->isChecked()||ui->actionSpecies_logging->isChecked()|| ui->actionFitness_logging_to_File->isChecked())&&!batch_running)
-                                            QMessageBox::warning(this,"Logging","This will append logs from the new run onto your last one, unless you change directories or move the old log file. It will also overwrite any images within that folder.");
+    if ((ui->actionRecombination_logging->isChecked()
+        || ui->actionSpecies_logging->isChecked()
+        || ui->actionFitness_logging_to_File->isChecked())
+        &&!batch_running) {
+            QMessageBox::warning(this,"Logging","This will append logs from the new run onto your last one, unless you change directories or move the old log file. It will also overwrite any images within that folder.");
+        }
 
-    //--- RJG: This resets all the species logging stuff as well as setting up the run
+    //RJG - This resets all the species logging stuff as well as setting up the run
     TheSimManager->SetupRun();
     NextRefresh=0;
 
-    //Update views...
+    //ARTS - Update views based on the new reset simulation
     RefreshReport();
     UpdateTitles();
     RefreshPopulations();
