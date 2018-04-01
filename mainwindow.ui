@@ -353,6 +353,20 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
+          <widget class="QLabel" name="batchLabel">
+           <property name="text">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Batch:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="LabelBatch">
+           <property name="text">
+            <string>1/1</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QLabel" name="iterationLabel">
            <property name="text">
             <string>&lt;b&gt;Iteration:&lt;/b&gt;</string>
@@ -786,7 +800,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>1148</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCommands">
@@ -803,7 +817,7 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionStart_Sim"/>
     <addaction name="actionRun_for"/>
     <addaction name="actionBatch"/>
-    <addaction name="actionPause_Sim"/>
+    <addaction name="actionStop_Sim"/>
     <addaction name="actionReset"/>
     <addaction name="actionReseed"/>
     <addaction name="actionGo_Slow"/>
@@ -931,12 +945,12 @@ p, li { white-space: pre-wrap; }
     <string>Alt+S</string>
    </property>
   </action>
-  <action name="actionPause_Sim">
+  <action name="actionStop_Sim">
    <property name="text">
-    <string>Pause</string>
+    <string>Stop</string>
    </property>
    <property name="toolTip">
-    <string>Pause</string>
+    <string>Stop</string>
    </property>
    <property name="shortcut">
     <string>Alt+P</string>

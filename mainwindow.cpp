@@ -8,11 +8,15 @@
 
 #include <QTextStream>
 #include <QInputDialog>
+#include <QComboBox>
+#include <QDialogButtonBox>
+#include <QFormLayout>
 #include <QGraphicsPixmapItem>
 #include <QDockWidget>
 #include <QDebug>
 #include <QTimer>
 #include <QFileDialog>
+#include <QFormLayout>
 #include <QStringList>
 #include <QMessageBox>
 #include <QActionGroup>
@@ -95,7 +99,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //---- ARTS: Add Toolbar
     startButton = new QAction(QIcon(QPixmap(":/toolbar/startButton-Enabled.png")), QString("Run"), this);
     runForButton = new QAction(QIcon(QPixmap(":/toolbar/runForButton-Enabled.png")), QString("Run for..."), this);
-    pauseButton = new QAction(QIcon(QPixmap(":/toolbar/pauseButton-Enabled.png")), QString("Pause"), this);
+    stopButton = new QAction(QIcon(QPixmap(":/toolbar/stopButton-Enabled.png")), QString("Stop"), this);
     resetButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton-Enabled.png")), QString("Reset"), this);
 
     //---- RJG add further Toolbar options - May 17.
@@ -104,7 +108,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     startButton->setEnabled(false);
     runForButton->setEnabled(false);
-    pauseButton->setEnabled(false);
+    stopButton->setEnabled(false);
     reseedButton->setEnabled(false);
     runForBatchButton->setEnabled(false);
 
@@ -119,7 +123,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->toolBar->addAction(startButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(runForButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(runForBatchButton);ui->toolBar->addSeparator();
-    ui->toolBar->addAction(pauseButton);ui->toolBar->addSeparator();
+    ui->toolBar->addAction(stopButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(resetButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(reseedButton);ui->toolBar->addSeparator();
     ui->toolBar->addAction(orgSettingsButton);ui->toolBar->addSeparator();
@@ -129,7 +133,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //----RJG - Connect button signals to slot. Note for clarity: Reset = start again with random individual. Reseed = start again with user defined genome
     QObject::connect(startButton, SIGNAL(triggered()), this, SLOT(on_actionStart_Sim_triggered()));
     QObject::connect(runForButton, SIGNAL(triggered()), this, SLOT(on_actionRun_for_triggered()));
-    QObject::connect(pauseButton, SIGNAL(triggered()), this, SLOT(on_actionPause_Sim_triggered()));
+    QObject::connect(stopButton, SIGNAL(triggered()), this, SLOT(on_actionStop_Sim_triggered()));
     QObject::connect(resetButton, SIGNAL(triggered()), this, SLOT(on_actionReset_triggered()));
     QObject::connect(reseedButton, SIGNAL(triggered()), this, SLOT(on_actionReseed_triggered()));
     QObject::connect(runForBatchButton, SIGNAL(triggered()), this, SLOT(on_actionBatch_triggered()));
@@ -691,17 +695,21 @@ void MainWindow::about_triggered()
     adialogue.exec();
 }
 
-// ---- RJG: Reset simulation (i.e. fill the centre pixel with a genome, then set up a run).
+//RJG - Reset simulation (i.e. fill the centre pixel with a genome (unless dual seed is selected), then set up a run).
 void MainWindow::on_actionReset_triggered()
 {
-    if ((ui->actionRecombination_logging->isChecked()||ui->actionSpecies_logging->isChecked()|| ui->actionFitness_logging_to_File->isChecked())&&!batch_running)
-                                            QMessageBox::warning(this,"Logging","This will append logs from the new run onto your last one, unless you change directories or move the old log file. It will also overwrite any images within that folder.");
+    if ((ui->actionRecombination_logging->isChecked()
+        || ui->actionSpecies_logging->isChecked()
+        || ui->actionFitness_logging_to_File->isChecked())
+        &&!batch_running) {
+            QMessageBox::warning(this,"Logging","This will append logs from the new run onto your last one, unless you change directories or move the old log file. It will also overwrite any images within that folder.");
+        }
 
-    //--- RJG: This resets all the species logging stuff as well as setting up the run
+    //RJG - This resets all the species logging stuff as well as setting up the run
     TheSimManager->SetupRun();
     NextRefresh=0;
 
-    //Update views...
+    //ARTS - Update views based on the new reset simulation
     RefreshReport();
     UpdateTitles();
     RefreshPopulations();
@@ -742,24 +750,27 @@ void MainWindow::on_actionStart_Sim_triggered()
         }
     }
     RunSetUp();
-    while (pauseflag==false)
+    ui->LabelBatch->setText(tr("1/1"));
+
+    while (stopflag==false)
     {
         Report();
         qApp->processEvents();
         if (ui->actionGo_Slow->isChecked()) Sleeper::msleep(30);
-        int emode=0;
-        if (ui->actionOnce->isChecked()) emode=1;
-        if (ui->actionBounce->isChecked()) emode=3;
-        if (ui->actionLoop->isChecked()) emode=2;
-        if (TheSimManager->iterate(emode,ui->actionInterpolate->isChecked())) pauseflag=true; //returns true if reached end
+        int environment_mode=0;
+        if (ui->actionOnce->isChecked()) environment_mode=1;
+        if (ui->actionBounce->isChecked()) environment_mode=3;
+        if (ui->actionLoop->isChecked()) environment_mode=2;
+        //ARTS - set Stop flag to returns true if reached end
+        if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) stopflag=true;
         FRW->MakeRecords();
     }
     FinishRun();
 }
 
-void MainWindow::on_actionPause_Sim_triggered()
+void MainWindow::on_actionStop_Sim_triggered()
 {
-    pauseflag=true;
+    stopflag=true;
 }
 
 void MainWindow::on_actionRun_for_triggered()
@@ -773,93 +784,161 @@ void MainWindow::on_actionRun_for_triggered()
     }
 
     bool ok = false;
-    int i;
+    int i, num_iterations;
     if(batch_running)
-                {
-                i=batch_iterations;
-                if(i>2)ok=true;
-                }
-    else i= QInputDialog::getInt(this, "",tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
+    {
+        num_iterations=batch_iterations;
+        if(num_iterations>=2)ok=true; //ARTS needs >=2 else you can't run an iteration value of 2
+    } else {
+        num_iterations = QInputDialog::getInt(this, "",tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
+        ui->LabelBatch->setText(tr("1/1"));
+    }
+    i = num_iterations;
     if (!ok) return;
 
+    //ARTS - issue with pausing a batched run...
     RunSetUp();
 
-    while (pauseflag==false && i>0)
+    while (stopflag==false && i>0)
     {
         Report();
         qApp->processEvents();
-        int emode=0;
-        if (ui->actionOnce->isChecked()) emode=1;
-        if (ui->actionBounce->isChecked()) emode=3;
-        if (ui->actionLoop->isChecked()) emode=2;
-        if (TheSimManager->iterate(emode,ui->actionInterpolate->isChecked())) pauseflag=true;
+        int environment_mode=0;
+        if (ui->actionOnce->isChecked()) environment_mode=1;
+        if (ui->actionBounce->isChecked()) environment_mode=3;
+        if (ui->actionLoop->isChecked()) environment_mode=2;
+        if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) stopflag=true;
         FRW->MakeRecords();
         i--;
     }
-    FinishRun();
+
+    //ARTS Show finish message and run FinshRun()
+    if (!batch_running && stopflag==false) {
+        QMessageBox::information(0,tr("Run For... Finished"),tr("The run for %1 iterations has finished.").arg(num_iterations));
+        FinishRun();
+    } else if(!batch_running) {
+        QMessageBox::information(0,tr("Run For... Stopped"),tr("The run for %1 iterations has been stopped at iteration %2.").arg(num_iterations).arg(i));
+        FinishRun();
+    }
 }
 
 //RJG - Batch - primarily intended to allow repeats of runs with the same settings, rather than allowing these to be changed between runs
+//ARTS - Condensed the Batch Setup multiple dialogs into one popup dialog to make it easier to explain in the User Manual.
 void MainWindow::on_actionBatch_triggered()
 {
+    //ARTS - set default vaules
     batch_running=true;
     runs=0;
-
     int environment_start = CurrentEnvFile;
 
-    bool ok = false;
-    batch_iterations=QInputDialog::getInt(this, "",tr("How many iterations would you like each run to go for?"), 1000, 1, 10000000, 1, &ok);
-    if (!ok)    return;
-    batch_target_runs=QInputDialog::getInt(this, "",tr("And how many runs?"), 1000, 1, 10000000, 1, &ok);
-    if (!ok) return;
-    QStringList options;
-    options << tr("Yes") << tr("No");
+    bool repeat_environment;
+    QString save_path(path->text());
 
-    QString environment = QInputDialog::getItem(this, tr("Environment"),
-                                            tr("Would you like the environment to repeat with each bacth?"), options, 0, false, &ok);
-    if (!ok) return;
+    //ARTS - batch setup default and maxium values
+    int maxIterations = 10000000;
+    int defaultIterations = 1000;
+    int maxRuns = 10000000;
+    int defaultRuns = 1000;
 
-    bool repeat_environment = false;
-    if (environment=="Yes")repeat_environment=true;
+    //ARTS - start of batch setup dialog form
+    QDialog dialog(this);
+    dialog.setMinimumSize(480,150);
+    dialog.setWindowTitle(tr("Batch Run Setup"));
 
-    do{
+    QFormLayout form(&dialog);
+    // Add some text above the fields
+    form.addRow(new QLabel("You may: 1) set the number of runs you require; 2) set the number of iterations per run; and 3) chose to repeat or not to repeat the environment each run."));
+
+    QSpinBox *iterationsSpinBox = new QSpinBox(&dialog);
+    iterationsSpinBox->setRange(2, maxIterations);
+    iterationsSpinBox->setSingleStep(1);
+    iterationsSpinBox->setValue(defaultIterations);
+    QString iterationsLabel = QString(tr("How many iterations would you like each run to go for (max = %1)?")).arg(maxIterations);
+    form.addRow(iterationsLabel, iterationsSpinBox);
+
+    QSpinBox *runsSpinBox = new QSpinBox(&dialog);
+    runsSpinBox->setRange(1, maxRuns);
+    runsSpinBox->setSingleStep(2);
+    runsSpinBox->setValue(defaultRuns);
+    QString runsLabel = QString(tr("And how many runs (max = %1)?")).arg(maxRuns);
+    form.addRow(runsLabel, runsSpinBox);
+
+    QComboBox *environmentComboBox = new QComboBox(&dialog);
+    environmentComboBox->addItem("Yes", 1);
+    environmentComboBox->addItem("No", 0);
+    int index = environmentComboBox->findData(1);
+    if ( index != -1 ) { // -1 for not found
+       environmentComboBox->setCurrentIndex(index);
+    }
+    QString environmentLabel = QString(tr("Would you like the environment to repeat with each batch?"));
+    form.addRow(environmentLabel, environmentComboBox);
+
+    // Add some standard buttons (Cancel/Ok) at the bottom of the dialog
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel,Qt::Horizontal, &dialog);
+    form.addRow(&buttonBox);
+    QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
+    QObject::connect(&buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
+    //ARTS - end of batch setup dialog form
+
+    //ARTS - if OK has been pressed take values and update the defaults, else return false without running batch
+    if (dialog.exec() == QDialog::Accepted) {
+        batch_iterations=iterationsSpinBox->value();
+        batch_target_runs=runsSpinBox->value();
+        if(environmentComboBox->itemData(environmentComboBox->currentIndex()) == 1) repeat_environment = true;
+            else repeat_environment = false;
+
+        ui->LabelBatch->setText(tr("%1/%2").arg(1).arg(batch_target_runs));
+
+    } else {
+        return;
+    }
+
+    //ARTS - run the batch
+    do {
+
         //RJG - Sort environment so it repeats
         if(repeat_environment)
-                {
-                CurrentEnvFile=environment_start;
-                int emode=0;
-                if (ui->actionOnce->isChecked()) emode=1;
-                if (ui->actionBounce->isChecked()) emode=3;
-                if (ui->actionLoop->isChecked()) emode=2;
-                TheSimManager->loadEnvironmentFromFile(emode);
-                }
+        {
+            CurrentEnvFile=environment_start;
+            int emode=0;
+            if (ui->actionOnce->isChecked()) emode=1;
+            if (ui->actionBounce->isChecked()) emode=3;
+            if (ui->actionLoop->isChecked()) emode=2;
+            TheSimManager->loadEnvironmentFromFile(emode);
+        }
 
         //And run...
+        ui->LabelBatch->setText(tr("%1/%2").arg((runs+1)).arg(batch_target_runs));
+
         on_actionRun_for_triggered();
 
         if(ui->actionSpecies_logging->isChecked())HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
         if(ui->actionWrite_phylogeny->isChecked())HandleAnalysisTool(ANALYSIS_TOOL_CODE_DUMP_DATA);
 
         on_actionReset_triggered();
+
         runs++;
-
-       }while(runs<batch_target_runs);
-
+      
+    }while(runs<batch_target_runs);
+      
     runs=0;
-
     batch_running=false;
+
+    //ARTS Show finish message and reset batch counter
+    QMessageBox::information(0,tr("Batch Finished"),tr("The batch of %1 runs with %2 iterations has finished.").arg(batch_target_runs).arg(batch_iterations));
+    ui->LabelBatch->setText(tr("1/1"));
 }
 
 void MainWindow::RunSetUp()
 {
     //RJG - Sort out GUI at start of run
-    pauseflag=false;
+    stopflag=false;
     ui->actionStart_Sim->setEnabled(false);
     startButton->setEnabled(false);
     ui->actionRun_for->setEnabled(false);
     runForButton->setEnabled(false);
-    ui->actionPause_Sim->setEnabled(true);
-    pauseButton->setEnabled(true);
+    ui->actionStop_Sim->setEnabled(true);
+    stopButton->setEnabled(true);
 
     if(ui->actionWrite_phylogeny->isChecked()||ui->actionSpecies_logging->isChecked())ui->actionPhylogeny_metrics->setChecked(true);
 
@@ -885,8 +964,8 @@ void MainWindow::FinishRun()
     //Reseed or reset
     ui->actionReset->setEnabled(true);
     resetButton->setEnabled(true);
-    ui->actionPause_Sim->setEnabled(false);
-    pauseButton->setEnabled(false);
+    ui->actionStop_Sim->setEnabled(false);
+    stopButton->setEnabled(false);
     ui->actionSettings->setEnabled(true);
     ui->actionEnvironment_Files->setEnabled(true);
 
@@ -899,7 +978,7 @@ void MainWindow::FinishRun()
     //Report();
 }
 
-void MainWindow::closeEvent(QCloseEvent *event)
+void MainWindow::closeEvent(QCloseEvent * /* unused */)
 {
     exit(0);
 }
@@ -1503,7 +1582,7 @@ void MainWindow::RefreshEnvironment()
     envscene->DrawLocations(FRW->FossilRecords,ui->actionShow_positions->isChecked());
 }
 
-void MainWindow::resizeEvent(QResizeEvent *event)
+void MainWindow::resizeEvent(QResizeEvent * /* unused */)
 {
     //force a rescale of the graphic view
     Resize();
@@ -1515,7 +1594,7 @@ void MainWindow::Resize()
     ui->GV_Environment->fitInView(env_item,Qt::KeepAspectRatio);
 }
 
-void MainWindow::view_mode_changed(QAction *temp2)
+void MainWindow::view_mode_changed(QAction * /* unused */)
 {
     UpdateTitles();
     RefreshPopulations();
@@ -1586,7 +1665,7 @@ void MainWindow::species_mode_changed(int change_species_mode)
     species_mode=new_species_mode;
 }
 
-void MainWindow::report_mode_changed(QAction *temp2)
+void MainWindow::report_mode_changed(QAction * /* unused */)
 {
     RefreshReport();
 }
@@ -1978,7 +2057,7 @@ void MainWindow::on_actionLoad_triggered()
 
     if (filename.length()==0) return;
 
-    if (pauseflag==false) pauseflag=true;
+    if (stopflag==false) stopflag=true;
 
 
     //Otherwise - serialise all my crap

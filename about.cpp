@@ -24,7 +24,7 @@ About::About(QWidget *parent) :
 
     ui->label->setWordWrap(true);
     ui->label->setText("This version of EvoSim was compiled on the date shown above. It was coded by:"
-                       "\n\nMark Sutton (m.sutton@imperial.ac.uk)\nRussell Garwood (russell.garwood@manchester.ac.uk)\nAlan Spencer (a.spencer09@imperial.ac.uk)"
+                       "\n\nMark Sutton (m.sutton@imperial.ac.uk)\nRussell Garwood (russell.garwood@manchester.ac.uk)\nAlan R.T. Spencer (alan.spencer@imperial.ac.uk)"
                        "\n\nBug reports are appreciated, and comments, suggestions, and feature requests are welcome.");
     ui->label->setAlignment(Qt::AlignJustify);
 
