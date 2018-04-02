@@ -494,7 +494,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QPushButton *dump_nwk = new QPushButton("Write newick tree for current run");
     output_settings_grid->addWidget(dump_nwk,3,1,1,2);
-    connect(dump_nwk, &QPushButton::clicked, []()
+    connect(dump_nwk, &QPushButton::clicked, [&]()
     {
         HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
     });
