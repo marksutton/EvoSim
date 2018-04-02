@@ -52,6 +52,7 @@ private:
     void FinishRun();
     void RefreshPopulations();
     void UpdateTitles();
+    void resetInformationBar();
 
     //RJG - some imporant variables
     bool stopflag;

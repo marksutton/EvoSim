@@ -732,8 +732,11 @@ void MainWindow::on_actionReset_triggered()
         || ui->actionSpecies_logging->isChecked()
         || ui->actionFitness_logging_to_File->isChecked())
         &&!batch_running) {
-            QMessageBox::warning(this,"Logging","This will append logs from the new run onto your last one, unless you change directories or move the old log file. It will also overwrite any images within that folder.");
+            QMessageBox::warning(this,"Logging","This will append logs from any new run(s) onto your last one, unless you change directories or move the old log file. It will also overwrite any images within that folder.");
         }
+
+    // Reset the information bar
+    resetInformationBar();
 
     //RJG - This resets all the species logging stuff as well as setting up the run
     TheSimManager->SetupRun();
@@ -743,7 +746,23 @@ void MainWindow::on_actionReset_triggered()
     RefreshReport();
     UpdateTitles();
     RefreshPopulations();
+}
 
+void MainWindow::resetInformationBar()
+{
+    //ARTS - reset the bottom information bar
+    ui->LabelBatch->setText(tr("1/1"));
+    ui->LabelIteration->setText(tr("0"));
+    ui->LabelYears->setText(tr("0"));
+    ui->LabelMyPerHour->setText(tr("0.00"));
+    ui->LabelCritters->setText(tr("0"));
+    ui->LabelSpeed->setText(tr("0.00"));
+    ui->LabelFitness->setText(tr("0.00%"));
+    ui->LabelSpecies->setText(tr("-"));
+
+    QString environment_scene_value;
+    environment_scene_value.sprintf("%d/%d",CurrentEnvFile+1,EnvFiles.count());
+    ui->LabelEnvironment->setText(environment_scene_value);
 }
 
 //RJG - Reseed provides options to either reset using a random genome, or a user defined one - drawn from the genome comparison docker.
@@ -770,6 +789,7 @@ void MainWindow::changeEvent(QEvent *e)
     }
 }
 
+//ARTS - "Run" action
 void MainWindow::on_actionStart_Sim_triggered()
 {
     if (CurrentEnvFile==-1)
@@ -798,42 +818,14 @@ void MainWindow::on_actionStart_Sim_triggered()
         if (ui->actionOnce->isChecked()) environment_mode=1;
         if (ui->actionBounce->isChecked()) environment_mode=3;
         if (ui->actionLoop->isChecked()) environment_mode=2;
-        //ARTS - set Stop flag to returns true if reached end
+        //ARTS - set Stop flag to returns true if reached end... but why? It will fire the FinishRun() function at the end.
         if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) stopflag=true;
         FRW->MakeRecords();
     }
     FinishRun();
 }
 
-void MainWindow::on_actionStop_Sim_triggered()
-{
-    stopflag=true;
-}
-
-//ARTS - pause funtion to halt the simulation mid run and allow restart at same point
-//Note this disables the Stop button as the Stop function runs outside the iteration loop,
-//so can not be triggered while paused
-void MainWindow::on_actionPause_Sim_triggered()
-{
-    if (pauseflag == true)
-    {
-        pauseflag = false;
-        ui->actionStop_Sim->setEnabled(true);
-        ui->actionPause_Sim->setText(tr("Pause"));
-        ui->actionPause_Sim->setToolTip(tr("Pause"));
-        stopButton->setEnabled(true);
-        pauseButton->setText(tr("Pause"));
-    }
-    else {
-        pauseflag = true;
-        ui->actionStop_Sim->setEnabled(false);
-        ui->actionPause_Sim->setText(tr("Resume"));
-        ui->actionPause_Sim->setToolTip(tr("Resume"));
-        stopButton->setEnabled(false);
-        pauseButton->setText(tr("Resume"));
-    }
-}
-
+//ARTS - "Run For..." action
 void MainWindow::on_actionRun_for_triggered()
 {
     if (CurrentEnvFile==-1)
@@ -852,7 +844,6 @@ void MainWindow::on_actionRun_for_triggered()
 
     ui->LabelBatch->setText(tr("1/1"));
 
-    //ARTS - issue with pausing a batched run...
     RunSetUp();
 
     while (stopflag==false && i>0)
@@ -1022,50 +1013,110 @@ void MainWindow::on_actionBatch_triggered()
     FinishRun();
 }
 
+//ARTS - pause function to halt the simulation mid run and allow restart at same point
+//Note this disables the Stop button as the Stop function runs outside the iteration loop,
+//so can not be triggered while paused.
+void MainWindow::on_actionPause_Sim_triggered()
+{
+    if (pauseflag == true)
+    {
+        pauseflag = false;
+        ui->actionStop_Sim->setEnabled(true);
+        ui->actionPause_Sim->setText(tr("Pause"));
+        ui->actionPause_Sim->setToolTip(tr("Pause"));
+        stopButton->setEnabled(true);
+        pauseButton->setText(tr("Pause"));
+    }
+    else {
+        pauseflag = true;
+        ui->actionStop_Sim->setEnabled(false);
+        ui->actionPause_Sim->setText(tr("Resume"));
+        ui->actionPause_Sim->setToolTip(tr("Resume"));
+        stopButton->setEnabled(false);
+        pauseButton->setText(tr("Resume"));
+    }
+}
+
+//ART - Sets the stopflag to be true on Stop button/command trigger.
+void MainWindow::on_actionStop_Sim_triggered()
+{
+    stopflag=true;
+}
+
+//ARTS - Sets up the defaults for a simulation run
 void MainWindow::RunSetUp()
 {
-    //RJG - Sort out GUI at start of run
     stopflag=false;
+
+    // Run start action
     ui->actionStart_Sim->setEnabled(false);
     startButton->setEnabled(false);
+
+    // Run for... start action
     ui->actionRun_for->setEnabled(false);
     runForButton->setEnabled(false);
+
+    // Batched Run start action
+    ui->actionBatch->setEnabled(false);
+    runForBatchButton->setEnabled(false);
+
+    // Pause action
     ui->actionPause_Sim->setEnabled(true);
     pauseButton->setEnabled(true);
+
+    // Stop action
     ui->actionStop_Sim->setEnabled(true);
     stopButton->setEnabled(true);
 
-    if(ui->actionWrite_phylogeny->isChecked()||ui->actionSpecies_logging->isChecked())ui->actionPhylogeny_metrics->setChecked(true);
-
-    //Reseed or reset
+    // Reset action
     ui->actionReset->setEnabled(false);
     resetButton->setEnabled(false);
-    ui->actionSettings->setEnabled(false);
-    ui->actionEnvironment_Files->setEnabled(false);
 
+    // Reseed action
+    ui->actionReseed->setEnabled(false);
     reseedButton->setEnabled(false);
-    runForBatchButton->setEnabled(false);
+
+    if(ui->actionWrite_phylogeny->isChecked()||ui->actionSpecies_logging->isChecked())ui->actionPhylogeny_metrics->setChecked(true);
+
+    ui->actionSettings->setEnabled(false); /* unused */
+    ui->actionEnvironment_Files->setEnabled(false);
 
     timer.restart();
     NextRefresh=RefreshRate;
 }
 
+//ARTS - resets the buttons/commands back to a pre-run state
 void MainWindow::FinishRun()
 {
+    // Run start action
     ui->actionStart_Sim->setEnabled(true);
     startButton->setEnabled(true);
+
+    // Run for... start action
     ui->actionRun_for->setEnabled(true);
     runForButton->setEnabled(true);
-    ui->actionPause_Sim->setEnabled(false);
-    pauseButton->setEnabled(false);
-    ui->actionStop_Sim->setEnabled(false);
-    stopButton->setEnabled(false);
-    ui->actionReset->setEnabled(true);
-    resetButton->setEnabled(true);
-    reseedButton->setEnabled(true);
+
+    // Batched Run start action
+    ui->actionBatch->setEnabled(true);
     runForBatchButton->setEnabled(true);
 
-    ui->actionSettings->setEnabled(true);
+    // Pause action
+    ui->actionPause_Sim->setEnabled(false);
+    pauseButton->setEnabled(false);
+
+    // Stop action
+    ui->actionStop_Sim->setEnabled(false);
+    stopButton->setEnabled(false);
+
+    // Reset action
+    ui->actionReset->setEnabled(true);
+    resetButton->setEnabled(true);
+
+    // Reseed action
+    ui->actionReseed->setEnabled(true);
+    reseedButton->setEnabled(true);
+
+    ui->actionSettings->setEnabled(true); /* unused */
     ui->actionEnvironment_Files->setEnabled(true);
 
     //----RJG disabled this to stop getting automatic logging at end of run, thus removing variability making analysis harder.
@@ -1073,12 +1124,13 @@ void MainWindow::FinishRun()
     //Report();
 }
 
+//ARTS - main close action
 void MainWindow::closeEvent(QCloseEvent * /* unused */)
 {
     exit(0);
 }
 
-// ---- RJG: Updates reports, and does logging
+//RJG - Updates reports, and does logging
 void MainWindow::Report()
 {
 
@@ -1660,6 +1712,7 @@ void MainWindow::RefreshPopulations()
     lastReport=generation;
 }
 
+//ARTS - environment window refresh function
 void MainWindow::RefreshEnvironment()
 {
 
@@ -1677,23 +1730,26 @@ void MainWindow::RefreshEnvironment()
     envscene->DrawLocations(FRW->FossilRecords,ui->actionShow_positions->isChecked());
 }
 
+//ARTS - resize windows on window size change event
 void MainWindow::resizeEvent(QResizeEvent * /* unused */)
 {
-    //force a rescale of the graphic view
     Resize();
 }
 
+//ARTS - Force and window resize and rescale of the graphic view
 void MainWindow::Resize()
 {
     ui->GV_Population->fitInView(pop_item,Qt::KeepAspectRatio);
     ui->GV_Environment->fitInView(env_item,Qt::KeepAspectRatio);
 }
 
+//ARTS - action triggered to update the population window on view mode change
 void MainWindow::view_mode_changed(QAction * /* unused */)
 {
     UpdateTitles();
     RefreshPopulations();
 }
+
 
 void MainWindow::gui_checkbox_state_changed(bool dont_update)
 {
@@ -1902,19 +1958,25 @@ bool  MainWindow::on_actionEnvironment_Files_triggered()
 
     EnvFiles = files;
     CurrentEnvFile=0;
-    int emode=0;
-    if (ui->actionOnce->isChecked()) emode=1;
-    if (ui->actionBounce->isChecked()) emode=3;
-    if (ui->actionLoop->isChecked()) emode=2;
-    TheSimManager->loadEnvironmentFromFile(emode);
+    int enviroment_mode=0;
+    if (ui->actionOnce->isChecked()) enviroment_mode=1;
+    if (ui->actionBounce->isChecked()) enviroment_mode=3;
+    if (ui->actionLoop->isChecked()) enviroment_mode=2;
+    TheSimManager->loadEnvironmentFromFile(enviroment_mode);
     RefreshEnvironment();
 
-    //---- RJG - Reset for this new environment
+    //RJG - Reset for this new environment
     TheSimManager->SetupRun();
+
+    //ARTS - Update the information bar
+    QString environment_scene_value;
+    environment_scene_value.sprintf("%d/%d",CurrentEnvFile+1,EnvFiles.count());
+    ui->LabelEnvironment->setText(environment_scene_value);
 
     return true;
 }
 
+//ARTS - action to select the fossil log save directory
 void MainWindow::on_actionChoose_Log_Directory_triggered()
 {
     QString dirname = QFileDialog::getExistingDirectory(this,"Select directory to log fossil record to");
@@ -1927,7 +1989,7 @@ void MainWindow::on_actionChoose_Log_Directory_triggered()
 
 }
 
-// ----RJG: Fitness logging to file not sorted on save as yet.
+//RJG - Fitness logging to file not sorted on save as yet.
 void MainWindow::on_actionSave_triggered()
 {
     QString filename = QFileDialog::getSaveFileName(
@@ -2043,7 +2105,7 @@ void MainWindow::on_actionSave_triggered()
         out<<xormasks[i][j];
     }
 
-    //---- ARTS Genome Comparison Saving
+    //ARTS - Genome Comparison Saving
     out<<genoneComparison->saveComparison();
 
     //and fossil record stuff
@@ -2140,7 +2202,7 @@ void MainWindow::on_actionSave_triggered()
     outfile.close();
 }
 
-// ----RJG: Fitness logging to file not sorted on load as yet.
+//RJG - Fitness logging to file not sorted on load as yet.
 void MainWindow::on_actionLoad_triggered()
 {
 
@@ -2414,7 +2476,7 @@ void MainWindow::on_actionLoad_triggered()
     Resize();
 }
 
-//---- ARTS: Genome Comparison UI ----
+//ARTS - Genome Comparison UI
 bool MainWindow::genomeComparisonAdd()
 {
     int x=popscene->selectedx;
@@ -2771,14 +2833,17 @@ void MainWindow::WriteLog()
         outputfile.close();
       }
 }
+
+// ARTS - general function to set the status bar text
 void MainWindow::setStatusBarText(QString text)
 {
     ui->statusBar->showMessage(text);
 }
 
+// ARTS - action to load custom random number files
 void MainWindow::on_actionLoad_Random_Numbers_triggered()
 {
-    // ---- RJG - have added randoms to resources and into constructor, load on launch to ensure true randoms are loaded by default.
+    //RJG - have added randoms to resources and into constructor, load on launch to ensure true randoms are loaded by default.
     //Select files
     QString file = QFileDialog::getOpenFileName(
                             this,

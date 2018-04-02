@@ -16,5 +16,6 @@
         <file alias="randoms.dat">resources/randoms.dat</file>
         <file alias="EvoSim_default_env.png">resources/EvoSim_default_env.png</file>
         <file alias="img.png">resources/img.png</file>
+        <file alias="gplv3-logo.png">resources/gplv3-127x51.png</file>
     </qresource>
 </RCC>
