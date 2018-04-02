@@ -768,6 +768,7 @@ void MainWindow::changeEvent(QEvent *e)
     }
 }
 
+//ARTS - "Run" action
 void MainWindow::on_actionStart_Sim_triggered()
 {
     if (CurrentEnvFile==-1)
@@ -796,42 +797,14 @@ void MainWindow::on_actionStart_Sim_triggered()
         if (ui->actionOnce->isChecked()) environment_mode=1;
         if (ui->actionBounce->isChecked()) environment_mode=3;
         if (ui->actionLoop->isChecked()) environment_mode=2;
-        //ARTS - set Stop flag to returns true if reached end
+        //ARTS - set Stop flag to returns true if reached end... but why? It will fire the FinishRun() function at the end.
         if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) stopflag=true;
         FRW->MakeRecords();
     }
     FinishRun();
 }
 
-void MainWindow::on_actionStop_Sim_triggered()
-{
-    stopflag=true;
-}
-
-//ARTS - pause funtion to halt the simulation mid run and allow restart at same point
-//Note this disables the Stop button as the Stop function runs outside the iteration loop,
-//so can not be triggered while paused
-void MainWindow::on_actionPause_Sim_triggered()
-{
-    if (pauseflag == true)
-    {
-        pauseflag = false;
-        ui->actionStop_Sim->setEnabled(true);
-        ui->actionPause_Sim->setText(tr("Pause"));
-        ui->actionPause_Sim->setToolTip(tr("Pause"));
-        stopButton->setEnabled(true);
-        pauseButton->setText(tr("Pause"));
-    }
-    else {
-        pauseflag = true;
-        ui->actionStop_Sim->setEnabled(false);
-        ui->actionPause_Sim->setText(tr("Resume"));
-        ui->actionPause_Sim->setToolTip(tr("Resume"));
-        stopButton->setEnabled(false);
-        pauseButton->setText(tr("Resume"));
-    }
-}
-
+//ARTS - "Run For..." action
 void MainWindow::on_actionRun_for_triggered()
 {
     if (CurrentEnvFile==-1)
@@ -850,7 +823,6 @@ void MainWindow::on_actionRun_for_triggered()
 
     ui->LabelBatch->setText(tr("1/1"));
 
-    //ARTS - issue with pausing a batched run...
     RunSetUp();
 
     while (stopflag==false && i>0)
@@ -1020,6 +992,37 @@ void MainWindow::on_actionBatch_triggered()
     FinishRun();
 }
 
+//ARTS - pause function to halt the simulation mid run and allow restart at same point
+//Note this disables the Stop button as the Stop function runs outside the iteration loop,
+//so can not be triggered while paused.
+void MainWindow::on_actionPause_Sim_triggered()
+{
+    if (pauseflag == true)
+    {
+        pauseflag = false;
+        ui->actionStop_Sim->setEnabled(true);
+        ui->actionPause_Sim->setText(tr("Pause"));
+        ui->actionPause_Sim->setToolTip(tr("Pause"));
+        stopButton->setEnabled(true);
+        pauseButton->setText(tr("Pause"));
+    }
+    else {
+        pauseflag = true;
+        ui->actionStop_Sim->setEnabled(false);
+        ui->actionPause_Sim->setText(tr("Resume"));
+        ui->actionPause_Sim->setToolTip(tr("Resume"));
+        stopButton->setEnabled(false);
+        pauseButton->setText(tr("Resume"));
+    }
+}
+
+//ART - Sets the stopflag to be true on Stop button/command trigger.
+void MainWindow::on_actionStop_Sim_triggered()
+{
+    stopflag=true;
+}
+
+//ARTS - Sets up the defaults for a simulation run
 void MainWindow::RunSetUp()
 {
     //RJG - Sort out GUI at start of run
@@ -1048,6 +1051,7 @@ void MainWindow::RunSetUp()
     NextRefresh=RefreshRate;
 }
 
+//ARTS - resets the buttons/commands back to a pre-run state
 void MainWindow::FinishRun()
 {
     ui->actionStart_Sim->setEnabled(true);
@@ -1071,12 +1075,13 @@ void MainWindow::FinishRun()
     //Report();
 }
 
+//ARTS - main close action
 void MainWindow::closeEvent(QCloseEvent * /* unused */)
 {
     exit(0);
 }
 
-// ---- RJG: Updates reports, and does logging
+//RJG - Updates reports, and does logging
 void MainWindow::Report()
 {
 
@@ -1658,6 +1663,7 @@ void MainWindow::RefreshPopulations()
     lastReport=generation;
 }
 
+//ARTS - environment window refresh function
 void MainWindow::RefreshEnvironment()
 {
 
@@ -1675,23 +1681,26 @@ void MainWindow::RefreshEnvironment()
     envscene->DrawLocations(FRW->FossilRecords,ui->actionShow_positions->isChecked());
 }
 
+//ARTS - resize windows on window size change event
 void MainWindow::resizeEvent(QResizeEvent * /* unused */)
 {
-    //force a rescale of the graphic view
     Resize();
 }
 
+//ARTS - Force and window resize and rescale of the graphic view
 void MainWindow::Resize()
 {
     ui->GV_Population->fitInView(pop_item,Qt::KeepAspectRatio);
     ui->GV_Environment->fitInView(env_item,Qt::KeepAspectRatio);
 }
 
+//ARTS - action triggered to update the population window on view mode change
 void MainWindow::view_mode_changed(QAction * /* unused */)
 {
     UpdateTitles();
     RefreshPopulations();
 }
+
 
 void MainWindow::gui_checkbox_state_changed(bool dont_update)
 {
@@ -1913,6 +1922,7 @@ bool  MainWindow::on_actionEnvironment_Files_triggered()
     return true;
 }
 
+//ARTS - action to select the fossil log save directory
 void MainWindow::on_actionChoose_Log_Directory_triggered()
 {
     QString dirname = QFileDialog::getExistingDirectory(this,"Select directory to log fossil record to");
@@ -1925,7 +1935,7 @@ void MainWindow::on_actionChoose_Log_Directory_triggered()
 
 }
 
-// ----RJG: Fitness logging to file not sorted on save as yet.
+//RJG - Fitness logging to file not sorted on save as yet.
 void MainWindow::on_actionSave_triggered()
 {
     QString filename = QFileDialog::getSaveFileName(
@@ -2041,7 +2051,7 @@ void MainWindow::on_actionSave_triggered()
         out<<xormasks[i][j];
     }
 
-    //---- ARTS Genome Comparison Saving
+    //ARTS - Genome Comparison Saving
     out<<genoneComparison->saveComparison();
 
     //and fossil record stuff
@@ -2138,7 +2148,7 @@ void MainWindow::on_actionSave_triggered()
     outfile.close();
 }
 
-// ----RJG: Fitness logging to file not sorted on load as yet.
+//RJG - Fitness logging to file not sorted on load as yet.
 void MainWindow::on_actionLoad_triggered()
 {
 
@@ -2769,14 +2779,17 @@ void MainWindow::WriteLog()
         outputfile.close();
       }
 }
+
+// ARTS - general function to set the status bar text
 void MainWindow::setStatusBarText(QString text)
 {
     ui->statusBar->showMessage(text);
 }
 
+// ARTS - action to load custom random number files
 void MainWindow::on_actionLoad_Random_Numbers_triggered()
 {
-    // ---- RJG - have added randoms to resources and into constructor, load on launch to ensure true randoms are loaded by default.
+    //RJG - have added randoms to resources and into constructor, load on launch to ensure true randoms are loaded by default.
     //Select files
     QString file = QFileDialog::getOpenFileName(
                             this,
