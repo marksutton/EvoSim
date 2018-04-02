@@ -749,7 +749,9 @@ void MainWindow::on_actionStart_Sim_triggered()
             return;
         }
     }
+
     RunSetUp();
+
     ui->LabelBatch->setText(tr("1/1"));
 
     while (stopflag==false)
@@ -785,16 +787,11 @@ void MainWindow::on_actionRun_for_triggered()
 
     bool ok = false;
     int i, num_iterations;
-    if(batch_running)
-    {
-        num_iterations=batch_iterations;
-        if(num_iterations>=2)ok=true; //ARTS needs >=2 else you can't run an iteration value of 2
-    } else {
-        num_iterations = QInputDialog::getInt(this, "",tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
-        ui->LabelBatch->setText(tr("1/1"));
-    }
+    num_iterations = QInputDialog::getInt(this, "",tr("Iterations: "), 1000, 1, 10000000, 1, &ok);
     i = num_iterations;
     if (!ok) return;
+
+    ui->LabelBatch->setText(tr("1/1"));
 
     //ARTS - issue with pausing a batched run...
     RunSetUp();
@@ -813,10 +810,10 @@ void MainWindow::on_actionRun_for_triggered()
     }
 
     //ARTS Show finish message and run FinshRun()
-    if (!batch_running && stopflag==false) {
+    if (stopflag==false) {
         QMessageBox::information(0,tr("Run For... Finished"),tr("The run for %1 iterations has finished.").arg(num_iterations));
         FinishRun();
-    } else if(!batch_running) {
+    } else {
         QMessageBox::information(0,tr("Run For... Stopped"),tr("The run for %1 iterations has been stopped at iteration %2.").arg(num_iterations).arg(i));
         FinishRun();
     }
@@ -888,7 +885,6 @@ void MainWindow::on_actionBatch_triggered()
             else repeat_environment = false;
 
         ui->LabelBatch->setText(tr("%1/%2").arg(1).arg(batch_target_runs));
-
     } else {
         return;
     }
@@ -900,34 +896,60 @@ void MainWindow::on_actionBatch_triggered()
         if(repeat_environment)
         {
             CurrentEnvFile=environment_start;
-            int emode=0;
-            if (ui->actionOnce->isChecked()) emode=1;
-            if (ui->actionBounce->isChecked()) emode=3;
-            if (ui->actionLoop->isChecked()) emode=2;
-            TheSimManager->loadEnvironmentFromFile(emode);
+            int environment_mode=0;
+            if (ui->actionOnce->isChecked()) environment_mode=1;
+            if (ui->actionBounce->isChecked()) environment_mode=3;
+            if (ui->actionLoop->isChecked()) environment_mode=2;
+            TheSimManager->loadEnvironmentFromFile(environment_mode);
         }
 
         //And run...
         ui->LabelBatch->setText(tr("%1/%2").arg((runs+1)).arg(batch_target_runs));
 
-        on_actionRun_for_triggered();
+        if (CurrentEnvFile==-1)
+        {
+            QMessageBox::critical(0,"","Cannot start simulation without environment");
+            if (on_actionEnvironment_Files_triggered() == false) {
+                return;
+            }
+        }
+
+        RunSetUp();
+        int i = batch_iterations;
+        while (stopflag==false && i>0)
+        {
+            Report();
+            qApp->processEvents();
+            int environment_mode=0;
+            if (ui->actionOnce->isChecked()) environment_mode=1;
+            if (ui->actionBounce->isChecked()) environment_mode=3;
+            if (ui->actionLoop->isChecked()) environment_mode=2;
+            TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked());
+            FRW->MakeRecords();
+            i--;
+        }
 
         if(ui->actionSpecies_logging->isChecked())HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
         if(ui->actionWrite_phylogeny->isChecked())HandleAnalysisTool(ANALYSIS_TOOL_CODE_DUMP_DATA);
 
-        on_actionReset_triggered();
-
         runs++;
-      
-    }while(runs<batch_target_runs);
-      
+
+        if(stopflag==false && runs<batch_target_runs) {
+            on_actionReset_triggered();
+        }
+
+    } while(runs<batch_target_runs && stopflag==false);
+
+    //ARTS Show finish message and reset batch counters
+    if ((runs)==batch_target_runs) {
+        QMessageBox::information(0,tr("Batch Finished"),tr("The batch of %1 runs with %2 iterations has finished.").arg(batch_target_runs).arg(batch_iterations));
+    } else {
+        QMessageBox::information(0,tr("Batch Stopped"),tr("The batch of %1 runs with %2 iterations has been stopped at batch run number %3.").arg(batch_target_runs).arg(batch_iterations).arg(runs));
+    }
+
+    path->setText(save_path);
     runs=0;
     batch_running=false;
-
-    //ARTS Show finish message and reset batch counter
-    QMessageBox::information(0,tr("Batch Finished"),tr("The batch of %1 runs with %2 iterations has finished.").arg(batch_target_runs).arg(batch_iterations));
-    ui->LabelBatch->setText(tr("1/1"));
-
     FinishRun();
 }
 
