@@ -17,6 +17,7 @@ public:
 
 private:
     Ui::About *ui;
+    QString returnLicense();
 };
 
 #endif // ABOUT_H
