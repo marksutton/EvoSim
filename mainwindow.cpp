@@ -494,7 +494,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QPushButton *dump_nwk = new QPushButton("Write newick tree for current run");
     output_settings_grid->addWidget(dump_nwk,3,1,1,2);
-    //connect(dump_nwk, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
+    connect(dump_nwk, &QPushButton::clicked, []()
+    {
+        HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
+    });
 
     QCheckBox *exclude_without_issue_checkbox = new QCheckBox("Exclude species without issue");
     exclude_without_issue_checkbox->setChecked(exclude_species_without_issue);
@@ -509,7 +512,6 @@ MainWindow::MainWindow(QWidget *parent) :
     output_settings_grid->addWidget(Min_species_size_label,5,1);
     output_settings_grid->addWidget(Min_species_size_spin,5,2);
     connect(Min_species_size_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { minimum_species_size=i; });
-
 
     //---- RJG - savepath for all functions.
     QLabel *save_path_label = new QLabel("Save path");
