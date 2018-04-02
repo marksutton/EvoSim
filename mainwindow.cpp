@@ -89,6 +89,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     a = new Analyser; // so can delete next time!
+
     ui->setupUi(this);
     MainWin=this;
 
@@ -96,50 +97,52 @@ MainWindow::MainWindow(QWidget *parent) :
     ResizeCatcher *rescatch = new ResizeCatcher(this);
     ui->centralWidget->installEventFilter(rescatch);
 
-    //---- ARTS: Add Toolbar
+    //ARTS - Toolbar buttons
+    //RJG - docker toggles
     startButton = new QAction(QIcon(QPixmap(":/toolbar/startButton-Enabled.png")), QString("Run"), this);
     runForButton = new QAction(QIcon(QPixmap(":/toolbar/runForButton-Enabled.png")), QString("Run for..."), this);
+    runForBatchButton = new QAction(QIcon(QPixmap(":/toolbar/runForBatchButton-Enabled.png")), QString("Batch..."), this);
+    pauseButton = new QAction(QIcon(QPixmap(":/toolbar/pauseButton-Enabled.png")), QString("Pause"), this);
     stopButton = new QAction(QIcon(QPixmap(":/toolbar/stopButton-Enabled.png")), QString("Stop"), this);
     resetButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton-Enabled.png")), QString("Reset"), this);
-
-    //---- RJG add further Toolbar options - May 17.
     reseedButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton_knowngenome-Enabled.png")), QString("Reseed"), this);
-    runForBatchButton = new QAction(QIcon(QPixmap(":/toolbar/runForBatchButton-Enabled.png")), QString("Batch..."), this);
+    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/globesettingsButton-Enabled.png")), QString("Simulation"), this);
+    orgSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled.png")), QString("Organism"), this);
+    logSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/logButton-Enabled.png")), QString("Output"), this);
+    aboutButton = new QAction(QIcon(QPixmap(":/toolbar/aboutButton-Enabled.png")), QString("About"), this);
 
+    //ARTS - Toolbar default settings
+    //RJG - docker toggles defaults
     startButton->setEnabled(false);
     runForButton->setEnabled(false);
+    pauseButton->setEnabled(false);
     stopButton->setEnabled(false);
     reseedButton->setEnabled(false);
-    runForBatchButton->setEnabled(false);
-
-    //---- RJG docker toggles - Mar 17.
-    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/globesettingsButton-Enabled.png")), QString("Simulation"), this);
+    runForBatchButton->setEnabled(false);    
     settingsButton->setCheckable(true);
-    orgSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled.png")), QString("Organism"), this);
-    orgSettingsButton->setCheckable(true);
-    logSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/logButton-Enabled.png")), QString("Output"), this);
+    orgSettingsButton->setCheckable(true);   
     logSettingsButton->setCheckable(true);
 
-    ui->toolBar->addAction(startButton);ui->toolBar->addSeparator();
-    ui->toolBar->addAction(runForButton);ui->toolBar->addSeparator();
-    ui->toolBar->addAction(runForBatchButton);ui->toolBar->addSeparator();
-    ui->toolBar->addAction(stopButton);ui->toolBar->addSeparator();
-    ui->toolBar->addAction(resetButton);ui->toolBar->addSeparator();
-    ui->toolBar->addAction(reseedButton);ui->toolBar->addSeparator();
-    ui->toolBar->addAction(orgSettingsButton);ui->toolBar->addSeparator();
-    ui->toolBar->addAction(settingsButton);ui->toolBar->addSeparator();
+    //ARTS - Toolbar layout
+    ui->toolBar->addAction(startButton);
+    ui->toolBar->addSeparator();
+    ui->toolBar->addAction(runForButton);
+    ui->toolBar->addSeparator();
+    ui->toolBar->addAction(runForBatchButton);
+    ui->toolBar->addSeparator();
+    ui->toolBar->addAction(pauseButton);
+    ui->toolBar->addSeparator();
+    ui->toolBar->addAction(stopButton);
+    ui->toolBar->addSeparator();
+    ui->toolBar->addAction(resetButton);
+    ui->toolBar->addSeparator();
+    ui->toolBar->addAction(reseedButton);
+    ui->toolBar->addSeparator();
+    ui->toolBar->addAction(orgSettingsButton);
+    ui->toolBar->addSeparator();
+    ui->toolBar->addAction(settingsButton);
+    ui->toolBar->addSeparator();
     ui->toolBar->addAction(logSettingsButton);
-
-    //----RJG - Connect button signals to slot. Note for clarity: Reset = start again with random individual. Reseed = start again with user defined genome
-    QObject::connect(startButton, SIGNAL(triggered()), this, SLOT(on_actionStart_Sim_triggered()));
-    QObject::connect(runForButton, SIGNAL(triggered()), this, SLOT(on_actionRun_for_triggered()));
-    QObject::connect(stopButton, SIGNAL(triggered()), this, SLOT(on_actionStop_Sim_triggered()));
-    QObject::connect(resetButton, SIGNAL(triggered()), this, SLOT(on_actionReset_triggered()));
-    QObject::connect(reseedButton, SIGNAL(triggered()), this, SLOT(on_actionReseed_triggered()));
-    QObject::connect(runForBatchButton, SIGNAL(triggered()), this, SLOT(on_actionBatch_triggered()));
-    QObject::connect(settingsButton, SIGNAL(triggered()), this, SLOT(on_actionSettings_triggered()));
-    QObject::connect(orgSettingsButton, SIGNAL(triggered()), this, SLOT(orgSettings_triggered()));
-    QObject::connect(logSettingsButton, SIGNAL(triggered()), this, SLOT(logSettings_triggered()));
 
     //Spacer
     QWidget* empty = new QWidget();
@@ -147,10 +150,24 @@ MainWindow::MainWindow(QWidget *parent) :
     empty->setMaximumWidth(10);
     empty->setMaximumHeight(5);
     ui->toolBar->addWidget(empty);
-
     ui->toolBar->addSeparator();
-    aboutButton = new QAction(QIcon(QPixmap(":/toolbar/aboutButton-Enabled.png")), QString("About"), this);
+
     ui->toolBar->addAction(aboutButton);
+
+    //RJG - Connect button signals to slot.
+    //Note for clarity:
+    //Reset = start again with random individual.
+    //Reseed = start again with user defined genome
+    QObject::connect(startButton, SIGNAL(triggered()), this, SLOT(on_actionStart_Sim_triggered()));
+    QObject::connect(runForButton, SIGNAL(triggered()), this, SLOT(on_actionRun_for_triggered()));
+    QObject::connect(pauseButton, SIGNAL(triggered()), this, SLOT(on_actionPause_Sim_triggered()));
+    QObject::connect(stopButton, SIGNAL(triggered()), this, SLOT(on_actionStop_Sim_triggered()));
+    QObject::connect(resetButton, SIGNAL(triggered()), this, SLOT(on_actionReset_triggered()));
+    QObject::connect(reseedButton, SIGNAL(triggered()), this, SLOT(on_actionReseed_triggered()));
+    QObject::connect(runForBatchButton, SIGNAL(triggered()), this, SLOT(on_actionBatch_triggered()));
+    QObject::connect(settingsButton, SIGNAL(triggered()), this, SLOT(on_actionSettings_triggered()));
+    QObject::connect(orgSettingsButton, SIGNAL(triggered()), this, SLOT(orgSettings_triggered()));
+    QObject::connect(logSettingsButton, SIGNAL(triggered()), this, SLOT(logSettings_triggered()));
     QObject::connect(aboutButton, SIGNAL (triggered()), this, SLOT (about_triggered()));
 
     //----RJG - set up settings docker.
@@ -538,14 +555,14 @@ MainWindow::MainWindow(QWidget *parent) :
     new QShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_P), this, SLOT(on_actionCount_Peaks_triggered()));
     QObject::connect(ui->actionCount_peaks, SIGNAL(triggered()), this, SLOT(on_actionCount_Peaks_triggered()));
 
-    //---- ARTS: Add Genome Comparison UI
+    //ARTS - Add Genome Comparison UI
     ui->genomeComparisonDock->hide();
     genoneComparison = new GenomeComparison;
     QVBoxLayout *genomeLayout = new QVBoxLayout;
     genomeLayout->addWidget(genoneComparison);
     ui->genomeComparisonContent->setLayout(genomeLayout);
 
-    //----MDS as above for fossil record dock and report dock
+    //MDS - as above for fossil record dock and report dock
     ui->fossRecDock->hide();
     FRW = new FossRecWidget();
     QVBoxLayout *frwLayout = new QVBoxLayout;
@@ -616,6 +633,8 @@ MainWindow::MainWindow(QWidget *parent) :
     pop_item->setPixmap(QPixmap::fromImage(*pop_image));
 
     TheSimManager = new SimManager;
+
+    pauseflag = false;
 
     //RJG - load default environment image to allow program to run out of box (quicker for testing)
     EnvFiles.append(":/EvoSim_default_env.png");
@@ -689,6 +708,15 @@ void MainWindow::changepath_triggered()
 
 }
 
+//ARTS - adds a null loop to the simulation iteration run when pause button/command is issued
+// this loop is removed on the next tiggered() signal send from either one.
+int MainWindow::waitUntilPauseSignalIsEmitted() {
+    QEventLoop loop;
+    QObject::connect(pauseButton, SIGNAL(triggered()),&loop, SLOT(quit()));
+    QObject::connect(ui->actionPause_Sim, SIGNAL(triggered()),&loop, SLOT(quit()));
+    return loop.exec();
+}
+
 void MainWindow::about_triggered()
 {
     About adialogue;
@@ -756,6 +784,11 @@ void MainWindow::on_actionStart_Sim_triggered()
 
     while (stopflag==false)
     {
+        while(pauseflag == true){
+            waitUntilPauseSignalIsEmitted();
+            pauseflag = false;
+        }
+
         Report();
         qApp->processEvents();
         if (ui->actionGo_Slow->isChecked()) Sleeper::msleep(30);
@@ -773,6 +806,30 @@ void MainWindow::on_actionStart_Sim_triggered()
 void MainWindow::on_actionStop_Sim_triggered()
 {
     stopflag=true;
+}
+
+//ARTS - pause funtion to halt the simulation mid run and allow restart at same point
+//Note this disables the Stop button as the Stop function runs outside the iteration loop,
+//so can not be triggered while paused
+void MainWindow::on_actionPause_Sim_triggered()
+{
+    if (pauseflag == true)
+    {
+        pauseflag = false;
+        ui->actionStop_Sim->setEnabled(true);
+        ui->actionPause_Sim->setText(tr("Pause"));
+        ui->actionPause_Sim->setToolTip(tr("Pause"));
+        stopButton->setEnabled(true);
+        pauseButton->setText(tr("Pause"));
+    }
+    else {
+        pauseflag = true;
+        ui->actionStop_Sim->setEnabled(false);
+        ui->actionPause_Sim->setText(tr("Resume"));
+        ui->actionPause_Sim->setToolTip(tr("Resume"));
+        stopButton->setEnabled(false);
+        pauseButton->setText(tr("Resume"));
+    }
 }
 
 void MainWindow::on_actionRun_for_triggered()
@@ -798,6 +855,11 @@ void MainWindow::on_actionRun_for_triggered()
 
     while (stopflag==false && i>0)
     {
+        while(pauseflag == true){
+            waitUntilPauseSignalIsEmitted();
+            pauseflag = false;
+        }
+
         Report();
         qApp->processEvents();
         int environment_mode=0;
@@ -918,6 +980,11 @@ void MainWindow::on_actionBatch_triggered()
         int i = batch_iterations;
         while (stopflag==false && i>0)
         {
+            while(pauseflag == true){
+                waitUntilPauseSignalIsEmitted();
+                pauseflag = false;
+            }
+
             Report();
             qApp->processEvents();
             int environment_mode=0;
@@ -961,6 +1028,8 @@ void MainWindow::RunSetUp()
     startButton->setEnabled(false);
     ui->actionRun_for->setEnabled(false);
     runForButton->setEnabled(false);
+    ui->actionPause_Sim->setEnabled(true);
+    pauseButton->setEnabled(true);
     ui->actionStop_Sim->setEnabled(true);
     stopButton->setEnabled(true);
 
@@ -985,17 +1054,17 @@ void MainWindow::FinishRun()
     startButton->setEnabled(true);
     ui->actionRun_for->setEnabled(true);
     runForButton->setEnabled(true);
-    //Reseed or reset
-    ui->actionReset->setEnabled(true);
-    resetButton->setEnabled(true);
+    ui->actionPause_Sim->setEnabled(false);
+    pauseButton->setEnabled(false);
     ui->actionStop_Sim->setEnabled(false);
     stopButton->setEnabled(false);
-    ui->actionSettings->setEnabled(true);
-    ui->actionEnvironment_Files->setEnabled(true);
-
-
+    ui->actionReset->setEnabled(true);
+    resetButton->setEnabled(true);
     reseedButton->setEnabled(true);
     runForBatchButton->setEnabled(true);
+
+    ui->actionSettings->setEnabled(true);
+    ui->actionEnvironment_Files->setEnabled(true);
 
     //----RJG disabled this to stop getting automatic logging at end of run, thus removing variability making analysis harder.
     //NextRefresh=0;

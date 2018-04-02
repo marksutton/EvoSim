@@ -817,6 +817,7 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionStart_Sim"/>
     <addaction name="actionRun_for"/>
     <addaction name="actionBatch"/>
+    <addaction name="actionPause_Sim"/>
     <addaction name="actionStop_Sim"/>
     <addaction name="actionReset"/>
     <addaction name="actionReseed"/>
@@ -953,7 +954,7 @@ p, li { white-space: pre-wrap; }
     <string>Stop</string>
    </property>
    <property name="shortcut">
-    <string>Alt+P</string>
+    <string>Alt+X</string>
    </property>
   </action>
   <action name="actionRun_for">
@@ -1600,6 +1601,14 @@ p, li { white-space: pre-wrap; }
   <action name="actionLoad_settings">
    <property name="text">
     <string>Load settings...</string>
+   </property>
+  </action>
+  <action name="actionPause_Sim">
+   <property name="text">
+    <string>Pause</string>
+   </property>
+   <property name="shortcut">
+    <string>Alt+P</string>
    </property>
   </action>
  </widget>
