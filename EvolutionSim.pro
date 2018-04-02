@@ -53,3 +53,6 @@ RESOURCES += \
 #Needed to use C++ lamda functions
 CONFIG += c++11
 
+DISTFILES += \
+    GNUv3License.txt
+

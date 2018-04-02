@@ -46,6 +46,7 @@ int speciesSamples=1;
 int speciesSensitivity=2;
 int timeSliceConnect=5;
 int lastReport=0;
+int minimum_species_size=0;
 
 //Settable bools
 bool recalcFitness=false;
@@ -65,6 +66,7 @@ bool breedspecies=false;
 bool breeddiff=true;
 bool path_on=false;
 bool gui=false;
+bool exclude_species_without_issue=true;
 
 //File handling
 QStringList EnvFiles;

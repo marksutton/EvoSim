@@ -6,14 +6,16 @@
         <file alias="runForButton-Enabled.png">resources/toolbar/runForButton-Enabled.png</file>
         <file alias="resetButton_knowngenome-Enabled.png">resources/toolbar/resetButton_knowngenome-Enabled.png</file>
         <file alias="runForBatchButton-Enabled.png">resources/toolbar/runForBatchButton-Enabled.png</file>
-	<file alias="settingsButton-Enabled.png">resources/toolbar/settingsButton-Enabled.png</file>
-	<file alias="globesettingsButton-Enabled.png">resources/toolbar/globesettingsButton-Enabled.png</file>
-	<file alias="aboutButton-Enabled.png">resources/toolbar/aboutButton-Enabled.png</file>
-	<file alias="logButton-Enabled.png">resources/toolbar/logButton-Enabled.png</file>
+        <file alias="settingsButton-Enabled.png">resources/toolbar/settingsButton-Enabled.png</file>
+        <file alias="globesettingsButton-Enabled.png">resources/toolbar/globesettingsButton-Enabled.png</file>
+        <file alias="aboutButton-Enabled.png">resources/toolbar/aboutButton-Enabled.png</file>
+        <file alias="logButton-Enabled.png">resources/toolbar/logButton-Enabled.png</file>
+        <file alias="stopButton-Enabled.png">resources/toolbar/stopButton-Enabled.png</file>
     </qresource>
     <qresource prefix="/">
         <file alias="randoms.dat">resources/randoms.dat</file>
         <file alias="EvoSim_default_env.png">resources/EvoSim_default_env.png</file>
         <file alias="img.png">resources/img.png</file>
+        <file alias="gplv3-logo.png">resources/gplv3-127x51.png</file>
     </qresource>
 </RCC>

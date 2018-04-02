@@ -14,7 +14,7 @@ GenomeComparison::GenomeComparison(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    //---- Set Auto Comapare
+    //---- Set Auto Compare
     autoComparison = true;
 
     //---- Set Column Colours
@@ -201,18 +201,18 @@ bool GenomeComparison::renderGenomesTable(){
 
                 insertRow(
                             row,
-                            genomeListMapB["name"],
-                            genomeListMapB["genome"],
-                            genomeListMapB["envColorR"].toInt(),
-                            genomeListMapB["envColorG"].toInt(),
-                            genomeListMapB["envColorB"].toInt(),
-                            genomeListMapB["genomeColorR"].toInt(),
-                            genomeListMapB["genomeColorG"].toInt(),
-                            genomeListMapB["genomeColorB"].toInt(),
-                            genomeListMapB["nonCodeColorR"].toInt(),
-                            genomeListMapB["nonCodeColorG"].toInt(),
-                            genomeListMapB["nonCodeColorB"].toInt(),
-                            genomeListMapB["fitness"].toInt(),
+                            genomeList[row]["name"],
+                            genomeList[row]["genome"],
+                            genomeList[row]["envColorR"].toInt(),
+                            genomeList[row]["envColorG"].toInt(),
+                            genomeList[row]["envColorB"].toInt(),
+                            genomeList[row]["genomeColorR"].toInt(),
+                            genomeList[row]["genomeColorG"].toInt(),
+                            genomeList[row]["genomeColorB"].toInt(),
+                            genomeList[row]["nonCodeColorR"].toInt(),
+                            genomeList[row]["nonCodeColorG"].toInt(),
+                            genomeList[row]["nonCodeColorB"].toInt(),
+                            genomeList[row]["fitness"].toInt(),
                             ui->genomeTableWidget,
                             compareMask);
             } else {
