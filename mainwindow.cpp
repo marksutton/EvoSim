@@ -337,7 +337,7 @@ MainWindow::MainWindow(QWidget *parent) :
     variable_mutation_checkbox->setChecked(variableMutate);
     connect(variable_mutation_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { variableMutate=i; mutate_spin->setEnabled(!i); });
 
-    QLabel *startAge_label = new QLabel("Chance of mutation:");
+    QLabel *startAge_label = new QLabel("Start age:");
     QSpinBox *startAge_spin = new QSpinBox;
     startAge_spin->setMinimum(1);
     startAge_spin->setMaximum(1000);
