@@ -1,3 +1,19 @@
+/**
+ * @file
+ * Main Window
+ *
+ * All REVOSIM code is released under the GNU General Public License.
+ * See GNUv3License.txt files in the programme directory.
+ *
+ * All REVOSIM code is Copyright 2018 by Mark Sutton, Russell Garwood,
+ * and Alan R.T. Spencer.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or (at
+ * your option) any later version. This program is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY.
+ */
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -321,7 +337,7 @@ MainWindow::MainWindow(QWidget *parent) :
     variable_mutation_checkbox->setChecked(variableMutate);
     connect(variable_mutation_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { variableMutate=i; mutate_spin->setEnabled(!i); });
 
-    QLabel *startAge_label = new QLabel("Chance of mutation:");
+    QLabel *startAge_label = new QLabel("Start age:");
     QSpinBox *startAge_spin = new QSpinBox;
     startAge_spin->setMinimum(1);
     startAge_spin->setMaximum(1000);
