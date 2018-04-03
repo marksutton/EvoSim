@@ -286,10 +286,10 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_grid->addWidget(phylogeny_settings_label,12,1,1,1);
 
     QGridLayout *phylogeny_grid = new QGridLayout;
-    *phylogeny_off_button = new QRadioButton("Off");
-    *basic_phylogeny_button = new QRadioButton("Basic");
-    *phylogeny_button = new QRadioButton("Phylogeny");
-    *phylogeny_and_metrics_button = new QRadioButton("Phylogeny and metrics");
+    phylogeny_off_button = new QRadioButton("Off");
+    basic_phylogeny_button = new QRadioButton("Basic");
+    phylogeny_button = new QRadioButton("Phylogeny");
+    phylogeny_and_metrics_button = new QRadioButton("Phylogeny and metrics");
     QButtonGroup* phylogeny_button_group = new QButtonGroup;
     phylogeny_button_group->addButton(phylogeny_off_button,SPECIES_MODE_NONE);
     phylogeny_button_group->addButton(basic_phylogeny_button,SPECIES_MODE_BASIC);
@@ -1207,7 +1207,6 @@ void MainWindow::Report()
         }
         out.sprintf("%d (>5:%d >50:%d)",oldspecieslist.count(), g5, g50);
     }
-
     ui->LabelSpecies->setText(out);
 
     RefreshReport();
@@ -2635,6 +2634,9 @@ void MainWindow::CalcSpecies()
         //New species analyser
         a->Groups_2017();
 
+        //Makre sure this is updated
+        lastSpeciesCalc=generation;
+
         //OLDER CODE
         /*
         if (ui->actionSpecies->isChecked() || speciesLogging) //do species calcs here even if not showing species - unless turned off in settings
@@ -2667,13 +2669,11 @@ void MainWindow::CalcSpecies()
 
 void MainWindow::WriteLog()
 {
-    if (!ui->actionRecombination_logging->isChecked() && !ui->actionFitness_logging_to_File->isChecked()) return;
 
-
-    // ----RJG separated species logging from fitness logging
-    //Now obsolete with new species system? Left here in case this is required again
-    /*if (speciesLoggingToFile==true)
+    //Main log
     {
+        //Need to sort out file here, I think.
+
         //log em!
         QFile outputfile(SpeciesLoggingFile);
 
@@ -2696,7 +2696,6 @@ void MainWindow::WriteLog()
             out<<","<<oldspecieslist[i].origintime;
             out<<","<<oldspecieslist[i].parent;
             out<<","<<oldspecieslist[i].size;
-            //out<<","<<oldspecieslist[i].type;
             //---- RJG - output binary genome if needed
             out<<",";
             for (int j=0; j<63; j++)
@@ -2705,11 +2704,14 @@ void MainWindow::WriteLog()
             out<<"\n";
         }
 
+        //Add fitness log stuff here, I think.
+
         outputfile.close();
-      }*/
+      }
 
 
     // ----RJG recombination logging to separate file
+    //Need to add this to GUI
     if (ui->actionRecombination_logging->isChecked())
     {
         QString rFile(path->text()+"EvoSim_recombination");
@@ -2759,6 +2761,7 @@ void MainWindow::WriteLog()
         routputfile.close();
     }
 
+    //Add this to GUI too
     // ----RJG log fitness to separate file
     if (ui->actionFitness_logging_to_File->isChecked())
     {
