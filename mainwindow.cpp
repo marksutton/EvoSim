@@ -54,7 +54,6 @@ Option to load/save without critter data also needed
 Load and Save don't include everything - they need to!
 Check how species logging actually works with analysis dock / do logging
 -->Logging should have a single option to turn logging on for whole grid stuff - species and other data too. Just log the lot. This can be in settings, but also can have a icon on toolbar.
-Species tracking - need a menu item for Species/Phylogeny. Includes tracking options, also a 'generate tree now' and a 'generate tree after batch' option, which trigger the Generate NWK tree item.
 Genome comparison - say which is noncoding half / document
 
 Visualisation:
@@ -271,10 +270,10 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_grid->addWidget(phylogeny_settings_label,12,1,1,1);
 
     QGridLayout *phylogeny_grid = new QGridLayout;
-    QRadioButton *phylogeny_off_button = new QRadioButton("Off");
-    QRadioButton *basic_phylogeny_button = new QRadioButton("Basic");
-    QRadioButton *phylogeny_button = new QRadioButton("Phylogeny");
-    QRadioButton *phylogeny_and_metrics_button = new QRadioButton("Phylogeny and metrics");
+    phylogeny_off_button = new QRadioButton("Off");
+    basic_phylogeny_button = new QRadioButton("Basic");
+    phylogeny_button = new QRadioButton("Phylogeny");
+    phylogeny_and_metrics_button = new QRadioButton("Phylogeny and metrics");
     QButtonGroup* phylogeny_button_group = new QButtonGroup;
     phylogeny_button_group->addButton(phylogeny_off_button,SPECIES_MODE_NONE);
     phylogeny_button_group->addButton(basic_phylogeny_button,SPECIES_MODE_BASIC);
@@ -1788,7 +1787,7 @@ void MainWindow::species_mode_changed(int change_species_mode)
             if (new_species_mode!=SPECIES_MODE_NONE)
             {
                 QMessageBox::warning(this,"Error","Turning on species logging is not allowed mid-simulation");
-                ui->actionOff->setChecked(true);
+                phylogeny_off_button->setChecked(true);
                 return;
             }
         }
@@ -1798,7 +1797,7 @@ void MainWindow::species_mode_changed(int change_species_mode)
             if (new_species_mode==SPECIES_MODE_PHYLOGENY || new_species_mode==SPECIES_MODE_PHYLOGENY_AND_METRICS)
             {
                 QMessageBox::warning(this,"Error","Turning on phylogeny tracking is not allowed mid-simulation");
-                ui->actionBasic->setChecked(true);
+                basic_phylogeny_button->setChecked(true);
                 return;
             }
         }
@@ -2619,6 +2618,9 @@ void MainWindow::CalcSpecies()
         //New species analyser
         a->Groups_2017();
 
+        //Makre sure this is updated
+        lastSpeciesCalc=generation;
+
         //OLDER CODE
         /*
         if (ui->actionSpecies->isChecked() || speciesLogging) //do species calcs here even if not showing species - unless turned off in settings
@@ -2651,13 +2653,11 @@ void MainWindow::CalcSpecies()
 
 void MainWindow::WriteLog()
 {
-    if (!ui->actionRecombination_logging->isChecked() && !ui->actionFitness_logging_to_File->isChecked()) return;
 
-
-    // ----RJG separated species logging from fitness logging
-    //Now obsolete with new species system? Left here in case this is required again
-    /*if (speciesLoggingToFile==true)
+    //Main log
     {
+        //Need to sort out file here, I think.
+
         //log em!
         QFile outputfile(SpeciesLoggingFile);
 
@@ -2680,7 +2680,6 @@ void MainWindow::WriteLog()
             out<<","<<oldspecieslist[i].origintime;
             out<<","<<oldspecieslist[i].parent;
             out<<","<<oldspecieslist[i].size;
-            //out<<","<<oldspecieslist[i].type;
             //---- RJG - output binary genome if needed
             out<<",";
             for (int j=0; j<63; j++)
@@ -2689,11 +2688,14 @@ void MainWindow::WriteLog()
             out<<"\n";
         }
 
+        //Add fitness log stuff here, I think.
+
         outputfile.close();
-      }*/
+      }
 
 
     // ----RJG recombination logging to separate file
+    //Need to add this to GUI
     if (ui->actionRecombination_logging->isChecked())
     {
         QString rFile(path->text()+"EvoSim_recombination");
@@ -2743,6 +2745,7 @@ void MainWindow::WriteLog()
         routputfile.close();
     }
 
+    //Add this to GUI too
     // ----RJG log fitness to separate file
     if (ui->actionFitness_logging_to_File->isChecked())
     {
@@ -2878,7 +2881,6 @@ void MainWindow::on_SelectLogFile_pressed()
 void MainWindow::HandleAnalysisTool(int code)
 {
     //Tidied up a bit - MDS 14/9/2017
-    //do filenames
     //Is there a valid input file?
 
     AnalysisTools a;

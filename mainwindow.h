@@ -7,6 +7,7 @@
 #include <QStandardPaths>
 #include <QCheckBox>
 #include <QSpinBox>
+#include <QRadioButton>
 #include <QShortcut>
 
 #include "simmanager.h"
@@ -72,6 +73,7 @@ private:
     //RJG - GUI buttons and settings docker options which need to be accessible via slots.
     QAction *startButton, *stopButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton, *orgSettingsButton, *logSettingsButton, *aboutButton;
     QCheckBox *gui_checkbox, *save_population_count, *save_mean_fitness, *save_coding_genome_as_colour, *save_species, *save_non_coding_genome_as_colour, *save_gene_frequencies, *save_settles, *save_fails_settles, *save_environment;
+    QRadioButton *phylogeny_off_button, *basic_phylogeny_button, *phylogeny_button, *phylogeny_and_metrics_button;
     QSpinBox *mutate_spin;
     QLineEdit *path;
 

@@ -12,7 +12,7 @@ Critter::Critter()
     age=0;  //this is the tested flag for dead
     fitness=0;
     energy=0;
-    speciesid=5; //=not assigned
+    speciesid=-1; //=not assigned
 
     //Temporary variable breed tag. Probably better way of doing this but short on time
     int variableBreedAsex = 0;
