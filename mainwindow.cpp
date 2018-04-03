@@ -54,7 +54,6 @@ Option to load/save without critter data also needed
 Load and Save don't include everything - they need to!
 Check how species logging actually works with analysis dock / do logging
 -->Logging should have a single option to turn logging on for whole grid stuff - species and other data too. Just log the lot. This can be in settings, but also can have a icon on toolbar.
-Species tracking - need a menu item for Species/Phylogeny. Includes tracking options, also a 'generate tree now' and a 'generate tree after batch' option, which trigger the Generate NWK tree item.
 Genome comparison - say which is noncoding half / document
 
 Visualisation:
@@ -271,10 +270,10 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_grid->addWidget(phylogeny_settings_label,12,1,1,1);
 
     QGridLayout *phylogeny_grid = new QGridLayout;
-    QRadioButton *phylogeny_off_button = new QRadioButton("Off");
-    QRadioButton *basic_phylogeny_button = new QRadioButton("Basic");
-    QRadioButton *phylogeny_button = new QRadioButton("Phylogeny");
-    QRadioButton *phylogeny_and_metrics_button = new QRadioButton("Phylogeny and metrics");
+    *phylogeny_off_button = new QRadioButton("Off");
+    *basic_phylogeny_button = new QRadioButton("Basic");
+    *phylogeny_button = new QRadioButton("Phylogeny");
+    *phylogeny_and_metrics_button = new QRadioButton("Phylogeny and metrics");
     QButtonGroup* phylogeny_button_group = new QButtonGroup;
     phylogeny_button_group->addButton(phylogeny_off_button,SPECIES_MODE_NONE);
     phylogeny_button_group->addButton(basic_phylogeny_button,SPECIES_MODE_BASIC);
@@ -1192,6 +1191,7 @@ void MainWindow::Report()
         }
         out.sprintf("%d (>5:%d >50:%d)",oldspecieslist.count(), g5, g50);
     }
+
     ui->LabelSpecies->setText(out);
 
     RefreshReport();
@@ -1788,7 +1788,7 @@ void MainWindow::species_mode_changed(int change_species_mode)
             if (new_species_mode!=SPECIES_MODE_NONE)
             {
                 QMessageBox::warning(this,"Error","Turning on species logging is not allowed mid-simulation");
-                ui->actionOff->setChecked(true);
+                phylogeny_off_button->setChecked(true);
                 return;
             }
         }
@@ -1798,7 +1798,7 @@ void MainWindow::species_mode_changed(int change_species_mode)
             if (new_species_mode==SPECIES_MODE_PHYLOGENY || new_species_mode==SPECIES_MODE_PHYLOGENY_AND_METRICS)
             {
                 QMessageBox::warning(this,"Error","Turning on phylogeny tracking is not allowed mid-simulation");
-                ui->actionBasic->setChecked(true);
+                basic_phylogeny_button->setChecked(true);
                 return;
             }
         }
@@ -2878,7 +2878,6 @@ void MainWindow::on_SelectLogFile_pressed()
 void MainWindow::HandleAnalysisTool(int code)
 {
     //Tidied up a bit - MDS 14/9/2017
-    //do filenames
     //Is there a valid input file?
 
     AnalysisTools a;
