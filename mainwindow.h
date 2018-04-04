@@ -151,7 +151,7 @@ private slots:
     void on_actionGenerate_NWK_tree_file_triggered();
     void on_actionSpecies_sizes_triggered();
     void changepath_triggered();
-    void about_triggered();
+    void on_actionAbout_triggered();
 };
 
 
