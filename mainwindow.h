@@ -107,7 +107,7 @@ private:
     void ResizeImageObjects();
     void WriteLog();
     void CalcSpecies();
-    void HandleAnalysisTool(int code);
+    QString HandleAnalysisTool(int code);
     Analyser *a;
     QString print_settings();
 
@@ -128,6 +128,7 @@ private slots:
     void report_mode_changed(QAction *);
     void gui_checkbox_state_changed(bool);
     void save_all_checkbox_state_changed(bool);
+    void dump_run_data();
     void redoImages(int oldrows, int oldcols);
     bool on_actionEnvironment_Files_triggered();
     void on_actionSave_triggered();

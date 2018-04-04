@@ -71,6 +71,7 @@ Load and Save don't include everything - they need to!
 Check how species logging actually works with analysis dock / do logging
 -->Logging should have a single option to turn logging on for whole grid stuff - species and other data too. Just log the lot. This can be in settings, but also can have a icon on toolbar.
 Genome comparison - say which is noncoding half / document
+-- Timer on calculting species - add progress bar and escape warning if needed to prevent crash
 
 Visualisation:
 Settles - does it work at all?
@@ -524,12 +525,9 @@ MainWindow::MainWindow(QWidget *parent) :
     output_settings_grid->addWidget(RefreshRate_spin,2,2);
     connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
 
-    QPushButton *dump_nwk = new QPushButton("Write newick tree for current run");
+    QPushButton *dump_nwk = new QPushButton("Write data (including tree) for current run");
     output_settings_grid->addWidget(dump_nwk,3,1,1,2);
-    connect(dump_nwk, &QPushButton::clicked, [&]()
-    {
-        HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
-    });
+    connect(dump_nwk , SIGNAL (clicked()), this, SLOT(dump_run_data()));
 
     QCheckBox *exclude_without_issue_checkbox = new QCheckBox("Exclude species without issue");
     exclude_without_issue_checkbox->setChecked(exclude_species_without_issue);
@@ -830,6 +828,7 @@ void MainWindow::on_actionStart_Sim_triggered()
         if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) stopflag=true;
         FRW->MakeRecords();
     }
+
     FinishRun();
 }
 
@@ -871,6 +870,8 @@ void MainWindow::on_actionRun_for_triggered()
         FRW->MakeRecords();
         i--;
     }
+
+    dump_run_data();
 
     //ARTS Show finish message and run FinshRun()
     if (stopflag==false) {
@@ -997,8 +998,7 @@ void MainWindow::on_actionBatch_triggered()
             i--;
         }
 
-        if(ui->actionSpecies_logging->isChecked())HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
-        if(ui->actionWrite_phylogeny->isChecked())HandleAnalysisTool(ANALYSIS_TOOL_CODE_DUMP_DATA);
+        dump_run_data();
 
         runs++;
 
@@ -1787,6 +1787,30 @@ void MainWindow::save_all_checkbox_state_changed(bool all)
     save_environment->setChecked(all);
 }
 
+//RJG - At end of run in run for/batch mode, or on click when a run is going, this allows user to output the final log, along with the tree for the run
+void MainWindow::dump_run_data()
+{
+
+    QString FinalLoggingFile(path->text());
+    if(!FinalLoggingFile.endsWith(QDir::separator()))FinalLoggingFile.append(QDir::separator());
+    FinalLoggingFile.append("REVOSIM_end_run_log");
+    if(batch_running)FinalLoggingFile.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
+    FinalLoggingFile.append(".txt");
+    QFile outputfile(FinalLoggingFile);
+    outputfile.open(QIODevice::WriteOnly|QIODevice::Text);
+    QTextStream out(&outputfile);
+
+    out<<"End run log ";
+    QDateTime t(QDateTime::currentDateTime());
+    out<<t.toString(Qt::ISODate)<< "\n\n===================\n\n"<<print_settings()<<"\n\n===================\n";
+    out<<"\nThis log features the tree from a finished run, in Newick format, and then data for all the species that have existed with more individuals than minimum species size. The exact data provided depends on the phylogeny tracking mode selected in the GUI.\n";
+    out<<"\n\n===================\n\n";
+    out<<"Tree:\n\n"<<HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
+    out<<"\n\nSpecies data:\n\n";
+    out<<HandleAnalysisTool(ANALYSIS_TOOL_CODE_DUMP_DATA);
+    outputfile.close();
+}
+
 void MainWindow::species_mode_changed(int change_species_mode)
 {
     int new_species_mode=SPECIES_MODE_NONE;
@@ -1946,7 +1970,26 @@ void MainWindow::on_actionMisc_triggered()
 
 void MainWindow::on_actionCount_Peaks_triggered()
 {
-    HandleAnalysisTool(ANALYSIS_TOOL_CODE_COUNT_PEAKS);
+
+    QString peaks(HandleAnalysisTool(ANALYSIS_TOOL_CODE_COUNT_PEAKS));
+    //Count peaks returns empty string if error.
+    if (peaks.length()<5)return;
+
+    QString count_peaks_file(path->text());
+    if(!count_peaks_file.endsWith(QDir::separator()))count_peaks_file.append(QDir::separator());
+    count_peaks_file.append("REVOSIM_count_peaks.txt");
+    QFile outputfile(count_peaks_file);
+    outputfile.open(QIODevice::WriteOnly|QIODevice::Text);
+    QTextStream out(&outputfile);
+
+    out<<"REVOSIM Peak Counting ";
+    QDateTime t(QDateTime::currentDateTime());
+    out<<t.toString(Qt::ISODate)<< "\n\n===================\n\n";
+    out<<"\nBelow is a histogram showing the different fitnesses for all potential 32-bit organisms in REVOSIM under the user-defined RGB levels.\n";
+    out<<"\n\n===================\n\n";
+    out<<peaks;
+
+    outputfile.close();
 }
 
 bool  MainWindow::on_actionEnvironment_Files_triggered()
@@ -2674,8 +2717,9 @@ void MainWindow::WriteLog()
     //RJG - write main ongoing log
     if(logging)
     {
-
-        SpeciesLoggingFile=path->text()+"EvoSim_log";
+        SpeciesLoggingFile=path->text();
+        if(!SpeciesLoggingFile.endsWith(QDir::separator()))SpeciesLoggingFile.append(QDir::separator());
+        SpeciesLoggingFile.append("REVOSIM_log");
         if(batch_running)SpeciesLoggingFile.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
         SpeciesLoggingFile.append(".txt");
         QFile outputfile(SpeciesLoggingFile);
@@ -2919,11 +2963,13 @@ void MainWindow::on_SelectLogFile_pressed()
     ui->LogFile->setText(filename);
 }
 
-void MainWindow::HandleAnalysisTool(int code)
+//RJG - Handle analyses at end of run for data
+QString MainWindow::HandleAnalysisTool(int code)
 {
     //Tidied up a bit - MDS 14/9/2017
-    //Is there a valid input file?
+    //RJG - changed to return string 04/04/18 as analysis docker will be removed.
 
+    //Is there a valid input file?
     AnalysisTools a;
     QString OutputString, FilenameString;
 
@@ -2933,27 +2979,26 @@ void MainWindow::HandleAnalysisTool(int code)
         if (!(f.exists()))
         {
             QMessageBox::warning(this,"Error","No valid input file set");
-            return;
+            return QString("Error, No valid input file set");
         }
     }
 
     switch (code)
     {
-        //sort filenames here
         case ANALYSIS_TOOL_CODE_GENERATE_TREE:
             OutputString = a.GenerateTree(ui->LogFile->text()); //deprecated - log file generator now removed
             break;
 
-        case ANALYSIS_TOOL_CODE_RATES_OF_CHANGE:
+        case ANALYSIS_TOOL_CODE_RATES_OF_CHANGE://Needs to be recoded
             OutputString = a.SpeciesRatesOfChange(ui->LogFile->text());
             break;
 
-        case ANALYSIS_TOOL_CODE_EXTINCT_ORIGIN:
+        case ANALYSIS_TOOL_CODE_EXTINCT_ORIGIN://Needs to be recoded
             OutputString = a.ExtinctOrigin(ui->LogFile->text());
             break;
 
         case ANALYSIS_TOOL_CODE_STASIS:
-            OutputString = a.Stasis(ui->LogFile->text(),ui->StasisBins->value()
+            OutputString = a.Stasis(ui->LogFile->text(),ui->StasisBins->value() //Needs to be recoded
                                 ,((float)ui->StasisPercentile->value())/100.0,ui->StasisQualify->value());
             break;
 
@@ -2961,69 +3006,47 @@ void MainWindow::HandleAnalysisTool(int code)
             {
             bool ok;
             int red = QInputDialog::getInt(this, "Count peaks...","Red level?", 128, 0, 255, 1, &ok);
-            if(!ok)return;
+            if(!ok)return QString("");
             int green= QInputDialog::getInt(this, "Count peaks...","Green level?", 128, 0, 255, 1, &ok);
-            if(!ok)return;
+            if(!ok)return QString("");;
             int blue= QInputDialog::getInt(this, "Count peaks...","Green level?", 128, 0, 255, 1, &ok);
-            if(!ok)return;
+            if(!ok)return QString("");
             OutputString = a.CountPeaks(red,green,blue);
             break;
             }
 
         case ANALYSIS_TOOL_CODE_MAKE_NEWICK:
-            if (ui->actionPhylogeny_metrics->isChecked()||ui->actionPhylogeny->isChecked())OutputString = a.MakeNewick(rootspecies, minimum_species_size, exclude_species_without_issue);
+            if (phylogeny_button->isChecked()||phylogeny_and_metrics_button->isChecked())OutputString = a.MakeNewick(rootspecies, minimum_species_size, exclude_species_without_issue);
             else OutputString = "Species tracking is not enabled.";
-            FilenameString = "_newick";
             break;
 
         case ANALYSIS_TOOL_CODE_DUMP_DATA:
-            if (ui->actionPhylogeny_metrics->isChecked())OutputString = a.DumpData(rootspecies, minimum_species_size, exclude_species_without_issue);
-            else OutputString = "Species tracking is not enabled.";
-            FilenameString = "_specieslog";
+            if (phylogeny_and_metrics_button->isChecked())OutputString = a.DumpData(rootspecies, minimum_species_size, exclude_species_without_issue);
+            else OutputString = "Species tracking is not enabled, or is set to phylogeny only.";
             break;
 
         default:
             QMessageBox::warning(this,"Error","No handler for analysis tool");
-            return;
+            return QString("Error, No handler for analysis tool");
 
     }
 
     //write result to screen
-    ui->plainTextEdit->clear();
-    ui->plainTextEdit->appendPlainText(OutputString);
+    //ui->plainTextEdit->clear();
+    //ui->plainTextEdit->appendPlainText(OutputString);
 
-    //RJG - Make file here
-    //and attempt to write to file
-    if (FilenameString.length()>1 && ui->actionSpecies_logging->isChecked()) //i.e. if not blank and loging is on
-    {
+    return OutputString;
+ }
 
-        QString File(path->text()+"EvoSim"+FilenameString);
-        if(batch_running)
-            File.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
-        File.append(".txt");
-
-        QFile o(File);
-
-        if (!o.open(QIODevice::WriteOnly | QIODevice::Text))
-        {
-            QMessageBox::warning(this,"Error","Could not open output file for writing");
-            return;
-        }
-
-        QTextStream out(&o);
-        out<<OutputString;
-        o.close();
-    }
-}
 
 void MainWindow::on_actionGenerate_NWK_tree_file_triggered()
 {
-    HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
+    dump_run_data();
 }
 
 void MainWindow::on_actionSpecies_sizes_triggered()
 {
-    HandleAnalysisTool(ANALYSIS_TOOL_CODE_DUMP_DATA);
+    dump_run_data();
 }
 
 
