@@ -597,6 +597,7 @@ void SimManager::SetupRun()
     newsp.origintime=0;
     newsp.parent=0;
     newsp.size=slotsPerSq;
+    newsp.type=gen;
     newsp.logspeciesstructure=rootspecies;
     oldspecieslist.append(newsp);
 
@@ -644,7 +645,7 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
         }
 
         // RJG - reset counters for fitness logging to file
-        if(fitnessLoggingToFile)breedattempts[n][m]=0;
+        if(fitnessLoggingToFile||logging)breedattempts[n][m]=0;
 
         if (totalfit[n][m]) //skip whole square if needbe
         {
@@ -657,7 +658,7 @@ int SimManager::iterate_parallel(int firstx, int lastx, int newgenomecount_local
                     if (crit[c].iterate_parallel(KillCount_local,addfood)) breedlist[breedlistentries++]=c;
 
             // ----RJG: breedattempts was no longer used - co-opting for fitness report.
-            if(fitnessLoggingToFile)breedattempts[n][m]=breedlistentries;
+            if(fitnessLoggingToFile||logging)breedattempts[n][m]=breedlistentries;
             if(variableBreed) for (int c=0; c<=maxv; c++)crit[c].variableBreedAsex=0;
 
             //----RJG Do breeding

@@ -190,7 +190,7 @@ void Analyser::Groups_2017()
                     genomedata.insert(critters[n][m][c].speciesid,speciesset); //add it to the hash
 
                     genomeposlist=new QHash<quint64,QList<quint32>*>; //new genome/position list hash table for the species
-                    slotswithgenome.insert(critters[n][m][c].speciesid,genomeposlist); //add this to it's hash as well
+                    slotswithgenome.insert(critters[n][m][c].speciesid,genomeposlist); //add this to its hash as well
                 }
                 else //species already encountered - objects exist
                 {
@@ -270,7 +270,6 @@ void Analyser::Groups_2017()
             arraymax++;
         }
         //arraymax is not numbe of items in the static array
-
 
         //qDebug()<<"Starting PWC for "<<ii.key()<<"in "<<t.elapsed(); //print out time taken
         //now do ALL the possible pairwise comparisons
@@ -382,9 +381,9 @@ void Analyser::Groups_2017()
             jj.next();
             if (jj.key()!=maxcountkey) //if this ISN'T the one we picked to keep the old ID
             {
-                qint32 groupcode=jj.key(); //get it's code
+                qint32 groupcode=jj.key(); //get its code
 
-                quint64 speciessize=0; //zero it's size
+                quint64 speciessize=0; //zero its size
                 quint64 samplegenome;  //will have to pick a genome for 'type' - it goes here
 
 
@@ -395,7 +394,7 @@ void Analyser::Groups_2017()
                 {
                      QList<quint32> *updatelist=slotswithgenome.value(speciesid)->value(genomes[iii]);
                         //retrieve the list of positions for this genome
-                     speciessize+=updatelist->count(); //add it's count to size
+                     speciessize+=updatelist->count(); //add its count to size
                      foreach (quint32 v,*updatelist) //go through list and set critters data to new species
                      {
                          int x=v/65536;
@@ -485,11 +484,11 @@ void Analyser::Groups_2017()
              while (jj.hasNext())
              {
                  jj.next();
-                 qint32 groupcode=jj.key(); //get it's code
+                 qint32 groupcode=jj.key(); //get its code
                  LogSpecies *thislogspecies=logspeciespointers[groupcode];
                  LogSpeciesDataItem *thisdataitem=thislogspecies->data_items.last();
 
-                 quint64 speciessize=0; //zero it's size
+                 quint64 speciessize=0; //zero its size
 
                  quint64 samplegenome;
                  QSet<quint16> cellsoc;
@@ -527,7 +526,7 @@ void Analyser::Groups_2017()
                          thisdataitem->genomic_diversity++;
                           QList<quint32> *updatelist=slotswithgenome.value(speciesid)->value(genomes[iii]);
                              //retrieve the list of positions for this genome
-                          speciessize+=updatelist->count(); //add it's count to size
+                          speciessize+=updatelist->count(); //add its count to size
 
 
                           foreach (quint32 v,*updatelist) //go through list and set critters data to new species

@@ -743,13 +743,6 @@ void MainWindow::about_triggered()
 //RJG - Reset simulation (i.e. fill the centre pixel with a genome (unless dual seed is selected), then set up a run).
 void MainWindow::on_actionReset_triggered()
 {
-    if ((ui->actionRecombination_logging->isChecked()
-        || ui->actionSpecies_logging->isChecked()
-        || ui->actionFitness_logging_to_File->isChecked())
-        &&!batch_running) {
-            QMessageBox::warning(this,"Logging","This will append logs from any new run(s) onto your last one, unless you change directories or move the old log file. It will also overwrite any images within that folder.");
-        }
-
     // Reset the information bar
     resetInformationBar();
 
@@ -1217,7 +1210,6 @@ void MainWindow::Report()
 
     WriteLog();
 
-
     //reset the breedattempts and breedfails arrays
     for (int n2=0; n2<gridX; n2++)
     for (int m2=0; m2<gridY; m2++)
@@ -1365,6 +1357,11 @@ void MainWindow::RefreshPopulations()
     //RJG - make path if required - this way as if user adds file name to path, this will create a subfolder with the same file name as logs
     QString save_path(path->text());
     if(!save_path.endsWith(QDir::separator()))save_path.append(QDir::separator());
+    if(batch_running)
+        {
+        save_path.append(QString("Images_run_%1").arg(runs, 4, 10, QChar('0')));
+        save_path.append(QDir::separator());
+        }
     QDir save_dir(save_path);
 
     //check to see what the mode is
@@ -1728,8 +1725,14 @@ void MainWindow::RefreshPopulations()
 //ARTS - environment window refresh function
 void MainWindow::RefreshEnvironment()
 {
-
-    QDir save_dir(path->text());
+    QString save_path(path->text());
+    if(!save_path.endsWith(QDir::separator()))save_path.append(QDir::separator());
+    if(batch_running)
+        {
+        save_path.append(QString("Images_run_%1").arg(runs, 4, 10, QChar('0')));
+        save_path.append(QDir::separator());
+        }
+    QDir save_dir(save_path);
 
     for (int n=0; n<gridX; n++)
     for (int m=0; m<gridY; m++)
@@ -2669,7 +2672,7 @@ void MainWindow::WriteLog()
 {
 //Need to sort out file name in batch mode, check breed list entries is actually working, etc. then deal with logging after run
     //RJG - write main ongoing log
-    if(logging_checkbox->isChecked())
+    if(logging)
     {
 
         SpeciesLoggingFile=path->text()+"EvoSim_log";
@@ -2677,39 +2680,46 @@ void MainWindow::WriteLog()
         SpeciesLoggingFile.append(".txt");
         QFile outputfile(SpeciesLoggingFile);
 
-        outputfile.open(QIODevice::Append|QIODevice::Text);
-        QTextStream out(&outputfile);
-
        if (generation==0)
             {
+                outputfile.open(QIODevice::WriteOnly|QIODevice::Text);
+                QTextStream out(&outputfile);
                 out<<"New run ";
                 QDateTime t(QDateTime::currentDateTime());
-                out<<t.toString(Qt::ISODate)<< "\n\n===================\n"<<print_settings()<<"\n\n===================\n";
+                out<<t.toString(Qt::ISODate)<< "\n\n===================\n\n"<<print_settings()<<"\n\n===================\n";
                 out<<"\nFor each iteration, this log features:\n";
-                out<<"Iteration\nNumber of living digital organisms\tMean fitness of living digital organisms\tNumber of entries on the breed list\n";
-                out<<"Species ID\tSpecies origin\tSpecies parent\tSpecies current size\tSpecies_current_genome\n\n";
+                out<<"Iteration\nFor the grid - Number of living digital organisms\tMean fitness of living digital organisms\tNumber of entries on the breed list\tNumber of failed breed attempts\n";
+                out<<"Species ID\tSpecies origin (iterations)\tSpecies parent\tSpecies current size (number of individuals)\tSpecies current genome (for speed this is the genome of a randomly sampled individual, not the modal organism)\n";
+                out<<"Note that this excludes species with less individuals than Minimum species size, but is not able to exlude species without issue, which can only be achieved with the end-run log.\n\n";
                 out<<"===================\n\n";
+                outputfile.close();
             }
+
+       outputfile.open(QIODevice::Append|QIODevice::Text);
+       QTextStream out(&outputfile);
 
         out<<"Iteration\t"<<generation<<"\n";
 
-        int gridNumberAlive=0, gridTotalFitness=0, gridBreedEntries=0;
+        int gridNumberAlive=0, gridTotalFitness=0, gridBreedEntries=0, gridBreedFails=0;
         for (int i=0; i<gridX; i++)
             for (int j=0; j<gridY; j++)
                     {
                     gridTotalFitness+=totalfit[i][j];
-                    //----RJG: Manually count breed attempts for grid
+                    //----RJG: Manually count breed stufffor grid
                     gridBreedEntries+=breedattempts[i][j];
+                    gridBreedFails+=breedfails[i][j];
                     //----RJG: Manually count number alive thanks to maxused issue
                     for  (int k=0; k<slotsPerSq; k++)if(critters[i][j][k].fitness)gridNumberAlive++;
                     }
         double mean_fitness=(double)gridTotalFitness/(double)gridNumberAlive;
 
-        out<<gridNumberAlive<<"\t"<<mean_fitness<<"\t"<<gridBreedEntries<<"\n";
+        out<<gridNumberAlive<<"\t"<<mean_fitness<<"\t"<<gridBreedEntries<<"\t"<<gridBreedFails<<"\n";
 
-        //----RJG:And species details for each iteration
+        //----RJG: And species details for each iteration
         for (int i=0; i<oldspecieslist.count(); i++)
-        {
+           //----RJG: Unable to exclude species without issue, for obvious reasons.
+           if(oldspecieslist[i].size>minspeciessize)
+           {
             out<<(oldspecieslist[i].ID)<<"\t";
             out<<oldspecieslist[i].origintime<<"\t";
             out<<oldspecieslist[i].parent<<"\t";
@@ -2719,7 +2729,7 @@ void MainWindow::WriteLog()
             for (int j=0; j<63; j++)if (tweakers64[63-j] & oldspecieslist[i].type) out<<"1"; else out<<"0";
             if (tweakers64[0] & oldspecieslist[i].type) out<<"1"; else out<<"0";
             out<<"\n";
-        }
+            }
         out<<"\n";
         outputfile.close();
       }
@@ -2753,14 +2763,14 @@ void MainWindow::WriteLog()
 
         rout<<generation<<"\t";
 
-        //RJG count breeding. Bit of a bodge, probably a better way
+        //RJG count breeding. There is probably a better way to do this, but keeping as is for now as not too slow
         int cntAsex=0, cntSex=0;
         int totalBreedAttempts=0, totalBreedFails=0;
 
         for (int i=0; i<gridX; i++)
                 for (int j=0; j<gridY; j++)
                         {
-                        for (int c=0; c<100; c++)
+                        for (int c=0; c<slotsPerSq; c++)
                             if (critters[i][j][c].fitness)
                                 {
                                     if(critters[i][j][c].return_recomb()<0)cntAsex++;
