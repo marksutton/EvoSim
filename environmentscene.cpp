@@ -3,7 +3,7 @@
  * Environment Scene
  *
  * All REVOSIM code is released under the GNU General Public License.
- * See GNUv3License.txt files in the programme directory.
+ * See LICENSE.md files in the programme directory.
  *
  * All REVOSIM code is Copyright 2018 by Mark Sutton, Russell Garwood,
  * and Alan R.T. Spencer.
