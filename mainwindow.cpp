@@ -52,42 +52,39 @@ MainWindow *MainWin;
 
 #include <QThread>
 
-/* To do:
+/*
 
--- sort out logging - get rid of logging variables other than logging bool that I have created, and implement this in a sensible way
--- Programme logo
--- Save path needs to go in there as well (not toolbar) - and button on toolbar needs to show/hide the docker, not the old window.
+To do for paper:
 
-1.  Tidy GUI  - RG
-2. Remove bits that are not for release  - RG
-3. Document GUI   - RG
-4. Write introduction - MS
-5. Tidy how it works section - MS
-6. Write discussion and applications stuff
-
-To do coding:
-Option to load/save without critter data also needed
-Load and Save don't include everything - they need to!
-Check how species logging actually works with analysis dock / do logging
--->Logging should have a single option to turn logging on for whole grid stuff - species and other data too. Just log the lot. This can be in settings, but also can have a icon on toolbar.
-Genome comparison - say which is noncoding half / document
+Coding:
+-- Option to load/save without critter data also needed
+-- Load and Save don't include everything - they need to!
+-- Genome comparison - say which is noncoding half / document
 -- Timer on calculting species - add progress bar and escape warning if needed to prevent crash
+-- GUI option for not automatically dumping data
+-- Programme logo
 
 Visualisation:
-Settles - does it work at all?
-Fails - green scaling
+-- Settles - does this work at all?
+-- Fails - check green scaling
 
-To remove:
-Dual reseed
-Species and logging - recombination logging remove, others document
-Fossil record - what does it do, does it actually work, is logging compatible with newer systems - just remove from release?
-We entirely lose the Analysis Tools menu. Phylogeny settings will become part of settings.
+To remove prior to release, but after all changes are complete:
+-- Dual reseed
+-- Remove all custom logging options (RJG is using these for research and projects, so needs to keep them in master fork).
+-- Fossil record - down the line we need to work out that this actually does check it actually works. For release, just remove option
+-- Entirely lose the Analysis Tools menu, and analysis docker. Phylogeny settings will become part of settings.
+
+
+To do in revisions:
+-- Further comment code
+-- Standardise case throughout the code, and also variable names in a sensible fashion
+-- Rename "generations" variable "iterations", which is more correct
 
 To do long term:
-Add variable mutation rate depent on population density:
--- Count number of filled slots (do as percentage of filled slots)
--- Use percentage to dictate probability of mutation (between 0 and 1), following standard normal distribution
--- But do this both ways around so really full mutation rate can be either very high, or very low
+-- Add variable mutation rate depent on population density:
+---- Count number of filled slots (do as percentage of filled slots)
+---- Use percentage to dictate probability of mutation (between 0 and 1), following standard normal distribution
+---- But do this both ways around so really full mutation rate can be either very high, or very low
 
 */
 
