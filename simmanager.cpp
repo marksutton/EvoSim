@@ -63,7 +63,6 @@ int speciesSamples=1;
 int speciesSensitivity=2;
 int timeSliceConnect=5;
 int lastReport=0;
-int minimum_species_size=0;
 
 //Settable bools
 bool recalcFitness=false;
@@ -72,8 +71,6 @@ bool variableBreed=false;
 bool variableMutate=false;
 bool sexual=true;
 bool logging=false;
-bool speciesLogging=false;
-bool speciesLoggingToFile=false;
 bool fitnessLoggingToFile=false;
 bool nonspatial=false;
 bool toroidal=false;
@@ -83,7 +80,6 @@ bool breedspecies=false;
 bool breeddiff=true;
 bool path_on=false;
 bool gui=false;
-bool exclude_species_without_issue=true;
 
 //File handling
 QStringList EnvFiles;
@@ -131,6 +127,7 @@ quint64 nextspeciesid;
 QList<uint> species_colours;
 quint8 species_mode;
 quint64 ids; //used in tree export -
+
 quint64 minspeciessize;
 bool allowexcludewithissue;
 
