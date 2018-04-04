@@ -19,8 +19,8 @@
 #define VERSION_H
 
 //Software Versions
-#define MAJORVERSION 1
-#define MINORVERSION 8
+#define MAJORVERSION 2
+#define MINORVERSION 0
 
 //File version
 #define VERSION 1

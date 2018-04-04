@@ -102,9 +102,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     a = new Analyser; // so can delete next time!
+    setWindowIcon(QIcon (":/icon.png"));
 
     ui->setupUi(this);
     MainWin=this;
+
+
 
     //Install filter to catch resize events to central widget and deliver to mainwindow (handle dock resizes)
     ResizeCatcher *rescatch = new ResizeCatcher(this);
