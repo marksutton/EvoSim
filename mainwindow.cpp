@@ -62,7 +62,6 @@ Coding:
 -- Genome comparison - say which is noncoding half / document
 -- Timer on calculting species - add progress bar and escape warning if needed to prevent crash
 -- GUI option for not automatically dumping data
--- Programme logo
 
 Visualisation:
 -- Settles - does this work at all?
@@ -527,9 +526,13 @@ MainWindow::MainWindow(QWidget *parent) :
     output_settings_grid->addWidget(dump_nwk,3,1,1,2);
     connect(dump_nwk , SIGNAL (clicked()), this, SLOT(dump_run_data()));
 
+    autodump_checkbox= new QCheckBox("Automatically dump for batch");
+    autodump_checkbox->setChecked(true);
+    output_settings_grid->addWidget(autodump_checkbox,4,1,1,2);
+
     QCheckBox *exclude_without_issue_checkbox = new QCheckBox("Exclude species without issue");
     exclude_without_issue_checkbox->setChecked(exclude_species_without_issue);
-    output_settings_grid->addWidget(exclude_without_issue_checkbox,4,1,1,1);
+    output_settings_grid->addWidget(exclude_without_issue_checkbox,5,1,1,1);
     connect(exclude_without_issue_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { exclude_species_without_issue=i; });
 
     QLabel *Min_species_size_label = new QLabel("Minimum species size:");
@@ -537,20 +540,20 @@ MainWindow::MainWindow(QWidget *parent) :
     Min_species_size_spin->setMinimum(0);
     Min_species_size_spin->setMaximum(10000);
     Min_species_size_spin->setValue(minimum_species_size);
-    output_settings_grid->addWidget(Min_species_size_label,5,1);
-    output_settings_grid->addWidget(Min_species_size_spin,5,2);
+    output_settings_grid->addWidget(Min_species_size_label,6,1);
+    output_settings_grid->addWidget(Min_species_size_spin,6,2);
     connect(Min_species_size_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { minimum_species_size=i; });
 
     //---- RJG - savepath for all functions.
     QLabel *save_path_label = new QLabel("Save path");
     save_path_label->setStyleSheet("font-weight: bold");
-    output_settings_grid->addWidget(save_path_label,6,1,1,2);
+    output_settings_grid->addWidget(save_path_label,7,1,1,2);
     QString program_path(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
     program_path.append("/");
     path = new QLineEdit(program_path);
-    output_settings_grid->addWidget(path,7,1,1,2);
+    output_settings_grid->addWidget(path,8,1,1,2);
     QPushButton *change_path = new QPushButton("&Change");
-    output_settings_grid->addWidget(change_path,8,1,1,2);
+    output_settings_grid->addWidget(change_path,9,1,1,2);
     connect(change_path, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
 
     QWidget *output_settings_layout_widget = new QWidget;
