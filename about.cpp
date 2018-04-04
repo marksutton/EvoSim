@@ -28,6 +28,8 @@ About::About(QWidget *parent) :
     ui->setupUi(this);
 
     setWindowTitle("About");
+    setWindowIcon(QIcon (":/icon.png"));
+
     QFont font;
     font.setWeight(QFont::Bold);
 

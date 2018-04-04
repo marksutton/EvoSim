@@ -107,8 +107,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     MainWin=this;
 
-
-
     //Install filter to catch resize events to central widget and deliver to mainwindow (handle dock resizes)
     ResizeCatcher *rescatch = new ResizeCatcher(this);
     ui->centralWidget->installEventFilter(rescatch);
@@ -184,7 +182,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(settingsButton, SIGNAL(triggered()), this, SLOT(on_actionSettings_triggered()));
     QObject::connect(orgSettingsButton, SIGNAL(triggered()), this, SLOT(orgSettings_triggered()));
     QObject::connect(logSettingsButton, SIGNAL(triggered()), this, SLOT(logSettings_triggered()));
-    QObject::connect(aboutButton, SIGNAL (triggered()), this, SLOT (about_triggered()));
+    QObject::connect(aboutButton, SIGNAL (triggered()), this, SLOT (on_actionAbout_triggered()));
 
     //----RJG - set up settings docker.
     settings_dock = new QDockWidget("Simulation", this);
@@ -732,7 +730,7 @@ int MainWindow::waitUntilPauseSignalIsEmitted() {
     return loop.exec();
 }
 
-void MainWindow::about_triggered()
+void MainWindow::on_actionAbout_triggered()
 {
     About adialogue;
     adialogue.exec();

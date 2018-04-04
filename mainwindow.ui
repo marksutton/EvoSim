@@ -916,6 +916,12 @@ p, li { white-space: pre-wrap; }
     <addaction name="separator"/>
     <addaction name="menuPhylogeny_Data_Tools"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
    <addaction name="menuCommands"/>
    <addaction name="menuEnvironment"/>
    <addaction name="menuSpecies"/>
@@ -923,6 +929,7 @@ p, li { white-space: pre-wrap; }
    <addaction name="menuFossil_Record"/>
    <addaction name="menuDocks"/>
    <addaction name="menuAnalysis_Tools"/>
+   <addaction name="menuHelp"/>
   </widget>
   <action name="actionReset">
    <property name="text">
@@ -1609,6 +1616,11 @@ p, li { white-space: pre-wrap; }
    </property>
    <property name="shortcut">
     <string>Alt+P</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
    </property>
   </action>
  </widget>
