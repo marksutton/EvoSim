@@ -39,6 +39,8 @@
 #include <QDataStream>
 #include <QStringList>
 #include <QFile>
+#include <QXmlStreamReader>
+
 #include "analysistools.h"
 #include "version.h"
 #include "math.h"
@@ -61,7 +63,6 @@ Coding:
 -- Load and Save don't include everything - they need to!
 -- Genome comparison - say which is noncoding half / document
 -- Timer on calculting species - add progress bar and escape warning if needed to prevent crash
--- GUI option for not automatically dumping data
 
 Visualisation:
 -- Settles - does this work at all?
@@ -135,9 +136,9 @@ MainWindow::MainWindow(QWidget *parent) :
     pauseButton->setEnabled(false);
     stopButton->setEnabled(false);
     reseedButton->setEnabled(false);
-    runForBatchButton->setEnabled(false);    
+    runForBatchButton->setEnabled(false);
     settingsButton->setCheckable(true);
-    orgSettingsButton->setCheckable(true);   
+    orgSettingsButton->setCheckable(true);
     logSettingsButton->setCheckable(true);
 
     //ARTS - Toolbar layout
@@ -577,18 +578,18 @@ MainWindow::MainWindow(QWidget *parent) :
     fileLoggingGrid->addWidget(textLogInfo3Label,8,1,1,2);
 
     QCheckBox *exclude_without_issue_checkbox = new QCheckBox("Exclude species without issue");
-    exclude_without_issue_checkbox->setChecked(allowexcludewithissue);
+    exclude_without_issue_checkbox->setChecked(exclude_species_without_issue);
     fileLoggingGrid->addWidget(exclude_without_issue_checkbox,9,1,1,1);
-    connect(exclude_without_issue_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { allowexcludewithissue=i; });
+    connect(exclude_without_issue_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { exclude_species_without_issue=i; });
 
     QLabel *Min_species_size_label = new QLabel("Minimum species size:");
     QSpinBox *Min_species_size_spin = new QSpinBox;
     Min_species_size_spin->setMinimum(0);
     Min_species_size_spin->setMaximum(10000);
-    Min_species_size_spin->setValue(minspeciessize);
+    Min_species_size_spin->setValue(minimum_species_size);
     fileLoggingGrid->addWidget(Min_species_size_label,10,1);
     fileLoggingGrid->addWidget(Min_species_size_spin,10,2);
-    connect(Min_species_size_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { minspeciessize=i; });
+    connect(Min_species_size_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { minimum_species_size=i; });
 
     //ARTS - Advanced
     QGridLayout *advancedLoggingGrid = new QGridLayout;
@@ -1058,7 +1059,7 @@ void MainWindow::on_actionBatch_triggered()
             i--;
         }
 
-        if(autodump_checkbox->isChecked())dump_run_data();
+       if(autodump_checkbox->isChecked())dump_run_data();
 
         runs++;
 
@@ -2273,10 +2274,6 @@ void MainWindow::on_actionSave_triggered()
     out<<speciesSamples;
     out<<speciesSensitivity;
     out<<timeSliceConnect;
-    out<<speciesLogging; //no longer used - compatibility only
-    out<<speciesLoggingToFile; //no longer used - compatibility only
-    out<<SpeciesLoggingFile;
-
 
     //now the species archive
     out<<oldspecieslist.count();
@@ -2510,14 +2507,6 @@ void MainWindow::on_actionLoad_triggered()
     if (!(in.atEnd())) in>>speciesSamples;
     if (!(in.atEnd())) in>>speciesSensitivity;
     if (!(in.atEnd())) in>>timeSliceConnect;
-    if (!(in.atEnd())) in>>speciesLogging; //no longer used - keep for file compatibility
-    if (!(in.atEnd())) in>>speciesLoggingToFile; //no longer used - keep for file compatibility
-    if (!(in.atEnd())) in>>SpeciesLoggingFile;
-
-    //if (speciesLogging) ui->actionTracking->setChecked(true); else ui->actionTracking->setChecked(false);
-    //if (speciesLoggingToFile)  {ui->actionLogging->setChecked(true); ui->actionTracking->setEnabled(false);}  else {ui->actionLogging->setChecked(false); ui->actionTracking->setEnabled(true);}
-    //if (SpeciesLoggingFile!="") ui->actionLogging->setEnabled(true); else ui->actionLogging->setEnabled(false);
-
 
     //now the species archive
     archivedspecieslists.clear();
@@ -2675,36 +2664,6 @@ void MainWindow::on_actionFitness_logging_to_File_triggered()
 {
     fitnessLoggingToFile=ui->actionFitness_logging_to_File->isChecked();
 }
-
-/*
-This is now obsolete, but retained in case we return to this approach
-void MainWindow::on_actionSet_Logging_File_triggered()
-{
-
-    // ----RJG: set logging to a text file for greater versatility across operating systems and analysis programs (R, Excel, etc.)
-    QString filename = QFileDialog::getSaveFileName(this,"Select file to log fossil record to","",".txt");
-    if (filename.length()==0) return;
-    QString filenamefitness(filename);
-
-    // ----RJG: Add extension as Linux does not automatically
-    if(filename.contains(".txt"))filename.insert(filename.length()-4,"_species");
-    else filename.append("_species.txt");
-
-    // ----RJG: Fitness logging
-    if(filenamefitness.contains(".txt"))filenamefitness.insert(filenamefitness.length()-4,"_fitness");
-    else filenamefitness.append("_fitness.txt");
-
-    SpeciesLoggingFile=filename;
-    FitnessLoggingFile=filenamefitness;
-
-    ui->actionLogging->setEnabled(true);
-    //ui->actionLogging->trigger();
-    ui->actionFitness_logging_to_File->setEnabled(true);
-    //ui->actionFitness_logging_to_File->trigger();
-
-
-}*/
-
 
 void MainWindow::on_actionGenerate_Tree_from_Log_File_triggered()
 {
@@ -3076,12 +3035,12 @@ QString MainWindow::HandleAnalysisTool(int code)
             }
 
         case ANALYSIS_TOOL_CODE_MAKE_NEWICK:
-            if (phylogeny_button->isChecked()||phylogeny_and_metrics_button->isChecked())OutputString = a.MakeNewick(rootspecies, minimum_species_size, exclude_species_without_issue);
+            if (phylogeny_button->isChecked()||phylogeny_and_metrics_button->isChecked())OutputString = a.MakeNewick(rootspecies, minspeciessize, allowexcludewithissue);
             else OutputString = "Species tracking is not enabled.";
             break;
 
         case ANALYSIS_TOOL_CODE_DUMP_DATA:
-            if (phylogeny_and_metrics_button->isChecked())OutputString = a.DumpData(rootspecies, minimum_species_size, exclude_species_without_issue);
+            if (phylogeny_and_metrics_button->isChecked())OutputString = a.DumpData(rootspecies, minspeciessize, allowexcludewithissue);
             else OutputString = "Species tracking is not enabled, or is set to phylogeny only.";
             break;
 
@@ -3129,9 +3088,10 @@ QString MainWindow::print_settings()
     settings_out<<"; Breed threshold: "<<breedThreshold;
     settings_out<<"; Slots per square: "<<slotsPerSq;
     settings_out<<"; Fitness target: "<<target;
-    settings_out<<"; Environmental change rate: "<<EnvChangeCounter;
+    settings_out<<"; Environmental change rate: "<<envchangerate;
     settings_out<<"; Years per iteration: "<<yearsPerIteration;
-    settings_out<<"; minimum_species_size:"<<minimum_species_size;
+    settings_out<<"; Minimum species size:"<<minspeciessize;
+
 
     settings_out<<". Bools - recalculate fitness: "<<recalcFitness;
     settings_out<<"; Toroidal environment: "<<toroidal;
@@ -3140,11 +3100,264 @@ QString MainWindow::print_settings()
     settings_out<<"; Only breed within species:"<<breedspecies;
     settings_out<<"; Pathogens enabled:"<<path_on;
     settings_out<<"; Variable mutate:"<<variableMutate;
-    settings_out<<"; Exclude species without issue:"<<exclude_species_without_issue;
+    settings_out<<"; Exclude species without issue:"<<allowexcludewithissue;
     settings_out<<"; Breeding:";
     if(sexual)settings_out<<" sexual.";
     else if (asexual)settings_out<<" asexual.";
     else settings_out<<" variable.";
 
     return settings;
+}
+
+//These still need testing and conecting to signal
+void MainWindow::load_settings()
+{
+    QString settings_filename=QFileDialog::getOpenFileName(this, tr("Open File"));
+    QFile settings_file(settings_filename);
+    if(!settings_file.open(QIODevice::ReadOnly))
+            {
+            QMessageBox::warning(0,"Erk","There seems to have been an error opening the file.");
+            return;
+            }
+
+
+           QXmlStreamReader settings_file_in(&settings_file);
+
+           while (!settings_file_in.atEnd()&& !settings_file_in.hasError())
+               {
+
+                /* Read next element.*/
+                QXmlStreamReader::TokenType token = settings_file_in.readNext();
+                /* If token is just StartDocument, we'll go to next.*/
+
+                if(token == QXmlStreamReader::StartDocument)continue;
+                if(token == QXmlStreamReader::StartElement)
+                    {
+                       //Ints
+                       if(settings_file_in.name() == "revosim")continue;
+                       if(settings_file_in.name() == "gridX")gridX=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "gridY")gridY=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "settleTolerance")settleTolerance=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "slotsPerSq")slotsPerSq=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "startAge")startAge=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "dispersal")dispersal=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "food")food=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "breedCost")breedCost=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "mutate")mutate=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "pathogen_mutate")pathogen_mutate=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "pathogen_frequency")pathogen_frequency=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "maxDiff")maxDiff=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "breedThreshold")breedThreshold=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "target")target=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "envchangerate")envchangerate=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "yearsPerIteration")yearsPerIteration=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "speciesSamples")speciesSamples=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "speciesSensitivity")speciesSensitivity=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "timeSliceConnect")timeSliceConnect=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "minspeciessize")minspeciessize=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "pathogen_mutate")pathogen_mutate=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "pathogen_frequency")pathogen_frequency=settings_file_in.readElementText().toInt();
+
+                       //Bools
+                       if(settings_file_in.name() == "recalcFitness")recalcFitness=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "toroidal")toroidal=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "nonspatial")nonspatial=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "breeddiff")breeddiff=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "breedspecies")breedspecies=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "path_on")path_on=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "variableMutate")variableMutate=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "allowexcludewithissue")allowexcludewithissue=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "sexual")sexual=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "asexual")asexual=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "variableBreed")variableBreed=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "logging")logging=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "gui")gui=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "path_on")path_on=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "fitnessLoggingToFile")fitnessLoggingToFile=settings_file_in.readElementText().toInt();
+                     }
+               }
+           // Error
+           if(settings_file_in.hasError()) QMessageBox::warning(0,"Oops","There seems to have been an error reading in the XML file. Not all settings will have been loaded.");
+           else ui->statusBar->showMessage("Loaded settings file");
+
+           settings_file.close();
+}
+
+void MainWindow::save_settings()
+{
+    QString settings_filename=QFileDialog::getOpenFileName(this, tr("Open File"));
+    QFile settings_file(settings_filename);
+    if(!settings_file.open(QIODevice::WriteOnly|QIODevice::Text))
+        {
+            QMessageBox::warning(0, "Error!", "Error opening settings file to write to.");
+            return;
+        }
+
+        QXmlStreamWriter settings_file_out(&settings_file);
+        settings_file_out.setAutoFormatting(true);
+        settings_file_out.setAutoFormattingIndent(-2);
+
+        settings_file_out.writeStartDocument();
+
+        settings_file_out.writeStartElement("revosim");
+
+        //Ints
+        settings_file_out.writeStartElement("gridX");
+        settings_file_out.writeCharacters(QString("%1").arg(gridX));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("gridY");
+        settings_file_out.writeCharacters(QString("%1").arg(gridY));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("settleTolerance");
+        settings_file_out.writeCharacters(QString("%1").arg(settleTolerance));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("slotsPerSq");
+        settings_file_out.writeCharacters(QString("%1").arg(slotsPerSq));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("startAge");
+        settings_file_out.writeCharacters(QString("%1").arg(startAge));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("dispersal");
+        settings_file_out.writeCharacters(QString("%1").arg(dispersal));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("food");
+        settings_file_out.writeCharacters(QString("%1").arg(food));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("breedCost");
+        settings_file_out.writeCharacters(QString("%1").arg(breedCost));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("mutate");
+        settings_file_out.writeCharacters(QString("%1").arg(mutate));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("pathogen_mutate");
+        settings_file_out.writeCharacters(QString("%1").arg(pathogen_mutate));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("pathogen_frequency");
+        settings_file_out.writeCharacters(QString("%1").arg(pathogen_frequency));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("maxDiff");
+        settings_file_out.writeCharacters(QString("%1").arg(maxDiff));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("breedThreshold");
+        settings_file_out.writeCharacters(QString("%1").arg(breedThreshold));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("target");
+        settings_file_out.writeCharacters(QString("%1").arg(target));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("envchangerate");
+        settings_file_out.writeCharacters(QString("%1").arg(envchangerate));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("yearsPerIteration");
+        settings_file_out.writeCharacters(QString("%1").arg(yearsPerIteration));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("speciesSamples");
+        settings_file_out.writeCharacters(QString("%1").arg(speciesSamples));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("speciesSensitivity");
+        settings_file_out.writeCharacters(QString("%1").arg(speciesSensitivity));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("timeSliceConnect");
+        settings_file_out.writeCharacters(QString("%1").arg(timeSliceConnect));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("minspeciessize");
+        settings_file_out.writeCharacters(QString("%1").arg(minspeciessize));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("pathogen_mutate");
+        settings_file_out.writeCharacters(QString("%1").arg(pathogen_mutate));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("pathogen_frequency");
+        settings_file_out.writeCharacters(QString("%1").arg(pathogen_frequency));
+        settings_file_out.writeEndElement();
+
+        //Bools
+        settings_file_out.writeStartElement("recalcFitness");
+        settings_file_out.writeCharacters(QString("%1").arg(recalcFitness));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("toroidal");
+        settings_file_out.writeCharacters(QString("%1").arg(toroidal));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("nonspatial");
+        settings_file_out.writeCharacters(QString("%1").arg(nonspatial));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("breeddiff");
+        settings_file_out.writeCharacters(QString("%1").arg(breeddiff));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("breedspecies");
+        settings_file_out.writeCharacters(QString("%1").arg(breedspecies));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("path_on");
+        settings_file_out.writeCharacters(QString("%1").arg(path_on));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("variableMutate");
+        settings_file_out.writeCharacters(QString("%1").arg(variableMutate));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("allowexcludewithissue");
+        settings_file_out.writeCharacters(QString("%1").arg(allowexcludewithissue));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("sexual");
+        settings_file_out.writeCharacters(QString("%1").arg(sexual));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("asexual");
+        settings_file_out.writeCharacters(QString("%1").arg(asexual));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("variableBreed");
+        settings_file_out.writeCharacters(QString("%1").arg(variableBreed));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("logging");
+        settings_file_out.writeCharacters(QString("%1").arg(logging));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("gui");
+        settings_file_out.writeCharacters(QString("%1").arg(gui));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("path_on");
+        settings_file_out.writeCharacters(QString("%1").arg(gui));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("fitnessLoggingToFile");
+        settings_file_out.writeCharacters(QString("%1").arg(fitnessLoggingToFile));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeEndDocument();
+
+        settings_file.close();
+
+        ui->statusBar->showMessage("File saved");
+
+
 }
