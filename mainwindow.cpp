@@ -102,14 +102,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     a = new Analyser; // so can delete next time!
+    ui->setupUi(this);
+    MainWin=this;
 
     //RJG - Output version, but also date compiled for clarity
     QString version;
     version.sprintf("%d.%d.%d",MAJORVERSION,MINORVERSION,PATCHVERSION);
-    this->setWindowTitle(QString(PRODUCTNAME)+" v"+version+" - compiled - "+__DATE__);
+    setWindowTitle(QString(PRODUCTNAME)+" v"+version+" - compiled - "+__DATE__);
     setWindowIcon(QIcon (":/icon.png"));
-    ui->setupUi(this);
-    MainWin=this;
 
     //Install filter to catch resize events to central widget and deliver to mainwindow (handle dock resizes)
     ResizeCatcher *rescatch = new ResizeCatcher(this);
@@ -476,42 +476,44 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //ARTS - Output Save Path
     QGridLayout *savePathGrid = new QGridLayout;
-    QLabel *save_path_label = new QLabel("Output save path");
-    save_path_label->setStyleSheet("font-weight: bold");
-    savePathGrid->addWidget(save_path_label,1,1,1,2);
+    QLabel *savePathLabel = new QLabel("Output save path");
+    savePathLabel->setObjectName("savePathLabel");
+    savePathGrid->addWidget(savePathLabel,1,1,1,2);
     QString program_path(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
     program_path.append("/");
     path = new QLineEdit(program_path);
     savePathGrid->addWidget(path,2,1,1,2);
-    QPushButton *change_path = new QPushButton("&Change");
-    savePathGrid->addWidget(change_path,3,1,1,2);
-    connect(change_path, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
+    QPushButton *changePathButton = new QPushButton("&Change");
+    changePathButton->setObjectName("changePathButton");
+    savePathGrid->addWidget(changePathButton,3,1,1,2);
+    connect(changePathButton, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
 
     //ARTS - Refresh/Polling Rate
     QGridLayout *pollingRateGrid = new QGridLayout;
     QLabel *pollingRateLabel = new QLabel("Refresh/Polling Rate");
-    pollingRateLabel->setStyleSheet("font-weight: bold");
+    pollingRateLabel->setObjectName("pollingRateLabel");
     pollingRateGrid->addWidget(pollingRateLabel,1,1,1,2);
 
     RefreshRate=50;
-    QLabel *RefreshRate_label = new QLabel("Refresh/polling rate:");
-    QSpinBox *RefreshRate_spin = new QSpinBox;
-    RefreshRate_spin->setMinimum(1);
-    RefreshRate_spin->setMaximum(10000);
-    RefreshRate_spin->setValue(RefreshRate);
-    pollingRateGrid->addWidget(RefreshRate_label,2,1);
-    pollingRateGrid->addWidget(RefreshRate_spin,2,2);
-    connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
+    QLabel *refreshRateLabel = new QLabel("Refresh/polling rate:");
+    refreshRateLabel->setObjectName("refreshRateLabel");
+    QSpinBox *refreshRateSpin = new QSpinBox;
+    refreshRateSpin->setMinimum(1);
+    refreshRateSpin->setMaximum(10000);
+    refreshRateSpin->setValue(RefreshRate);
+    pollingRateGrid->addWidget(refreshRateLabel,2,1);
+    pollingRateGrid->addWidget(refreshRateSpin,2,2);
+    connect(refreshRateSpin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
 
     //ARTS - Logging: Population & Environment
     QGridLayout *images_grid = new QGridLayout;
 
     QLabel *imagesLabel= new QLabel("Logging: Population/Enivronment");
-    imagesLabel->setStyleSheet("font-weight: bold");
+    imagesLabel->setObjectName("imagesLabel");
     images_grid->addWidget(imagesLabel,1,1,1,2);
 
     QLabel *imagesInfoLabel= new QLabel("Turn on/off these logging options to save images of the population/environment windows every refresh/poll.");
-    imagesInfoLabel->setStyleSheet("color: blue;");
+    imagesInfoLabel->setObjectName("imagesInfoLabel");
     imagesInfoLabel->setWordWrap(true);
     images_grid->addWidget(imagesInfoLabel,2,1,1,2);
 
@@ -534,21 +536,21 @@ MainWindow::MainWindow(QWidget *parent) :
     save_environment = new QCheckBox("Environment");
     images_grid->addWidget(save_environment,7,1,1,1);
 
-    QCheckBox *save_all_images_checkbox = new QCheckBox("All");
-    save_all_images_checkbox->setStyleSheet("font-style: italic");
-    images_grid->addWidget(save_all_images_checkbox,7,2,1,1);
-    QObject::connect(save_all_images_checkbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
+    QCheckBox *saveAllImagesCheckbox = new QCheckBox("All");
+    saveAllImagesCheckbox->setObjectName("saveAllImagesCheckbox");
+    images_grid->addWidget(saveAllImagesCheckbox,7,2,1,1);
+    QObject::connect(saveAllImagesCheckbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
 
 
     //ARTS - Logging to text file
     QGridLayout *fileLoggingGrid = new QGridLayout;
 
-    QLabel *output_settings_label= new QLabel("Logging: To Text File(s)");
-    output_settings_label->setStyleSheet("font-weight: bold");
-    fileLoggingGrid->addWidget(output_settings_label,1,1,1,2);
+    QLabel *outputSettingsLabel= new QLabel("Logging: To Text File(s)");
+    outputSettingsLabel->setObjectName("outputSettingsLabel");
+    fileLoggingGrid->addWidget(outputSettingsLabel,1,1,1,2);
 
     QLabel *textLogInfoLabel= new QLabel("Turn on/off this option to write to a text log file every refresh/poll.");
-    textLogInfoLabel->setStyleSheet("color: blue;");
+    textLogInfoLabel->setObjectName("textLogInfoLabel");
     textLogInfoLabel->setWordWrap(true);
     fileLoggingGrid->addWidget(textLogInfoLabel,2,1,1,2);
 
@@ -558,7 +560,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
 
     QLabel *textLogInfo1Label= new QLabel("After a batched run has finished a more detailed log file (includding trees) can be automatically created.");
-    textLogInfo1Label->setStyleSheet("color: blue;");
+    textLogInfo1Label->setObjectName("textLogInfo1Label");
     textLogInfo1Label->setWordWrap(true);
     fileLoggingGrid->addWidget(textLogInfo1Label,4,1,1,2);
 
@@ -567,7 +569,7 @@ MainWindow::MainWindow(QWidget *parent) :
     fileLoggingGrid->addWidget(autodump_checkbox,5,1,1,2);
 
     QLabel *textLogInfo2Label= new QLabel("...you can also manually create this detailed log file after any run.");
-    textLogInfo2Label->setStyleSheet("color: blue;");
+    textLogInfo2Label->setObjectName("textLogInfo2Label");
     textLogInfo2Label->setWordWrap(true);
     fileLoggingGrid->addWidget(textLogInfo2Label,6,1,1,2);
 
@@ -576,7 +578,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(dump_nwk , SIGNAL (clicked()), this, SLOT(dump_run_data()));
 
     QLabel *textLogInfo3Label= new QLabel("More advanced options on what is included in the log files:");
-    textLogInfo3Label->setStyleSheet("color: blue;");
+    textLogInfo3Label->setObjectName("textLogInfo3Label");
     textLogInfo3Label->setWordWrap(true);
     fileLoggingGrid->addWidget(textLogInfo3Label,8,1,1,2);
 
@@ -598,11 +600,11 @@ MainWindow::MainWindow(QWidget *parent) :
     QGridLayout *advancedLoggingGrid = new QGridLayout;
 
     QLabel *advancedSettingsLabel= new QLabel("Advanced");
-    advancedSettingsLabel->setStyleSheet("font-weight: bold");
+    advancedSettingsLabel->setObjectName("advancedSettingsLabel");
     advancedLoggingGrid->addWidget(advancedSettingsLabel,1,1,1,2);
 
     QLabel *guiInfoLabel= new QLabel("If you turn off GUI update you cannot log the population/environment windows using saved images.");
-    guiInfoLabel->setStyleSheet("color: blue;");
+    guiInfoLabel->setObjectName("guiInfoLabel");
     guiInfoLabel->setWordWrap(true);
     advancedLoggingGrid->addWidget(guiInfoLabel,2,1,1,2);
 
@@ -617,7 +619,6 @@ MainWindow::MainWindow(QWidget *parent) :
     output_settings_grid->addLayout(images_grid,3,1,1,2);
     output_settings_grid->addLayout(fileLoggingGrid,4,1,1,2);
     output_settings_grid->addLayout(advancedLoggingGrid,5,1,1,2);
-
 
     QWidget *output_settings_layout_widget = new QWidget;
     output_settings_layout_widget->setLayout(output_settings_grid);

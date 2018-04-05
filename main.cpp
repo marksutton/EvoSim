@@ -16,12 +16,22 @@
  */
 
 #include <QApplication>
+#include <QFile>
+#include <QString>
 #include "mainwindow.h"
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     a.setQuitOnLastWindowClosed(true);
+
+    //ARTS - Load stylesheet
+    QFile file(":/stylesheet.qss");
+    file.open(QFile::ReadOnly);
+    QString styleSheet(file.readAll());
+    a.setStyleSheet(styleSheet);
+
+
     MainWindow w;
     w.show();
     return a.exec();

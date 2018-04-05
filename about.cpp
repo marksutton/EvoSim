@@ -33,19 +33,16 @@ About::About(QWidget *parent) :
     setWindowTitle("About");
     setWindowIcon(QIcon (":/icon.png"));
 
-    QFont font;
-    font.setWeight(QFont::Bold);
-
     QPixmap picture_1(":/img.png");
     ui->header->setPixmap(picture_1);
     ui->header->setAlignment(Qt::AlignCenter);
 
-    ui->textLabel_1->setFont(font);
     ui->textLabel_1->setText(MainWin->windowTitle());
+    ui->textLabel_1->setObjectName("aboutTextLabel1");
     ui->textLabel_1->setAlignment(Qt::AlignCenter);
 
     ui->textLabel_2->setWordWrap(true);
-    ui->textLabel_2->setText("This version of EvoSim was compiled on the date shown above. It was coded by:"
+    ui->textLabel_2->setText("This version of " + QString(PRODUCTNAME) + " was compiled on the date shown above. It was coded by:"
                        "<br><br><b>Mark Sutton</b> (m.sutton@imperial.ac.uk)<br><b>Russell Garwood</b> (russell.garwood@manchester.ac.uk)<br><b>Alan R.T. Spencer</b> (alan.spencer@imperial.ac.uk)"
                        "<br><br>Reports are appreciated, and comments, suggestions, and feature requests are welcome.");
     ui->textLabel_2->setAlignment(Qt::AlignCenter);
@@ -60,9 +57,13 @@ About::About(QWidget *parent) :
     ui->textBrowser->setOpenLinks(true);
     ui->textBrowser->setOpenExternalLinks(true);
 
-    QPixmap picture_2(":/gplv3-logo.png");
-    ui->footer->setPixmap(picture_2);
-    ui->footer->setAlignment(Qt::AlignCenter);
+    QPixmap picture_2(":/gplV3Logo");
+    ui->footer1->setPixmap(picture_2);
+    ui->footer1->setAlignment(Qt::AlignCenter);
+
+    QPixmap picture_3(":/builtWithQTLogo");
+    ui->footer2->setPixmap(picture_3);
+    ui->footer2->setAlignment(Qt::AlignCenter);
 
     ui->buttonBox->setStandardButtons(QDialogButtonBox::Close);
 }
