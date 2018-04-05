@@ -101,8 +101,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     a = new Analyser; // so can delete next time!
-    setWindowIcon(QIcon (":/icon.png"));
 
+    //RJG - Output version, but also date compiled for clarity
+    QString version;
+    version.sprintf("%d.%d.%d",MAJORVERSION,MINORVERSION,PATCHVERSION);
+    this->setWindowTitle(QString(PRODUCTNAME)+" v"+version+" - compiled - "+__DATE__);
+    setWindowIcon(QIcon (":/icon.png"));
     ui->setupUi(this);
     MainWin=this;
 
@@ -456,7 +460,7 @@ MainWindow::MainWindow(QWidget *parent) :
     org_settings_layout_widget->setLayout(org_settings_grid);
     org_settings_dock->setWidget(org_settings_layout_widget);
 
-    //---- RJG Third settings docker
+    //RJG - Third settings docker
     output_settings_dock = new QDockWidget("Output", this);
     output_settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     output_settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
@@ -466,51 +470,24 @@ MainWindow::MainWindow(QWidget *parent) :
     QGridLayout *output_settings_grid = new QGridLayout;
     output_settings_grid->setAlignment(Qt::AlignTop);
 
-    QGridLayout *images_grid = new QGridLayout;
+    //ARTS - Output Save Path
+    QGridLayout *savePathGrid = new QGridLayout;
+    QLabel *save_path_label = new QLabel("Output save path");
+    save_path_label->setStyleSheet("font-weight: bold");
+    savePathGrid->addWidget(save_path_label,1,1,1,2);
+    QString program_path(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
+    program_path.append("/");
+    path = new QLineEdit(program_path);
+    savePathGrid->addWidget(path,2,1,1,2);
+    QPushButton *change_path = new QPushButton("&Change");
+    savePathGrid->addWidget(change_path,3,1,1,2);
+    connect(change_path, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
 
-    QLabel *images_label= new QLabel("Save Images");
-    images_label->setStyleSheet("font-weight: bold");
-    images_grid->addWidget(images_label,1,1,1,1);
-
-    save_population_count = new QCheckBox("Population count");
-    images_grid->addWidget(save_population_count,2,1,1,1);
-    save_mean_fitness = new QCheckBox("Mean fitness");
-    images_grid->addWidget(save_mean_fitness,2,2,1,1);
-    save_coding_genome_as_colour = new QCheckBox("Coding genome");
-    images_grid->addWidget(save_coding_genome_as_colour,3,1,1,1);
-    save_non_coding_genome_as_colour = new QCheckBox("Noncoding genome");
-    images_grid->addWidget(save_non_coding_genome_as_colour,3,2,1,1);
-    save_species = new QCheckBox("Species");
-    images_grid->addWidget(save_species,4,1,1,1);
-    save_gene_frequencies = new QCheckBox("Gene frequencies");
-    images_grid->addWidget(save_gene_frequencies,4,2,1,1);
-    save_settles = new QCheckBox("Settles");
-    images_grid->addWidget(save_settles,5,1,1,1);
-    save_fails_settles = new QCheckBox("Fails + settles");
-    images_grid->addWidget(save_fails_settles,5,2,1,1);
-    save_environment = new QCheckBox("Environment");
-    images_grid->addWidget(save_environment,6,1,1,1);
-
-    QCheckBox *save_all_images_checkbox = new QCheckBox("All");
-    save_all_images_checkbox->setStyleSheet("font-style: italic");
-    images_grid->addWidget(save_all_images_checkbox,6,2,1,1);
-    QObject::connect(save_all_images_checkbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
-
-    QLabel *output_settings_label= new QLabel("Output/GUI");
-    output_settings_label->setStyleSheet("font-weight: bold");
-    images_grid->addWidget(output_settings_label,7,1,1,2);
-
-    logging_checkbox = new QCheckBox("Logging");
-    logging_checkbox->setChecked(logging);
-    images_grid->addWidget(logging_checkbox,8,1,1,1);
-    connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
-
-    gui_checkbox = new QCheckBox("Don't update GUI");
-    gui_checkbox->setChecked(gui);
-    images_grid->addWidget(gui_checkbox,8,2,1,1);
-    QObject::connect(gui_checkbox ,SIGNAL (toggled(bool)), this, SLOT(gui_checkbox_state_changed(bool)));
-
-    output_settings_grid->addLayout(images_grid,1,1,1,2);
+    //ARTS - Refresh/Polling Rate
+    QGridLayout *pollingRateGrid = new QGridLayout;
+    QLabel *pollingRateLabel = new QLabel("Refresh/Polling Rate");
+    pollingRateLabel->setStyleSheet("font-weight: bold");
+    pollingRateGrid->addWidget(pollingRateLabel,1,1,1,2);
 
     RefreshRate=50;
     QLabel *RefreshRate_label = new QLabel("Refresh/polling rate:");
@@ -518,21 +495,90 @@ MainWindow::MainWindow(QWidget *parent) :
     RefreshRate_spin->setMinimum(1);
     RefreshRate_spin->setMaximum(10000);
     RefreshRate_spin->setValue(RefreshRate);
-    output_settings_grid->addWidget(RefreshRate_label,2,1);
-    output_settings_grid->addWidget(RefreshRate_spin,2,2);
+    pollingRateGrid->addWidget(RefreshRate_label,2,1);
+    pollingRateGrid->addWidget(RefreshRate_spin,2,2);
     connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
 
+    //ARTS - Logging: Population & Environment
+    QGridLayout *images_grid = new QGridLayout;
+
+    QLabel *imagesLabel= new QLabel("Logging: Population/Enivronment");
+    imagesLabel->setStyleSheet("font-weight: bold");
+    images_grid->addWidget(imagesLabel,1,1,1,2);
+
+    QLabel *imagesInfoLabel= new QLabel("Turn on/off these logging options to save images of the population/environment windows every refresh/poll.");
+    imagesInfoLabel->setStyleSheet("color: blue;");
+    imagesInfoLabel->setWordWrap(true);
+    images_grid->addWidget(imagesInfoLabel,2,1,1,2);
+
+    save_population_count = new QCheckBox("Population count");
+    images_grid->addWidget(save_population_count,3,1,1,1);
+    save_mean_fitness = new QCheckBox("Mean fitness");
+    images_grid->addWidget(save_mean_fitness,3,2,1,1);
+    save_coding_genome_as_colour = new QCheckBox("Coding genome");
+    images_grid->addWidget(save_coding_genome_as_colour,4,1,1,1);
+    save_non_coding_genome_as_colour = new QCheckBox("Noncoding genome");
+    images_grid->addWidget(save_non_coding_genome_as_colour,4,2,1,1);
+    save_species = new QCheckBox("Species");
+    images_grid->addWidget(save_species,5,1,1,1);
+    save_gene_frequencies = new QCheckBox("Gene frequencies");
+    images_grid->addWidget(save_gene_frequencies,5,2,1,1);
+    save_settles = new QCheckBox("Settles");
+    images_grid->addWidget(save_settles,6,1,1,1);
+    save_fails_settles = new QCheckBox("Fails + settles");
+    images_grid->addWidget(save_fails_settles,6,2,1,1);
+    save_environment = new QCheckBox("Environment");
+    images_grid->addWidget(save_environment,7,1,1,1);
+
+    QCheckBox *save_all_images_checkbox = new QCheckBox("All");
+    save_all_images_checkbox->setStyleSheet("font-style: italic");
+    images_grid->addWidget(save_all_images_checkbox,7,2,1,1);
+    QObject::connect(save_all_images_checkbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
+
+
+    //ARTS - Logging to text file
+    QGridLayout *fileLoggingGrid = new QGridLayout;
+
+    QLabel *output_settings_label= new QLabel("Logging: To Text File(s)");
+    output_settings_label->setStyleSheet("font-weight: bold");
+    fileLoggingGrid->addWidget(output_settings_label,1,1,1,2);
+
+    QLabel *textLogInfoLabel= new QLabel("Turn on/off this option to write to a text log file every refresh/poll.");
+    textLogInfoLabel->setStyleSheet("color: blue;");
+    textLogInfoLabel->setWordWrap(true);
+    fileLoggingGrid->addWidget(textLogInfoLabel,2,1,1,2);
+
+    logging_checkbox = new QCheckBox("Write Text Log Files");
+    logging_checkbox->setChecked(logging);
+    fileLoggingGrid->addWidget(logging_checkbox,3,1,1,2);
+    connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
+
+    QLabel *textLogInfo1Label= new QLabel("After a batched run has finished a more detailed log file (includding trees) can be automatically created.");
+    textLogInfo1Label->setStyleSheet("color: blue;");
+    textLogInfo1Label->setWordWrap(true);
+    fileLoggingGrid->addWidget(textLogInfo1Label,4,1,1,2);
+
+    autodump_checkbox= new QCheckBox("Create automatically detailed log on batch runs");
+    autodump_checkbox->setChecked(true);
+    fileLoggingGrid->addWidget(autodump_checkbox,5,1,1,2);
+
+    QLabel *textLogInfo2Label= new QLabel("...you can also manually create this detailed log file after any run.");
+    textLogInfo2Label->setStyleSheet("color: blue;");
+    textLogInfo2Label->setWordWrap(true);
+    fileLoggingGrid->addWidget(textLogInfo2Label,6,1,1,2);
+
     QPushButton *dump_nwk = new QPushButton("Write data (including tree) for current run");
-    output_settings_grid->addWidget(dump_nwk,3,1,1,2);
+    fileLoggingGrid->addWidget(dump_nwk,7,1,1,2);
     connect(dump_nwk , SIGNAL (clicked()), this, SLOT(dump_run_data()));
 
-    autodump_checkbox= new QCheckBox("Automatically dump for batch");
-    autodump_checkbox->setChecked(true);
-    output_settings_grid->addWidget(autodump_checkbox,4,1,1,2);
+    QLabel *textLogInfo3Label= new QLabel("More advanced options on what is included in the log files:");
+    textLogInfo3Label->setStyleSheet("color: blue;");
+    textLogInfo3Label->setWordWrap(true);
+    fileLoggingGrid->addWidget(textLogInfo3Label,8,1,1,2);
 
     QCheckBox *exclude_without_issue_checkbox = new QCheckBox("Exclude species without issue");
     exclude_without_issue_checkbox->setChecked(exclude_species_without_issue);
-    output_settings_grid->addWidget(exclude_without_issue_checkbox,5,1,1,1);
+    fileLoggingGrid->addWidget(exclude_without_issue_checkbox,9,1,1,1);
     connect(exclude_without_issue_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { exclude_species_without_issue=i; });
 
     QLabel *Min_species_size_label = new QLabel("Minimum species size:");
@@ -540,21 +586,34 @@ MainWindow::MainWindow(QWidget *parent) :
     Min_species_size_spin->setMinimum(0);
     Min_species_size_spin->setMaximum(10000);
     Min_species_size_spin->setValue(minimum_species_size);
-    output_settings_grid->addWidget(Min_species_size_label,6,1);
-    output_settings_grid->addWidget(Min_species_size_spin,6,2);
+    fileLoggingGrid->addWidget(Min_species_size_label,10,1);
+    fileLoggingGrid->addWidget(Min_species_size_spin,10,2);
     connect(Min_species_size_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { minimum_species_size=i; });
 
-    //---- RJG - savepath for all functions.
-    QLabel *save_path_label = new QLabel("Save path");
-    save_path_label->setStyleSheet("font-weight: bold");
-    output_settings_grid->addWidget(save_path_label,7,1,1,2);
-    QString program_path(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
-    program_path.append("/");
-    path = new QLineEdit(program_path);
-    output_settings_grid->addWidget(path,8,1,1,2);
-    QPushButton *change_path = new QPushButton("&Change");
-    output_settings_grid->addWidget(change_path,9,1,1,2);
-    connect(change_path, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
+    //ARTS - Advanced
+    QGridLayout *advancedLoggingGrid = new QGridLayout;
+
+    QLabel *advancedSettingsLabel= new QLabel("Advanced");
+    advancedSettingsLabel->setStyleSheet("font-weight: bold");
+    advancedLoggingGrid->addWidget(advancedSettingsLabel,1,1,1,2);
+
+    QLabel *guiInfoLabel= new QLabel("If you turn off GUI update you cannot log the population/environment windows using saved images.");
+    guiInfoLabel->setStyleSheet("color: blue;");
+    guiInfoLabel->setWordWrap(true);
+    advancedLoggingGrid->addWidget(guiInfoLabel,2,1,1,2);
+
+    gui_checkbox = new QCheckBox("Don't update GUI on refresh/poll");
+    gui_checkbox->setChecked(gui);
+    advancedLoggingGrid->addWidget(gui_checkbox,3,1,1,2);
+    QObject::connect(gui_checkbox ,SIGNAL (toggled(bool)), this, SLOT(gui_checkbox_state_changed(bool)));
+
+    //ARTS - Dock Grid Layout
+    output_settings_grid->addLayout(savePathGrid,1,1,1,2);
+    output_settings_grid->addLayout(pollingRateGrid,2,1,1,2);
+    output_settings_grid->addLayout(images_grid,3,1,1,2);
+    output_settings_grid->addLayout(fileLoggingGrid,4,1,1,2);
+    output_settings_grid->addLayout(advancedLoggingGrid,5,1,1,2);
+
 
     QWidget *output_settings_layout_widget = new QWidget;
     output_settings_layout_widget->setLayout(output_settings_grid);
@@ -669,11 +728,6 @@ MainWindow::MainWindow(QWidget *parent) :
     batch_target_runs=-1;
 
     showMaximized();
-
-    //RJG - Output version, but also date compiled for clarity
-    QString vstring;
-    vstring.sprintf("%d.%03d",MAJORVERSION,MINORVERSION);
-    this->setWindowTitle("REVOSIM v"+vstring+" - compiled - "+__DATE__);
 
     //RJG - seed pseudorandom numbers
     qsrand(QTime::currentTime().msec());
@@ -949,10 +1003,15 @@ void MainWindow::on_actionBatch_triggered()
         if(environmentComboBox->itemData(environmentComboBox->currentIndex()) == 1) repeat_environment = true;
             else repeat_environment = false;
 
+        // Reset before starting batch run
+        on_actionReset_triggered();
+
         ui->LabelBatch->setText(tr("%1/%2").arg(1).arg(batch_target_runs));
     } else {
         return;
     }
+
+
 
     //ARTS - run the batch
     do {
@@ -2068,7 +2127,7 @@ void MainWindow::on_actionSave_triggered()
 
 
     out<<QString("EVOSIM file");
-    out<<(int)VERSION;
+    out<<(int)FILEVERSION;
     out<<gridX;
     out<<gridY;
     out<<slotsPerSq;
@@ -2290,7 +2349,7 @@ void MainWindow::on_actionLoad_triggered()
 
     int version;
     in>>version;
-    if (version>VERSION)
+    if (version>FILEVERSION)
     {QMessageBox::warning(this,"","Version too high - will try to read, but may go horribly wrong");}
 
     in>>gridX;
@@ -2714,7 +2773,7 @@ void MainWindow::CalcSpecies()
 
 void MainWindow::WriteLog()
 {
-//Need to sort out file name in batch mode, check breed list entries is actually working, etc. then deal with logging after run
+    //Need to sort out file name in batch mode, check breed list entries is actually working, etc. then deal with logging after run
     //RJG - write main ongoing log
     if(logging)
     {

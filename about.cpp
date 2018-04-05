@@ -17,6 +17,9 @@
 
 #include "about.h"
 #include "ui_about.h"
+#include "version.h"
+
+#include <QString>
 
 //RJG - so can access MainWin
 #include "mainwindow.h"
@@ -49,8 +52,8 @@ About::About(QWidget *parent) :
 
     ui->textLabel_3->setWordWrap(true);
     ui->textLabel_3->setText("<b>Copyright and License:</b>"
-                             "<br><br>Copyright (C) 2018 Mark Sutton, Russell Garwood, Alan R.T. Spencer."
-                             "<br><br>This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to redistribute it under the conditions of the GPL v3 license (see below).");
+                             "<br><br>" + QString(COPYRIGHT) +
+                             "<br><br>"+ QString(LICENCE) +" (see below).");
     ui->textLabel_3->setAlignment(Qt::AlignCenter);
 
     ui->textBrowser->setHtml(returnLicense());
