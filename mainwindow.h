@@ -133,6 +133,8 @@ private slots:
     bool on_actionEnvironment_Files_triggered();
     void on_actionSave_triggered();
     void on_actionLoad_triggered();
+    void load_settings();
+    void save_settings();
     void on_actionChoose_Log_Directory_triggered();
     void on_actionAdd_Regular_triggered();
     void on_actionAdd_Random_triggered();

@@ -578,18 +578,18 @@ MainWindow::MainWindow(QWidget *parent) :
     fileLoggingGrid->addWidget(textLogInfo3Label,8,1,1,2);
 
     QCheckBox *exclude_without_issue_checkbox = new QCheckBox("Exclude species without issue");
-    exclude_without_issue_checkbox->setChecked(exclude_species_without_issue);
+    exclude_without_issue_checkbox->setChecked(allowexcludewithissue);
     fileLoggingGrid->addWidget(exclude_without_issue_checkbox,9,1,1,1);
-    connect(exclude_without_issue_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { exclude_species_without_issue=i; });
+    connect(exclude_without_issue_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { allowexcludewithissue=i; });
 
     QLabel *Min_species_size_label = new QLabel("Minimum species size:");
     QSpinBox *Min_species_size_spin = new QSpinBox;
     Min_species_size_spin->setMinimum(0);
     Min_species_size_spin->setMaximum(10000);
-    Min_species_size_spin->setValue(minimum_species_size);
+    Min_species_size_spin->setValue(minspeciessize);
     fileLoggingGrid->addWidget(Min_species_size_label,10,1);
     fileLoggingGrid->addWidget(Min_species_size_spin,10,2);
-    connect(Min_species_size_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { minimum_species_size=i; });
+    connect(Min_species_size_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { minspeciessize=i; });
 
     //ARTS - Advanced
     QGridLayout *advancedLoggingGrid = new QGridLayout;
