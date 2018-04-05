@@ -9,3 +9,7 @@ QLabel#imagesInfoLabel, QLabel#textLogInfoLabel, QLabel#textLogInfo1Label, QLabe
 QCheckBox#saveAllImagesCheckbox {
     font-style: italic;
 }
+
+QLabel#aboutTextLabel1 {
+    font-weight: bold;
+}

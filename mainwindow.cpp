@@ -102,14 +102,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     a = new Analyser; // so can delete next time!
+    ui->setupUi(this);
+    MainWin=this;
 
     //RJG - Output version, but also date compiled for clarity
     QString version;
     version.sprintf("%d.%d.%d",MAJORVERSION,MINORVERSION,PATCHVERSION);
-    this->setWindowTitle(QString(PRODUCTNAME)+" v"+version+" - compiled - "+__DATE__);
+    setWindowTitle(QString(PRODUCTNAME)+" v"+version+" - compiled - "+__DATE__);
     setWindowIcon(QIcon (":/icon.png"));
-    ui->setupUi(this);
-    MainWin=this;
 
     //Install filter to catch resize events to central widget and deliver to mainwindow (handle dock resizes)
     ResizeCatcher *rescatch = new ResizeCatcher(this);
