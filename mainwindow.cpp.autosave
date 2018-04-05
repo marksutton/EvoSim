@@ -3189,7 +3189,8 @@ void MainWindow::load_settings()
 void MainWindow::save_settings()
 {
     QString settings_filename=QFileDialog::getSaveFileName(this, tr("Save file as..."));
-
+    settings_filename
+            
     QFile settings_file(settings_filename);
     if(!settings_file.open(QIODevice::WriteOnly|QIODevice::Text))
         {
