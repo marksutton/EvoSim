@@ -63,6 +63,7 @@ Coding:
 -- Genome comparison - say which is noncoding half / document
 -- Timer on calculting species - add progress bar and escape warning if needed to prevent crash
 -- Add Keyboard shortcuts where required
+-- Load and save settings still need to update gui
 
 Visualisation:
 -- Settles - does this work at all?
@@ -190,6 +191,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QObject::connect(ui->actionSave_settings, SIGNAL (triggered()), this, SLOT (save_settings()));
     QObject::connect(ui->actionLoad_settings, SIGNAL (triggered()), this, SLOT (load_settings()));
+    QObject::connect(ui->actionCount_peaks, SIGNAL(triggered()), this, SLOT(on_actionCount_Peaks_triggered()));
 
     //----RJG - set up settings docker.
     settings_dock = new QDockWidget("Simulation", this);
@@ -630,10 +632,6 @@ MainWindow::MainWindow(QWidget *parent) :
     org_settings_dock->hide();
     settings_dock->hide();
     output_settings_dock->hide();
-
-    //RJG - Set up counts shortcut
-    new QShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_P), this, SLOT(on_actionCount_Peaks_triggered()));
-    QObject::connect(ui->actionCount_peaks, SIGNAL(triggered()), this, SLOT(on_actionCount_Peaks_triggered()));
 
     //ARTS - Add Genome Comparison UI
     ui->genomeComparisonDock->hide();
@@ -2077,7 +2075,7 @@ bool  MainWindow::on_actionEnvironment_Files_triggered()
         if(x!=y)notsquare=true;
         if(x!=100||y!=100)different_size=true;
         }
-        if(notsquare||different_size)QMessageBox::warning(this,"FYI","For speed EvoSim currently has static arrays for the environment, which limits out of the box functionality to 100 x 100 square environments. "
+        if(notsquare||different_size)QMessageBox::warning(this,"FYI","For speed REvoSim currently has static arrays for the environment, which limits out of the box functionality to 100 x 100 square environments. "
         "It looks like some of your Environment images don't meet this requirement. Anything smaller than 100 x 100 will be stretched (irrespective of aspect ratio) to 100x100. Anything bigger, and we'll use the top left corner. Should you wish to use a different size environment, please email RJG or MDS.");
 
     EnvFiles = files;
@@ -2346,7 +2344,7 @@ void MainWindow::on_actionLoad_triggered()
     QString temp;
     in>>temp;
     if (temp!="EVOSIM file")
-    {QMessageBox::warning(this,"","Not an EVOSIM file"); return;}
+    {QMessageBox::warning(this,"","Not an REvoSim file"); return;}
 
     int version;
     in>>version;
@@ -2806,7 +2804,7 @@ void MainWindow::WriteLog()
     //Need to add this to GUI
     if (ui->actionRecombination_logging->isChecked())
     {
-        QString rFile(path->text()+"EvoSim_recombination");
+        QString rFile(path->text()+"REvoSim_recombination");
         if(batch_running)
             rFile.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
         rFile.append(".txt");
@@ -3113,14 +3111,15 @@ QString MainWindow::print_settings()
     return settings;
 }
 
-//These still need testing and conecting to signal
+//RJG - Save and load settings (but not critter info, masks etc.)
 void MainWindow::load_settings()
 {
-    QString settings_filename=QFileDialog::getOpenFileName(this, tr("Open File"));
+    QString settings_filename=QFileDialog::getOpenFileName(this, tr("Open File"),path->text(),"XML files (*.xml)");
+    if (settings_filename.length()<3) return;
     QFile settings_file(settings_filename);
     if(!settings_file.open(QIODevice::ReadOnly))
             {
-            QMessageBox::warning(0,"Erk","There seems to have been an error opening the file.");
+            setStatusBarText("Error opening file / dialogue cancelled.");
             return;
             }
 
@@ -3181,20 +3180,20 @@ void MainWindow::load_settings()
                      }
                }
            // Error
-           if(settings_file_in.hasError()) QMessageBox::warning(0,"Oops","There seems to have been an error reading in the XML file. Not all settings will have been loaded.");
-           else ui->statusBar->showMessage("Loaded settings file");
+           if(settings_file_in.hasError()) setStatusBarText("There seems to have been an error reading in the XML file. Not all settings will have been loaded.");
+           else setStatusBarText("Loaded settings file");
 
            settings_file.close();
 }
 
 void MainWindow::save_settings()
 {
-    QString settings_filename=QFileDialog::getSaveFileName(this, tr("Save file as..."));
-
+    QString settings_filename=QFileDialog::getSaveFileName(this, tr("Save file as..."),QString(path->text()+"REvoSim_settings.xml"));
+    if(!settings_filename.endsWith(".xml"))settings_filename.append(".xml");
     QFile settings_file(settings_filename);
     if(!settings_file.open(QIODevice::WriteOnly|QIODevice::Text))
         {
-            QMessageBox::warning(0, "Error!", "Error opening settings file to write to.");
+            setStatusBarText("Error opening settings file to write to.");
             return;
         }
 
@@ -3362,7 +3361,7 @@ void MainWindow::save_settings()
 
         settings_file.close();
 
-        ui->statusBar->showMessage("File saved");
+       setStatusBarText("File saved");
 
 
 }
