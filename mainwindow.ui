@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1148</width>
+    <width>1162</width>
     <height>791</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>EvoSim</string>
+   <string>REvoSim</string>
   </property>
   <property name="toolButtonStyle">
    <enum>Qt::ToolButtonTextUnderIcon</enum>
@@ -799,7 +799,7 @@ p, li { white-space: pre-wrap; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1148</width>
+     <width>1162</width>
      <height>21</height>
     </rect>
    </property>
@@ -882,18 +882,10 @@ p, li { white-space: pre-wrap; }
    </widget>
    <widget class="QMenu" name="menuSpecies">
     <property name="title">
-     <string>Species and Logging</string>
+     <string>Custom logging</string>
     </property>
-    <widget class="QMenu" name="menuFitness_logging">
-     <property name="title">
-      <string>Logging</string>
-     </property>
-     <addaction name="actionFitness_logging_to_File"/>
-     <addaction name="actionSpecies_logging"/>
-     <addaction name="actionWrite_phylogeny"/>
-     <addaction name="actionRecombination_logging"/>
-    </widget>
-    <addaction name="menuFitness_logging"/>
+    <addaction name="actionFitness_logging_to_File"/>
+    <addaction name="actionRecombination_logging"/>
    </widget>
    <widget class="QMenu" name="menuAnalysis_Tools">
     <property name="title">
@@ -916,13 +908,20 @@ p, li { white-space: pre-wrap; }
     <addaction name="separator"/>
     <addaction name="menuPhylogeny_Data_Tools"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
    <addaction name="menuCommands"/>
    <addaction name="menuEnvironment"/>
-   <addaction name="menuSpecies"/>
    <addaction name="menuView"/>
    <addaction name="menuFossil_Record"/>
    <addaction name="menuDocks"/>
    <addaction name="menuAnalysis_Tools"/>
+   <addaction name="menuSpecies"/>
+   <addaction name="menuHelp"/>
   </widget>
   <action name="actionReset">
    <property name="text">
@@ -1609,6 +1608,11 @@ p, li { white-space: pre-wrap; }
    </property>
    <property name="shortcut">
     <string>Alt+P</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
    </property>
   </action>
  </widget>

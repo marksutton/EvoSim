@@ -3,7 +3,7 @@
  * Main Window
  *
  * All REVOSIM code is released under the GNU General Public License.
- * See GNUv3License.txt files in the programme directory.
+ * See LICENSE.md files in the programme directory.
  *
  * All REVOSIM code is Copyright 2018 by Mark Sutton, Russell Garwood,
  * and Alan R.T. Spencer.
@@ -39,6 +39,8 @@
 #include <QDataStream>
 #include <QStringList>
 #include <QFile>
+#include <QXmlStreamReader>
+
 #include "analysistools.h"
 #include "version.h"
 #include "math.h"
@@ -52,41 +54,37 @@ MainWindow *MainWin;
 
 #include <QThread>
 
-/* To do:
+/*
 
--- sort out logging - get rid of logging variables other than logging bool that I have created, and implement this in a sensible way
--- Programme logo
--- Save path needs to go in there as well (not toolbar) - and button on toolbar needs to show/hide the docker, not the old window.
+To do for paper:
 
-1.  Tidy GUI  - RG
-2. Remove bits that are not for release  - RG
-3. Document GUI   - RG
-4. Write introduction - MS
-5. Tidy how it works section - MS
-6. Write discussion and applications stuff
-
-To do coding:
-Option to load/save without critter data also needed
-Load and Save don't include everything - they need to!
-Check how species logging actually works with analysis dock / do logging
--->Logging should have a single option to turn logging on for whole grid stuff - species and other data too. Just log the lot. This can be in settings, but also can have a icon on toolbar.
-Genome comparison - say which is noncoding half / document
+Coding:
+-- Load and Save don't include everything - they need to!
+-- Genome comparison - say which is noncoding half / document
+-- Timer on calculting species - add progress bar and escape warning if needed to prevent crash
+-- Add Keyboard shortcuts where required
 
 Visualisation:
-Settles - does it work at all?
-Fails - green scaling
+-- Settles - does this work at all?
+-- Fails - check green scaling
 
-To remove:
-Dual reseed
-Species and logging - recombination logging remove, others document
-Fossil record - what does it do, does it actually work, is logging compatible with newer systems - just remove from release?
-We entirely lose the Analysis Tools menu. Phylogeny settings will become part of settings.
+To remove prior to release, but after all changes are complete:
+-- Dual reseed
+-- Remove all custom logging options (RJG is using these for research and projects, so needs to keep them in master fork).
+-- Fossil record - down the line we need to work out that this actually does check it actually works. For release, just remove option
+-- Entirely lose the Analysis Tools menu, and analysis docker. Phylogeny settings will become part of settings.
+
+
+To do in revisions:
+-- Further comment code
+-- Standardise case throughout the code, and also variable names in a sensible fashion
+-- Rename "generations" variable "iterations", which is more correct
 
 To do long term:
-Add variable mutation rate depent on population density:
--- Count number of filled slots (do as percentage of filled slots)
--- Use percentage to dictate probability of mutation (between 0 and 1), following standard normal distribution
--- But do this both ways around so really full mutation rate can be either very high, or very low
+-- Add variable mutation rate depent on population density:
+---- Count number of filled slots (do as percentage of filled slots)
+---- Use percentage to dictate probability of mutation (between 0 and 1), following standard normal distribution
+---- But do this both ways around so really full mutation rate can be either very high, or very low
 
 */
 
@@ -104,9 +102,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     a = new Analyser; // so can delete next time!
-
     ui->setupUi(this);
     MainWin=this;
+
+    //RJG - Output version, but also date compiled for clarity
+    QString version;
+    version.sprintf("%d.%d.%d",MAJORVERSION,MINORVERSION,PATCHVERSION);
+    setWindowTitle(QString(PRODUCTNAME)+" v"+version+" - compiled - "+__DATE__);
+    setWindowIcon(QIcon (":/icon.png"));
 
     //Install filter to catch resize events to central widget and deliver to mainwindow (handle dock resizes)
     ResizeCatcher *rescatch = new ResizeCatcher(this);
@@ -133,9 +136,9 @@ MainWindow::MainWindow(QWidget *parent) :
     pauseButton->setEnabled(false);
     stopButton->setEnabled(false);
     reseedButton->setEnabled(false);
-    runForBatchButton->setEnabled(false);    
+    runForBatchButton->setEnabled(false);
     settingsButton->setCheckable(true);
-    orgSettingsButton->setCheckable(true);   
+    orgSettingsButton->setCheckable(true);
     logSettingsButton->setCheckable(true);
 
     //ARTS - Toolbar layout
@@ -183,7 +186,10 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(settingsButton, SIGNAL(triggered()), this, SLOT(on_actionSettings_triggered()));
     QObject::connect(orgSettingsButton, SIGNAL(triggered()), this, SLOT(orgSettings_triggered()));
     QObject::connect(logSettingsButton, SIGNAL(triggered()), this, SLOT(logSettings_triggered()));
-    QObject::connect(aboutButton, SIGNAL (triggered()), this, SLOT (about_triggered()));
+    QObject::connect(aboutButton, SIGNAL (triggered()), this, SLOT (on_actionAbout_triggered()));
+
+    QObject::connect(ui->actionSave_settings, SIGNAL (triggered()), this, SLOT (save_settings()));
+    QObject::connect(ui->actionLoad_settings, SIGNAL (triggered()), this, SLOT (load_settings()));
 
     //----RJG - set up settings docker.
     settings_dock = new QDockWidget("Simulation", this);
@@ -458,7 +464,7 @@ MainWindow::MainWindow(QWidget *parent) :
     org_settings_layout_widget->setLayout(org_settings_grid);
     org_settings_dock->setWidget(org_settings_layout_widget);
 
-    //---- RJG Third settings docker
+    //RJG - Third settings docker
     output_settings_dock = new QDockWidget("Output", this);
     output_settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     output_settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
@@ -468,94 +474,151 @@ MainWindow::MainWindow(QWidget *parent) :
     QGridLayout *output_settings_grid = new QGridLayout;
     output_settings_grid->setAlignment(Qt::AlignTop);
 
-    QGridLayout *images_grid = new QGridLayout;
+    //ARTS - Output Save Path
+    QGridLayout *savePathGrid = new QGridLayout;
+    QLabel *savePathLabel = new QLabel("Output save path");
+    savePathLabel->setObjectName("savePathLabel");
+    savePathGrid->addWidget(savePathLabel,1,1,1,2);
+    QString program_path(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
+    program_path.append("/");
+    path = new QLineEdit(program_path);
+    savePathGrid->addWidget(path,2,1,1,2);
+    QPushButton *changePathButton = new QPushButton("&Change");
+    changePathButton->setObjectName("changePathButton");
+    savePathGrid->addWidget(changePathButton,3,1,1,2);
+    connect(changePathButton, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
 
-    QLabel *images_label= new QLabel("Save Images");
-    images_label->setStyleSheet("font-weight: bold");
-    images_grid->addWidget(images_label,1,1,1,1);
-
-    save_population_count = new QCheckBox("Population count");
-    images_grid->addWidget(save_population_count,2,1,1,1);
-    save_mean_fitness = new QCheckBox("Mean fitness");
-    images_grid->addWidget(save_mean_fitness,2,2,1,1);
-    save_coding_genome_as_colour = new QCheckBox("Coding genome");
-    images_grid->addWidget(save_coding_genome_as_colour,3,1,1,1);
-    save_non_coding_genome_as_colour = new QCheckBox("Noncoding genome");
-    images_grid->addWidget(save_non_coding_genome_as_colour,3,2,1,1);
-    save_species = new QCheckBox("Species");
-    images_grid->addWidget(save_species,4,1,1,1);
-    save_gene_frequencies = new QCheckBox("Gene frequencies");
-    images_grid->addWidget(save_gene_frequencies,4,2,1,1);
-    save_settles = new QCheckBox("Settles");
-    images_grid->addWidget(save_settles,5,1,1,1);
-    save_fails_settles = new QCheckBox("Fails + settles");
-    images_grid->addWidget(save_fails_settles,5,2,1,1);
-    save_environment = new QCheckBox("Environment");
-    images_grid->addWidget(save_environment,6,1,1,1);
-
-    QCheckBox *save_all_images_checkbox = new QCheckBox("All");
-    save_all_images_checkbox->setStyleSheet("font-style: italic");
-    images_grid->addWidget(save_all_images_checkbox,6,2,1,1);
-    QObject::connect(save_all_images_checkbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
-
-    QLabel *output_settings_label= new QLabel("Output/GUI");
-    output_settings_label->setStyleSheet("font-weight: bold");
-    images_grid->addWidget(output_settings_label,7,1,1,2);
-
-    QCheckBox *logging_checkbox = new QCheckBox("Logging");
-    logging_checkbox->setChecked(logging);
-    images_grid->addWidget(logging_checkbox,8,1,1,1);
-    connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
-
-    gui_checkbox = new QCheckBox("Don't update GUI");
-    gui_checkbox->setChecked(gui);
-    images_grid->addWidget(gui_checkbox,8,2,1,1);
-    QObject::connect(gui_checkbox ,SIGNAL (toggled(bool)), this, SLOT(gui_checkbox_state_changed(bool)));
-
-    output_settings_grid->addLayout(images_grid,1,1,1,2);
+    //ARTS - Refresh/Polling Rate
+    QGridLayout *pollingRateGrid = new QGridLayout;
+    QLabel *pollingRateLabel = new QLabel("Refresh/Polling Rate");
+    pollingRateLabel->setObjectName("pollingRateLabel");
+    pollingRateGrid->addWidget(pollingRateLabel,1,1,1,2);
 
     RefreshRate=50;
-    QLabel *RefreshRate_label = new QLabel("Refresh/polling rate:");
-    QSpinBox *RefreshRate_spin = new QSpinBox;
-    RefreshRate_spin->setMinimum(1);
-    RefreshRate_spin->setMaximum(10000);
-    RefreshRate_spin->setValue(RefreshRate);
-    output_settings_grid->addWidget(RefreshRate_label,2,1);
-    output_settings_grid->addWidget(RefreshRate_spin,2,2);
-    connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
+    QLabel *refreshRateLabel = new QLabel("Refresh/polling rate:");
+    refreshRateLabel->setObjectName("refreshRateLabel");
+    QSpinBox *refreshRateSpin = new QSpinBox;
+    refreshRateSpin->setMinimum(1);
+    refreshRateSpin->setMaximum(10000);
+    refreshRateSpin->setValue(RefreshRate);
+    pollingRateGrid->addWidget(refreshRateLabel,2,1);
+    pollingRateGrid->addWidget(refreshRateSpin,2,2);
+    connect(refreshRateSpin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
 
-    QPushButton *dump_nwk = new QPushButton("Write newick tree for current run");
-    output_settings_grid->addWidget(dump_nwk,3,1,1,2);
-    connect(dump_nwk, &QPushButton::clicked, [&]()
-    {
-        HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
-    });
+    //ARTS - Logging: Population & Environment
+    QGridLayout *images_grid = new QGridLayout;
+
+    QLabel *imagesLabel= new QLabel("Logging: Population/Enivronment");
+    imagesLabel->setObjectName("imagesLabel");
+    images_grid->addWidget(imagesLabel,1,1,1,2);
+
+    QLabel *imagesInfoLabel= new QLabel("Turn on/off these logging options to save images of the population/environment windows every refresh/poll.");
+    imagesInfoLabel->setObjectName("imagesInfoLabel");
+    imagesInfoLabel->setWordWrap(true);
+    images_grid->addWidget(imagesInfoLabel,2,1,1,2);
+
+    save_population_count = new QCheckBox("Population count");
+    images_grid->addWidget(save_population_count,3,1,1,1);
+    save_mean_fitness = new QCheckBox("Mean fitness");
+    images_grid->addWidget(save_mean_fitness,3,2,1,1);
+    save_coding_genome_as_colour = new QCheckBox("Coding genome");
+    images_grid->addWidget(save_coding_genome_as_colour,4,1,1,1);
+    save_non_coding_genome_as_colour = new QCheckBox("Noncoding genome");
+    images_grid->addWidget(save_non_coding_genome_as_colour,4,2,1,1);
+    save_species = new QCheckBox("Species");
+    images_grid->addWidget(save_species,5,1,1,1);
+    save_gene_frequencies = new QCheckBox("Gene frequencies");
+    images_grid->addWidget(save_gene_frequencies,5,2,1,1);
+    save_settles = new QCheckBox("Settles");
+    images_grid->addWidget(save_settles,6,1,1,1);
+    save_fails_settles = new QCheckBox("Fails + settles");
+    images_grid->addWidget(save_fails_settles,6,2,1,1);
+    save_environment = new QCheckBox("Environment");
+    images_grid->addWidget(save_environment,7,1,1,1);
+
+    QCheckBox *saveAllImagesCheckbox = new QCheckBox("All");
+    saveAllImagesCheckbox->setObjectName("saveAllImagesCheckbox");
+    images_grid->addWidget(saveAllImagesCheckbox,7,2,1,1);
+    QObject::connect(saveAllImagesCheckbox, SIGNAL (toggled(bool)), this, SLOT(save_all_checkbox_state_changed(bool)));
+
+
+    //ARTS - Logging to text file
+    QGridLayout *fileLoggingGrid = new QGridLayout;
+
+    QLabel *outputSettingsLabel= new QLabel("Logging: To Text File(s)");
+    outputSettingsLabel->setObjectName("outputSettingsLabel");
+    fileLoggingGrid->addWidget(outputSettingsLabel,1,1,1,2);
+
+    QLabel *textLogInfoLabel= new QLabel("Turn on/off this option to write to a text log file every refresh/poll.");
+    textLogInfoLabel->setObjectName("textLogInfoLabel");
+    textLogInfoLabel->setWordWrap(true);
+    fileLoggingGrid->addWidget(textLogInfoLabel,2,1,1,2);
+
+    logging_checkbox = new QCheckBox("Write Text Log Files");
+    logging_checkbox->setChecked(logging);
+    fileLoggingGrid->addWidget(logging_checkbox,3,1,1,2);
+    connect(logging_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { logging=i; });
+
+    QLabel *textLogInfo1Label= new QLabel("After a batched run has finished a more detailed log file (includding trees) can be automatically created.");
+    textLogInfo1Label->setObjectName("textLogInfo1Label");
+    textLogInfo1Label->setWordWrap(true);
+    fileLoggingGrid->addWidget(textLogInfo1Label,4,1,1,2);
+
+    autodump_checkbox= new QCheckBox("Create automatically detailed log on batch runs");
+    autodump_checkbox->setChecked(true);
+    fileLoggingGrid->addWidget(autodump_checkbox,5,1,1,2);
+
+    QLabel *textLogInfo2Label= new QLabel("...you can also manually create this detailed log file after any run.");
+    textLogInfo2Label->setObjectName("textLogInfo2Label");
+    textLogInfo2Label->setWordWrap(true);
+    fileLoggingGrid->addWidget(textLogInfo2Label,6,1,1,2);
+
+    QPushButton *dump_nwk = new QPushButton("Write data (including tree) for current run");
+    fileLoggingGrid->addWidget(dump_nwk,7,1,1,2);
+    connect(dump_nwk , SIGNAL (clicked()), this, SLOT(dump_run_data()));
+
+    QLabel *textLogInfo3Label= new QLabel("More advanced options on what is included in the log files:");
+    textLogInfo3Label->setObjectName("textLogInfo3Label");
+    textLogInfo3Label->setWordWrap(true);
+    fileLoggingGrid->addWidget(textLogInfo3Label,8,1,1,2);
 
     QCheckBox *exclude_without_issue_checkbox = new QCheckBox("Exclude species without issue");
-    exclude_without_issue_checkbox->setChecked(exclude_species_without_issue);
-    output_settings_grid->addWidget(exclude_without_issue_checkbox,4,1,1,1);
-    connect(exclude_without_issue_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { exclude_species_without_issue=i; });
+    exclude_without_issue_checkbox->setChecked(allowexcludewithissue);
+    fileLoggingGrid->addWidget(exclude_without_issue_checkbox,9,1,1,1);
+    connect(exclude_without_issue_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { allowexcludewithissue=i; });
 
     QLabel *Min_species_size_label = new QLabel("Minimum species size:");
     QSpinBox *Min_species_size_spin = new QSpinBox;
     Min_species_size_spin->setMinimum(0);
     Min_species_size_spin->setMaximum(10000);
-    Min_species_size_spin->setValue(minimum_species_size);
-    output_settings_grid->addWidget(Min_species_size_label,5,1);
-    output_settings_grid->addWidget(Min_species_size_spin,5,2);
-    connect(Min_species_size_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { minimum_species_size=i; });
+    Min_species_size_spin->setValue(minspeciessize);
+    fileLoggingGrid->addWidget(Min_species_size_label,10,1);
+    fileLoggingGrid->addWidget(Min_species_size_spin,10,2);
+    connect(Min_species_size_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { minspeciessize=i; });
 
-    //---- RJG - savepath for all functions.
-    QLabel *save_path_label = new QLabel("Save path");
-    save_path_label->setStyleSheet("font-weight: bold");
-    output_settings_grid->addWidget(save_path_label,6,1,1,2);
-    QString program_path(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
-    program_path.append("/");
-    path = new QLineEdit(program_path);
-    output_settings_grid->addWidget(path,7,1,1,2);
-    QPushButton *change_path = new QPushButton("&Change");
-    output_settings_grid->addWidget(change_path,8,1,1,2);
-    connect(change_path, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
+    //ARTS - Advanced
+    QGridLayout *advancedLoggingGrid = new QGridLayout;
+
+    QLabel *advancedSettingsLabel= new QLabel("Advanced");
+    advancedSettingsLabel->setObjectName("advancedSettingsLabel");
+    advancedLoggingGrid->addWidget(advancedSettingsLabel,1,1,1,2);
+
+    QLabel *guiInfoLabel= new QLabel("If you turn off GUI update you cannot log the population/environment windows using saved images.");
+    guiInfoLabel->setObjectName("guiInfoLabel");
+    guiInfoLabel->setWordWrap(true);
+    advancedLoggingGrid->addWidget(guiInfoLabel,2,1,1,2);
+
+    gui_checkbox = new QCheckBox("Don't update GUI on refresh/poll");
+    gui_checkbox->setChecked(gui);
+    advancedLoggingGrid->addWidget(gui_checkbox,3,1,1,2);
+    QObject::connect(gui_checkbox ,SIGNAL (toggled(bool)), this, SLOT(gui_checkbox_state_changed(bool)));
+
+    //ARTS - Dock Grid Layout
+    output_settings_grid->addLayout(savePathGrid,1,1,1,2);
+    output_settings_grid->addLayout(pollingRateGrid,2,1,1,2);
+    output_settings_grid->addLayout(images_grid,3,1,1,2);
+    output_settings_grid->addLayout(fileLoggingGrid,4,1,1,2);
+    output_settings_grid->addLayout(advancedLoggingGrid,5,1,1,2);
 
     QWidget *output_settings_layout_widget = new QWidget;
     output_settings_layout_widget->setLayout(output_settings_grid);
@@ -671,11 +734,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
     showMaximized();
 
-    //RJG - Output version, but also date compiled for clarity
-    QString vstring;
-    vstring.sprintf("%d.%03d",MAJORVERSION,MINORVERSION);
-    this->setWindowTitle("REVOSIM v"+vstring+" - compiled - "+__DATE__);
-
     //RJG - seed pseudorandom numbers
     qsrand(QTime::currentTime().msec());
     //RJG - Now load randoms into program - portable rand is just plain pseudorandom number - initially used in makelookups (called from simmanager contructor) to write to randoms array
@@ -734,7 +792,7 @@ int MainWindow::waitUntilPauseSignalIsEmitted() {
     return loop.exec();
 }
 
-void MainWindow::about_triggered()
+void MainWindow::on_actionAbout_triggered()
 {
     About adialogue;
     adialogue.exec();
@@ -743,13 +801,6 @@ void MainWindow::about_triggered()
 //RJG - Reset simulation (i.e. fill the centre pixel with a genome (unless dual seed is selected), then set up a run).
 void MainWindow::on_actionReset_triggered()
 {
-    if ((ui->actionRecombination_logging->isChecked()
-        || ui->actionSpecies_logging->isChecked()
-        || ui->actionFitness_logging_to_File->isChecked())
-        &&!batch_running) {
-            QMessageBox::warning(this,"Logging","This will append logs from any new run(s) onto your last one, unless you change directories or move the old log file. It will also overwrite any images within that folder.");
-        }
-
     // Reset the information bar
     resetInformationBar();
 
@@ -837,6 +888,7 @@ void MainWindow::on_actionStart_Sim_triggered()
         if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) stopflag=true;
         FRW->MakeRecords();
     }
+
     FinishRun();
 }
 
@@ -878,6 +930,8 @@ void MainWindow::on_actionRun_for_triggered()
         FRW->MakeRecords();
         i--;
     }
+
+    if(autodump_checkbox->isChecked())dump_run_data();
 
     //ARTS Show finish message and run FinshRun()
     if (stopflag==false) {
@@ -954,10 +1008,15 @@ void MainWindow::on_actionBatch_triggered()
         if(environmentComboBox->itemData(environmentComboBox->currentIndex()) == 1) repeat_environment = true;
             else repeat_environment = false;
 
+        // Reset before starting batch run
+        on_actionReset_triggered();
+
         ui->LabelBatch->setText(tr("%1/%2").arg(1).arg(batch_target_runs));
     } else {
         return;
     }
+
+
 
     //ARTS - run the batch
     do {
@@ -1004,8 +1063,7 @@ void MainWindow::on_actionBatch_triggered()
             i--;
         }
 
-        if(ui->actionSpecies_logging->isChecked())HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
-        if(ui->actionWrite_phylogeny->isChecked())HandleAnalysisTool(ANALYSIS_TOOL_CODE_DUMP_DATA);
+       if(autodump_checkbox->isChecked())dump_run_data();
 
         runs++;
 
@@ -1091,13 +1149,15 @@ void MainWindow::RunSetUp()
     ui->actionReseed->setEnabled(false);
     reseedButton->setEnabled(false);
 
-    if(ui->actionWrite_phylogeny->isChecked()||ui->actionSpecies_logging->isChecked())ui->actionPhylogeny_metrics->setChecked(true);
+    if(logging && species_mode==SPECIES_MODE_NONE)QMessageBox::warning(this,"Be aware","Species tracking is off, so the log files won't show species information");
 
     ui->actionSettings->setEnabled(false); /* unused */
     ui->actionEnvironment_Files->setEnabled(false);
 
     timer.restart();
     NextRefresh=RefreshRate;
+
+    if (logging_checkbox->isChecked())WriteLog();
 }
 
 //ARTS - resets the buttons/commands back to a pre-run state
@@ -1133,10 +1193,6 @@ void MainWindow::FinishRun()
 
     ui->actionSettings->setEnabled(true); /* unused */
     ui->actionEnvironment_Files->setEnabled(true);
-
-    //----RJG disabled this to stop getting automatic logging at end of run, thus removing variability making analysis harder.
-    //NextRefresh=0;
-    //Report();
 }
 
 //ARTS - main close action
@@ -1197,7 +1253,7 @@ void MainWindow::Report()
 
     CalcSpecies();
     out="-";
-    if (speciesLogging || ui->actionSpecies->isChecked())
+    if (species_mode!=SPECIES_MODE_NONE)
     {
         int g5=0, g50=0;
         for (int i=0; i<oldspecieslist.count(); i++)
@@ -1218,7 +1274,6 @@ void MainWindow::Report()
     FRW->WriteFiles();
 
     WriteLog();
-
 
     //reset the breedattempts and breedfails arrays
     for (int n2=0; n2<gridX; n2++)
@@ -1367,6 +1422,11 @@ void MainWindow::RefreshPopulations()
     //RJG - make path if required - this way as if user adds file name to path, this will create a subfolder with the same file name as logs
     QString save_path(path->text());
     if(!save_path.endsWith(QDir::separator()))save_path.append(QDir::separator());
+    if(batch_running)
+        {
+        save_path.append(QString("Images_run_%1").arg(runs, 4, 10, QChar('0')));
+        save_path.append(QDir::separator());
+        }
     QDir save_dir(save_path);
 
     //check to see what the mode is
@@ -1730,8 +1790,14 @@ void MainWindow::RefreshPopulations()
 //ARTS - environment window refresh function
 void MainWindow::RefreshEnvironment()
 {
-
-    QDir save_dir(path->text());
+    QString save_path(path->text());
+    if(!save_path.endsWith(QDir::separator()))save_path.append(QDir::separator());
+    if(batch_running)
+        {
+        save_path.append(QString("Images_run_%1").arg(runs, 4, 10, QChar('0')));
+        save_path.append(QDir::separator());
+        }
+    QDir save_dir(save_path);
 
     for (int n=0; n<gridX; n++)
     for (int m=0; m<gridY; m++)
@@ -1784,6 +1850,30 @@ void MainWindow::save_all_checkbox_state_changed(bool all)
     save_settles->setChecked(all);
     save_fails_settles->setChecked(all);
     save_environment->setChecked(all);
+}
+
+//RJG - At end of run in run for/batch mode, or on click when a run is going, this allows user to output the final log, along with the tree for the run
+void MainWindow::dump_run_data()
+{
+
+    QString FinalLoggingFile(path->text());
+    if(!FinalLoggingFile.endsWith(QDir::separator()))FinalLoggingFile.append(QDir::separator());
+    FinalLoggingFile.append("REVOSIM_end_run_log");
+    if(batch_running)FinalLoggingFile.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
+    FinalLoggingFile.append(".txt");
+    QFile outputfile(FinalLoggingFile);
+    outputfile.open(QIODevice::WriteOnly|QIODevice::Text);
+    QTextStream out(&outputfile);
+
+    out<<"End run log ";
+    QDateTime t(QDateTime::currentDateTime());
+    out<<t.toString(Qt::ISODate)<< "\n\n===================\n\n"<<print_settings()<<"\n\n===================\n";
+    out<<"\nThis log features the tree from a finished run, in Newick format, and then data for all the species that have existed with more individuals than minimum species size. The exact data provided depends on the phylogeny tracking mode selected in the GUI.\n";
+    out<<"\n\n===================\n\n";
+    out<<"Tree:\n\n"<<HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
+    out<<"\n\nSpecies data:\n\n";
+    out<<HandleAnalysisTool(ANALYSIS_TOOL_CODE_DUMP_DATA);
+    outputfile.close();
 }
 
 void MainWindow::species_mode_changed(int change_species_mode)
@@ -1945,7 +2035,26 @@ void MainWindow::on_actionMisc_triggered()
 
 void MainWindow::on_actionCount_Peaks_triggered()
 {
-    HandleAnalysisTool(ANALYSIS_TOOL_CODE_COUNT_PEAKS);
+
+    QString peaks(HandleAnalysisTool(ANALYSIS_TOOL_CODE_COUNT_PEAKS));
+    //Count peaks returns empty string if error.
+    if (peaks.length()<5)return;
+
+    QString count_peaks_file(path->text());
+    if(!count_peaks_file.endsWith(QDir::separator()))count_peaks_file.append(QDir::separator());
+    count_peaks_file.append("REVOSIM_count_peaks.txt");
+    QFile outputfile(count_peaks_file);
+    outputfile.open(QIODevice::WriteOnly|QIODevice::Text);
+    QTextStream out(&outputfile);
+
+    out<<"REVOSIM Peak Counting ";
+    QDateTime t(QDateTime::currentDateTime());
+    out<<t.toString(Qt::ISODate)<< "\n\n===================\n\n";
+    out<<"\nBelow is a histogram showing the different fitnesses for all potential 32-bit organisms in REVOSIM under the user-defined RGB levels.\n";
+    out<<"\n\n===================\n\n";
+    out<<peaks;
+
+    outputfile.close();
 }
 
 bool  MainWindow::on_actionEnvironment_Files_triggered()
@@ -2023,7 +2132,7 @@ void MainWindow::on_actionSave_triggered()
 
 
     out<<QString("EVOSIM file");
-    out<<(int)VERSION;
+    out<<(int)FILEVERSION;
     out<<gridX;
     out<<gridY;
     out<<slotsPerSq;
@@ -2169,10 +2278,6 @@ void MainWindow::on_actionSave_triggered()
     out<<speciesSamples;
     out<<speciesSensitivity;
     out<<timeSliceConnect;
-    out<<speciesLogging; //no longer used - compatibility only
-    out<<speciesLoggingToFile; //no longer used - compatibility only
-    out<<SpeciesLoggingFile;
-
 
     //now the species archive
     out<<oldspecieslist.count();
@@ -2245,7 +2350,7 @@ void MainWindow::on_actionLoad_triggered()
 
     int version;
     in>>version;
-    if (version>VERSION)
+    if (version>FILEVERSION)
     {QMessageBox::warning(this,"","Version too high - will try to read, but may go horribly wrong");}
 
     in>>gridX;
@@ -2406,14 +2511,6 @@ void MainWindow::on_actionLoad_triggered()
     if (!(in.atEnd())) in>>speciesSamples;
     if (!(in.atEnd())) in>>speciesSensitivity;
     if (!(in.atEnd())) in>>timeSliceConnect;
-    if (!(in.atEnd())) in>>speciesLogging; //no longer used - keep for file compatibility
-    if (!(in.atEnd())) in>>speciesLoggingToFile; //no longer used - keep for file compatibility
-    if (!(in.atEnd())) in>>SpeciesLoggingFile;
-
-    //if (speciesLogging) ui->actionTracking->setChecked(true); else ui->actionTracking->setChecked(false);
-    //if (speciesLoggingToFile)  {ui->actionLogging->setChecked(true); ui->actionTracking->setEnabled(false);}  else {ui->actionLogging->setChecked(false); ui->actionTracking->setEnabled(true);}
-    if (SpeciesLoggingFile!="") ui->actionLogging->setEnabled(true); else ui->actionLogging->setEnabled(false);
-
 
     //now the species archive
     archivedspecieslists.clear();
@@ -2572,36 +2669,6 @@ void MainWindow::on_actionFitness_logging_to_File_triggered()
     fitnessLoggingToFile=ui->actionFitness_logging_to_File->isChecked();
 }
 
-/*
-This is now obsolete, but retained in case we return to this approach
-void MainWindow::on_actionSet_Logging_File_triggered()
-{
-
-    // ----RJG: set logging to a text file for greater versatility across operating systems and analysis programs (R, Excel, etc.)
-    QString filename = QFileDialog::getSaveFileName(this,"Select file to log fossil record to","",".txt");
-    if (filename.length()==0) return;
-    QString filenamefitness(filename);
-
-    // ----RJG: Add extension as Linux does not automatically
-    if(filename.contains(".txt"))filename.insert(filename.length()-4,"_species");
-    else filename.append("_species.txt");
-
-    // ----RJG: Fitness logging
-    if(filenamefitness.contains(".txt"))filenamefitness.insert(filenamefitness.length()-4,"_fitness");
-    else filenamefitness.append("_fitness.txt");
-
-    SpeciesLoggingFile=filename;
-    FitnessLoggingFile=filenamefitness;
-
-    ui->actionLogging->setEnabled(true);
-    //ui->actionLogging->trigger();
-    ui->actionFitness_logging_to_File->setEnabled(true);
-    //ui->actionFitness_logging_to_File->trigger();
-
-
-}*/
-
-
 void MainWindow::on_actionGenerate_Tree_from_Log_File_triggered()
 {
     HandleAnalysisTool(ANALYSIS_TOOL_CODE_GENERATE_TREE);
@@ -2669,43 +2736,68 @@ void MainWindow::CalcSpecies()
 
 void MainWindow::WriteLog()
 {
-
-    //Main log
+    //Need to sort out file name in batch mode, check breed list entries is actually working, etc. then deal with logging after run
+    //RJG - write main ongoing log
+    if(logging)
     {
-        //Need to sort out file here, I think.
-
-        //log em!
+        SpeciesLoggingFile=path->text();
+        if(!SpeciesLoggingFile.endsWith(QDir::separator()))SpeciesLoggingFile.append(QDir::separator());
+        SpeciesLoggingFile.append("REVOSIM_log");
+        if(batch_running)SpeciesLoggingFile.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
+        SpeciesLoggingFile.append(".txt");
         QFile outputfile(SpeciesLoggingFile);
 
-            if (!(outputfile.exists()))
+       if (generation==0)
             {
                 outputfile.open(QIODevice::WriteOnly|QIODevice::Text);
                 QTextStream out(&outputfile);
-
-                out<<"Time,Species_ID,Species_origin_time,Species_parent_ID,Species_current_size,Species_current_genome\n";
+                out<<"New run ";
+                QDateTime t(QDateTime::currentDateTime());
+                out<<t.toString(Qt::ISODate)<< "\n\n===================\n\n"<<print_settings()<<"\n\n===================\n";
+                out<<"\nFor each iteration, this log features:\n";
+                out<<"Iteration\nFor the grid - Number of living digital organisms\tMean fitness of living digital organisms\tNumber of entries on the breed list\tNumber of failed breed attempts\n";
+                out<<"Species ID\tSpecies origin (iterations)\tSpecies parent\tSpecies current size (number of individuals)\tSpecies current genome (for speed this is the genome of a randomly sampled individual, not the modal organism)\n";
+                out<<"Note that this excludes species with less individuals than Minimum species size, but is not able to exlude species without issue, which can only be achieved with the end-run log.\n\n";
+                out<<"===================\n\n";
                 outputfile.close();
             }
 
-        outputfile.open(QIODevice::Append|QIODevice::Text);
-        QTextStream out(&outputfile);
+       outputfile.open(QIODevice::Append|QIODevice::Text);
+       QTextStream out(&outputfile);
 
+        out<<"Iteration\t"<<generation<<"\n";
+
+        int gridNumberAlive=0, gridTotalFitness=0, gridBreedEntries=0, gridBreedFails=0;
+        for (int i=0; i<gridX; i++)
+            for (int j=0; j<gridY; j++)
+                    {
+                    gridTotalFitness+=totalfit[i][j];
+                    //----RJG: Manually count breed stufffor grid
+                    gridBreedEntries+=breedattempts[i][j];
+                    gridBreedFails+=breedfails[i][j];
+                    //----RJG: Manually count number alive thanks to maxused issue
+                    for  (int k=0; k<slotsPerSq; k++)if(critters[i][j][k].fitness)gridNumberAlive++;
+                    }
+        double mean_fitness=(double)gridTotalFitness/(double)gridNumberAlive;
+
+        out<<gridNumberAlive<<"\t"<<mean_fitness<<"\t"<<gridBreedEntries<<"\t"<<gridBreedFails<<"\n";
+
+        //----RJG: And species details for each iteration
         for (int i=0; i<oldspecieslist.count(); i++)
-        {
-            out<<generation;
-            out<<","<<(oldspecieslist[i].ID);
-            out<<","<<oldspecieslist[i].origintime;
-            out<<","<<oldspecieslist[i].parent;
-            out<<","<<oldspecieslist[i].size;
+           //----RJG: Unable to exclude species without issue, for obvious reasons.
+           if(oldspecieslist[i].size>minspeciessize)
+           {
+            out<<(oldspecieslist[i].ID)<<"\t";
+            out<<oldspecieslist[i].origintime<<"\t";
+            out<<oldspecieslist[i].parent<<"\t";
+            out<<oldspecieslist[i].size<<"\t";
             //---- RJG - output binary genome if needed
-            out<<",";
-            for (int j=0; j<63; j++)
-            if (tweakers64[63-j] & oldspecieslist[i].type) out<<"1"; else out<<"0";
+            out<<"\t";
+            for (int j=0; j<63; j++)if (tweakers64[63-j] & oldspecieslist[i].type) out<<"1"; else out<<"0";
             if (tweakers64[0] & oldspecieslist[i].type) out<<"1"; else out<<"0";
             out<<"\n";
-        }
-
-        //Add fitness log stuff here, I think.
-
+            }
+        out<<"\n";
         outputfile.close();
       }
 
@@ -2738,14 +2830,14 @@ void MainWindow::WriteLog()
 
         rout<<generation<<"\t";
 
-        //RJG count breeding. Bit of a bodge, probably a better way
+        //RJG count breeding. There is probably a better way to do this, but keeping as is for now as not too slow
         int cntAsex=0, cntSex=0;
         int totalBreedAttempts=0, totalBreedFails=0;
 
         for (int i=0; i<gridX; i++)
                 for (int j=0; j<gridY; j++)
                         {
-                        for (int c=0; c<100; c++)
+                        for (int c=0; c<slotsPerSq; c++)
                             if (critters[i][j][c].fitness)
                                 {
                                     if(critters[i][j][c].return_recomb()<0)cntAsex++;
@@ -2894,11 +2986,13 @@ void MainWindow::on_SelectLogFile_pressed()
     ui->LogFile->setText(filename);
 }
 
-void MainWindow::HandleAnalysisTool(int code)
+//RJG - Handle analyses at end of run for data
+QString MainWindow::HandleAnalysisTool(int code)
 {
     //Tidied up a bit - MDS 14/9/2017
-    //Is there a valid input file?
+    //RJG - changed to return string 04/04/18 as analysis docker will be removed.
 
+    //Is there a valid input file?
     AnalysisTools a;
     QString OutputString, FilenameString;
 
@@ -2908,27 +3002,26 @@ void MainWindow::HandleAnalysisTool(int code)
         if (!(f.exists()))
         {
             QMessageBox::warning(this,"Error","No valid input file set");
-            return;
+            return QString("Error, No valid input file set");
         }
     }
 
     switch (code)
     {
-        //sort filenames here
         case ANALYSIS_TOOL_CODE_GENERATE_TREE:
             OutputString = a.GenerateTree(ui->LogFile->text()); //deprecated - log file generator now removed
             break;
 
-        case ANALYSIS_TOOL_CODE_RATES_OF_CHANGE:
+        case ANALYSIS_TOOL_CODE_RATES_OF_CHANGE://Needs to be recoded
             OutputString = a.SpeciesRatesOfChange(ui->LogFile->text());
             break;
 
-        case ANALYSIS_TOOL_CODE_EXTINCT_ORIGIN:
+        case ANALYSIS_TOOL_CODE_EXTINCT_ORIGIN://Needs to be recoded
             OutputString = a.ExtinctOrigin(ui->LogFile->text());
             break;
 
         case ANALYSIS_TOOL_CODE_STASIS:
-            OutputString = a.Stasis(ui->LogFile->text(),ui->StasisBins->value()
+            OutputString = a.Stasis(ui->LogFile->text(),ui->StasisBins->value() //Needs to be recoded
                                 ,((float)ui->StasisPercentile->value())/100.0,ui->StasisQualify->value());
             break;
 
@@ -2936,69 +3029,47 @@ void MainWindow::HandleAnalysisTool(int code)
             {
             bool ok;
             int red = QInputDialog::getInt(this, "Count peaks...","Red level?", 128, 0, 255, 1, &ok);
-            if(!ok)return;
+            if(!ok)return QString("");
             int green= QInputDialog::getInt(this, "Count peaks...","Green level?", 128, 0, 255, 1, &ok);
-            if(!ok)return;
+            if(!ok)return QString("");;
             int blue= QInputDialog::getInt(this, "Count peaks...","Green level?", 128, 0, 255, 1, &ok);
-            if(!ok)return;
+            if(!ok)return QString("");
             OutputString = a.CountPeaks(red,green,blue);
             break;
             }
 
         case ANALYSIS_TOOL_CODE_MAKE_NEWICK:
-            if (ui->actionPhylogeny_metrics->isChecked()||ui->actionPhylogeny->isChecked())OutputString = a.MakeNewick(rootspecies, minimum_species_size, exclude_species_without_issue);
+            if (phylogeny_button->isChecked()||phylogeny_and_metrics_button->isChecked())OutputString = a.MakeNewick(rootspecies, minspeciessize, allowexcludewithissue);
             else OutputString = "Species tracking is not enabled.";
-            FilenameString = "_newick";
             break;
 
         case ANALYSIS_TOOL_CODE_DUMP_DATA:
-            if (ui->actionPhylogeny_metrics->isChecked())OutputString = a.DumpData(rootspecies, minimum_species_size, exclude_species_without_issue);
-            else OutputString = "Species tracking is not enabled.";
-            FilenameString = "_specieslog";
+            if (phylogeny_and_metrics_button->isChecked())OutputString = a.DumpData(rootspecies, minspeciessize, allowexcludewithissue);
+            else OutputString = "Species tracking is not enabled, or is set to phylogeny only.";
             break;
 
         default:
             QMessageBox::warning(this,"Error","No handler for analysis tool");
-            return;
+            return QString("Error, No handler for analysis tool");
 
     }
 
     //write result to screen
-    ui->plainTextEdit->clear();
-    ui->plainTextEdit->appendPlainText(OutputString);
+    //ui->plainTextEdit->clear();
+    //ui->plainTextEdit->appendPlainText(OutputString);
 
-    //RJG - Make file here
-    //and attempt to write to file
-    if (FilenameString.length()>1 && ui->actionSpecies_logging->isChecked()) //i.e. if not blank and loging is on
-    {
+    return OutputString;
+ }
 
-        QString File(path->text()+"EvoSim"+FilenameString);
-        if(batch_running)
-            File.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
-        File.append(".txt");
-
-        QFile o(File);
-
-        if (!o.open(QIODevice::WriteOnly | QIODevice::Text))
-        {
-            QMessageBox::warning(this,"Error","Could not open output file for writing");
-            return;
-        }
-
-        QTextStream out(&o);
-        out<<OutputString;
-        o.close();
-    }
-}
 
 void MainWindow::on_actionGenerate_NWK_tree_file_triggered()
 {
-    HandleAnalysisTool(ANALYSIS_TOOL_CODE_MAKE_NEWICK);
+    dump_run_data();
 }
 
 void MainWindow::on_actionSpecies_sizes_triggered()
 {
-    HandleAnalysisTool(ANALYSIS_TOOL_CODE_DUMP_DATA);
+    dump_run_data();
 }
 
 
@@ -3007,7 +3078,7 @@ QString MainWindow::print_settings()
     QString settings;
     QTextStream settings_out(&settings);
 
-    settings_out<<"EvoSim settings - integers - Grid X: "<<gridX;
+    settings_out<<"EvoSim settings. Integers - Grid X: "<<gridX;
     settings_out<<"; Grid Y: "<<gridY;
     settings_out<<"; Settle tolerance: "<<settleTolerance;
     settings_out<<"; Start age: "<<startAge;
@@ -3021,21 +3092,277 @@ QString MainWindow::print_settings()
     settings_out<<"; Breed threshold: "<<breedThreshold;
     settings_out<<"; Slots per square: "<<slotsPerSq;
     settings_out<<"; Fitness target: "<<target;
-    settings_out<<"; Environmental change rate: "<<EnvChangeCounter;
+    settings_out<<"; Environmental change rate: "<<envchangerate;
     settings_out<<"; Years per iteration: "<<yearsPerIteration;
-    settings_out<<"; EvoSim settings - bools - recalculate fitness: "<<recalcFitness;
+    settings_out<<"; Minimum species size:"<<minspeciessize;
+
+
+    settings_out<<". Bools - recalculate fitness: "<<recalcFitness;
     settings_out<<"; Toroidal environment: "<<toroidal;
     settings_out<<"; Nonspatial setling: "<<nonspatial;
     settings_out<<"; Enforce max diff to breed:"<<breeddiff;
     settings_out<<"; Only breed within species:"<<breedspecies;
     settings_out<<"; Pathogens enabled:"<<path_on;
     settings_out<<"; Variable mutate:"<<variableMutate;
-    settings_out<<"; Exclude species without issue:"<<exclude_species_without_issue;
-    settings_out<<"; minimum_species_size:"<<minimum_species_size;
+    settings_out<<"; Exclude species without issue:"<<allowexcludewithissue;
     settings_out<<"; Breeding:";
     if(sexual)settings_out<<" sexual.";
     else if (asexual)settings_out<<" asexual.";
     else settings_out<<" variable.";
 
     return settings;
+}
+
+//These still need testing and conecting to signal
+void MainWindow::load_settings()
+{
+    QString settings_filename=QFileDialog::getOpenFileName(this, tr("Open File"));
+    QFile settings_file(settings_filename);
+    if(!settings_file.open(QIODevice::ReadOnly))
+            {
+            QMessageBox::warning(0,"Erk","There seems to have been an error opening the file.");
+            return;
+            }
+
+
+           QXmlStreamReader settings_file_in(&settings_file);
+
+           while (!settings_file_in.atEnd()&& !settings_file_in.hasError())
+               {
+
+                /* Read next element.*/
+                QXmlStreamReader::TokenType token = settings_file_in.readNext();
+                /* If token is just StartDocument, we'll go to next.*/
+
+                if(token == QXmlStreamReader::StartDocument)continue;
+                if(token == QXmlStreamReader::StartElement)
+                    {
+                       //Ints
+                       if(settings_file_in.name() == "revosim")continue;
+                       if(settings_file_in.name() == "gridX")gridX=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "gridY")gridY=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "settleTolerance")settleTolerance=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "slotsPerSq")slotsPerSq=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "startAge")startAge=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "dispersal")dispersal=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "food")food=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "breedCost")breedCost=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "mutate")mutate=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "pathogen_mutate")pathogen_mutate=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "pathogen_frequency")pathogen_frequency=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "maxDiff")maxDiff=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "breedThreshold")breedThreshold=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "target")target=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "envchangerate")envchangerate=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "yearsPerIteration")yearsPerIteration=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "speciesSamples")speciesSamples=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "speciesSensitivity")speciesSensitivity=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "timeSliceConnect")timeSliceConnect=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "minspeciessize")minspeciessize=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "pathogen_mutate")pathogen_mutate=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "pathogen_frequency")pathogen_frequency=settings_file_in.readElementText().toInt();
+
+                       //Bools
+                       if(settings_file_in.name() == "recalcFitness")recalcFitness=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "toroidal")toroidal=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "nonspatial")nonspatial=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "breeddiff")breeddiff=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "breedspecies")breedspecies=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "path_on")path_on=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "variableMutate")variableMutate=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "allowexcludewithissue")allowexcludewithissue=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "sexual")sexual=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "asexual")asexual=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "variableBreed")variableBreed=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "logging")logging=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "gui")gui=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "path_on")path_on=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "fitnessLoggingToFile")fitnessLoggingToFile=settings_file_in.readElementText().toInt();
+                     }
+               }
+           // Error
+           if(settings_file_in.hasError()) QMessageBox::warning(0,"Oops","There seems to have been an error reading in the XML file. Not all settings will have been loaded.");
+           else ui->statusBar->showMessage("Loaded settings file");
+
+           settings_file.close();
+}
+
+void MainWindow::save_settings()
+{
+    QString settings_filename=QFileDialog::getSaveFileName(this, tr("Save file as..."));
+
+    QFile settings_file(settings_filename);
+    if(!settings_file.open(QIODevice::WriteOnly|QIODevice::Text))
+        {
+            QMessageBox::warning(0, "Error!", "Error opening settings file to write to.");
+            return;
+        }
+
+        QXmlStreamWriter settings_file_out(&settings_file);
+        settings_file_out.setAutoFormatting(true);
+        settings_file_out.setAutoFormattingIndent(-2);
+
+        settings_file_out.writeStartDocument();
+
+        settings_file_out.writeStartElement("revosim");
+
+        //Ints
+        settings_file_out.writeStartElement("gridX");
+        settings_file_out.writeCharacters(QString("%1").arg(gridX));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("gridY");
+        settings_file_out.writeCharacters(QString("%1").arg(gridY));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("settleTolerance");
+        settings_file_out.writeCharacters(QString("%1").arg(settleTolerance));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("slotsPerSq");
+        settings_file_out.writeCharacters(QString("%1").arg(slotsPerSq));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("startAge");
+        settings_file_out.writeCharacters(QString("%1").arg(startAge));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("dispersal");
+        settings_file_out.writeCharacters(QString("%1").arg(dispersal));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("food");
+        settings_file_out.writeCharacters(QString("%1").arg(food));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("breedCost");
+        settings_file_out.writeCharacters(QString("%1").arg(breedCost));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("mutate");
+        settings_file_out.writeCharacters(QString("%1").arg(mutate));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("pathogen_mutate");
+        settings_file_out.writeCharacters(QString("%1").arg(pathogen_mutate));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("pathogen_frequency");
+        settings_file_out.writeCharacters(QString("%1").arg(pathogen_frequency));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("maxDiff");
+        settings_file_out.writeCharacters(QString("%1").arg(maxDiff));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("breedThreshold");
+        settings_file_out.writeCharacters(QString("%1").arg(breedThreshold));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("target");
+        settings_file_out.writeCharacters(QString("%1").arg(target));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("envchangerate");
+        settings_file_out.writeCharacters(QString("%1").arg(envchangerate));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("yearsPerIteration");
+        settings_file_out.writeCharacters(QString("%1").arg(yearsPerIteration));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("speciesSamples");
+        settings_file_out.writeCharacters(QString("%1").arg(speciesSamples));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("speciesSensitivity");
+        settings_file_out.writeCharacters(QString("%1").arg(speciesSensitivity));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("timeSliceConnect");
+        settings_file_out.writeCharacters(QString("%1").arg(timeSliceConnect));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("minspeciessize");
+        settings_file_out.writeCharacters(QString("%1").arg(minspeciessize));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("pathogen_mutate");
+        settings_file_out.writeCharacters(QString("%1").arg(pathogen_mutate));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("pathogen_frequency");
+        settings_file_out.writeCharacters(QString("%1").arg(pathogen_frequency));
+        settings_file_out.writeEndElement();
+
+        //Bools
+        settings_file_out.writeStartElement("recalcFitness");
+        settings_file_out.writeCharacters(QString("%1").arg(recalcFitness));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("toroidal");
+        settings_file_out.writeCharacters(QString("%1").arg(toroidal));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("nonspatial");
+        settings_file_out.writeCharacters(QString("%1").arg(nonspatial));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("breeddiff");
+        settings_file_out.writeCharacters(QString("%1").arg(breeddiff));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("breedspecies");
+        settings_file_out.writeCharacters(QString("%1").arg(breedspecies));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("path_on");
+        settings_file_out.writeCharacters(QString("%1").arg(path_on));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("variableMutate");
+        settings_file_out.writeCharacters(QString("%1").arg(variableMutate));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("allowexcludewithissue");
+        settings_file_out.writeCharacters(QString("%1").arg(allowexcludewithissue));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("sexual");
+        settings_file_out.writeCharacters(QString("%1").arg(sexual));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("asexual");
+        settings_file_out.writeCharacters(QString("%1").arg(asexual));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("variableBreed");
+        settings_file_out.writeCharacters(QString("%1").arg(variableBreed));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("logging");
+        settings_file_out.writeCharacters(QString("%1").arg(logging));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("gui");
+        settings_file_out.writeCharacters(QString("%1").arg(gui));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("path_on");
+        settings_file_out.writeCharacters(QString("%1").arg(gui));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("fitnessLoggingToFile");
+        settings_file_out.writeCharacters(QString("%1").arg(fitnessLoggingToFile));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeEndDocument();
+
+        settings_file.close();
+
+        ui->statusBar->showMessage("File saved");
+
+
 }

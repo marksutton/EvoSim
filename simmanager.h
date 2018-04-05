@@ -3,7 +3,7 @@
  * Header: Simulation Manager
  *
  * All REVOSIM code is released under the GNU General Public License.
- * See GNUv3License.txt files in the programme directory.
+ * See LICENSE.md files in the programme directory.
  *
  * All REVOSIM code is Copyright 2018 by Mark Sutton, Russell Garwood,
  * and Alan R.T. Spencer.
@@ -123,7 +123,6 @@ extern int yearsPerIteration;
 extern int speciesSamples; //no longer used - keep for backwards compat of files
 extern int speciesSensitivity; //no longer used - keep for backwards compat of files
 extern int timeSliceConnect; //no longer used - keep for backwards compat of files
-extern int minimum_species_size;
 extern bool speciesLogging;
 extern bool speciesLoggingToFile;
 extern QString SpeciesLoggingFile;
@@ -131,7 +130,6 @@ extern bool fitnessLoggingToFile;
 //extern QString FitnessLoggingFile;
 extern bool logging;
 extern bool gui;
-extern bool exclude_species_without_issue;
 
 extern QStringList EnvFiles;
 extern int CurrentEnvFile;

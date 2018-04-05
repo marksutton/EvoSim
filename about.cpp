@@ -3,7 +3,7 @@
  * About Dialog
  *
  * All REVOSIM code is released under the GNU General Public License.
- * See GNUv3License.txt files in the programme directory.
+ * See LICENSE.md files in the programme directory.
  *
  * All REVOSIM code is Copyright 2018 by Mark Sutton, Russell Garwood,
  * and Alan R.T. Spencer.
@@ -17,6 +17,9 @@
 
 #include "about.h"
 #include "ui_about.h"
+#include "version.h"
+
+#include <QString>
 
 //RJG - so can access MainWin
 #include "mainwindow.h"
@@ -28,36 +31,39 @@ About::About(QWidget *parent) :
     ui->setupUi(this);
 
     setWindowTitle("About");
-    QFont font;
-    font.setWeight(QFont::Bold);
+    setWindowIcon(QIcon (":/icon.png"));
 
     QPixmap picture_1(":/img.png");
     ui->header->setPixmap(picture_1);
     ui->header->setAlignment(Qt::AlignCenter);
 
-    ui->textLabel_1->setFont(font);
     ui->textLabel_1->setText(MainWin->windowTitle());
+    ui->textLabel_1->setObjectName("aboutTextLabel1");
     ui->textLabel_1->setAlignment(Qt::AlignCenter);
 
     ui->textLabel_2->setWordWrap(true);
-    ui->textLabel_2->setText("This version of EvoSim was compiled on the date shown above. It was coded by:"
+    ui->textLabel_2->setText("This version of " + QString(PRODUCTNAME) + " was compiled on the date shown above. It was coded by:"
                        "<br><br><b>Mark Sutton</b> (m.sutton@imperial.ac.uk)<br><b>Russell Garwood</b> (russell.garwood@manchester.ac.uk)<br><b>Alan R.T. Spencer</b> (alan.spencer@imperial.ac.uk)"
                        "<br><br>Reports are appreciated, and comments, suggestions, and feature requests are welcome.");
     ui->textLabel_2->setAlignment(Qt::AlignCenter);
 
     ui->textLabel_3->setWordWrap(true);
     ui->textLabel_3->setText("<b>Copyright and License:</b>"
-                             "<br><br>Copyright (C) 2018 Mark Sutton, Russell Garwood, Alan R.T. Spencer."
-                             "<br><br>This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to redistribute it under the conditions of the GPL v3 license (see below).");
+                             "<br><br>" + QString(COPYRIGHT) +
+                             "<br><br>"+ QString(LICENCE) +" (see below).");
     ui->textLabel_3->setAlignment(Qt::AlignCenter);
 
     ui->textBrowser->setHtml(returnLicense());
     ui->textBrowser->setOpenLinks(true);
     ui->textBrowser->setOpenExternalLinks(true);
 
-    QPixmap picture_2(":/gplv3-logo.png");
-    ui->footer->setPixmap(picture_2);
-    ui->footer->setAlignment(Qt::AlignCenter);
+    QPixmap picture_2(":/gplV3Logo");
+    ui->footer1->setPixmap(picture_2);
+    ui->footer1->setAlignment(Qt::AlignCenter);
+
+    QPixmap picture_3(":/builtWithQTLogo");
+    ui->footer2->setPixmap(picture_3);
+    ui->footer2->setAlignment(Qt::AlignCenter);
 
     ui->buttonBox->setStandardButtons(QDialogButtonBox::Close);
 }

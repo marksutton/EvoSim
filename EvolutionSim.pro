@@ -54,5 +54,5 @@ RESOURCES += \
 CONFIG += c++11
 
 DISTFILES += \
-    GNUv3License.txt
+    LICENSE.md
 

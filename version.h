@@ -3,7 +3,7 @@
  * Header: Version
  *
  * All REVOSIM code is released under the GNU General Public License.
- * See GNUv3License.txt files in the programme directory.
+ * See LICENSE.md files in the programme directory.
  *
  * All REVOSIM code is Copyright 2018 by Mark Sutton, Russell Garwood,
  * and Alan R.T. Spencer.
@@ -19,10 +19,23 @@
 #define VERSION_H
 
 //Software Versions
-#define MAJORVERSION 1
-#define MINORVERSION 8
+#define MAJORVERSION 2
+#define MINORVERSION 0
+#define PATCHVERSION 0
 
-//File version
-#define VERSION 1
+//Save File Version
+#define FILEVERSION 1
+
+//Legal Stuff
+#define COPYRIGHT "Copyright © 2018 Mark Sutton, Russell Garwood, Alan R.T.Spencer"
+#define LICENCE "This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to redistribute it under the conditions of the GPL v3  license"
+
+//Programme Name
+#define PRODUCTNAME "REvoSim"
+
+//Github
+//ARTS - This will need to be changed once we settle on a name for the programme
+#define GITHUB_URL "https://github.com/"
+#define GITREPOSITORY "marksutton/EvoSim"
 
 #endif // VERSION_H
