@@ -473,42 +473,44 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //ARTS - Output Save Path
     QGridLayout *savePathGrid = new QGridLayout;
-    QLabel *save_path_label = new QLabel("Output save path");
-    save_path_label->setStyleSheet("font-weight: bold");
-    savePathGrid->addWidget(save_path_label,1,1,1,2);
+    QLabel *savePathLabel = new QLabel("Output save path");
+    savePathLabel->setObjectName("savePathLabel");
+    savePathGrid->addWidget(savePathLabel,1,1,1,2);
     QString program_path(QStandardPaths::writableLocation(QStandardPaths::DesktopLocation));
     program_path.append("/");
     path = new QLineEdit(program_path);
     savePathGrid->addWidget(path,2,1,1,2);
-    QPushButton *change_path = new QPushButton("&Change");
-    savePathGrid->addWidget(change_path,3,1,1,2);
-    connect(change_path, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
+    QPushButton *changePathButton = new QPushButton("&Change");
+    changePathButton->setObjectName("changePathButton");
+    savePathGrid->addWidget(changePathButton,3,1,1,2);
+    connect(changePathButton, SIGNAL (clicked()), this, SLOT(changepath_triggered()));
 
     //ARTS - Refresh/Polling Rate
     QGridLayout *pollingRateGrid = new QGridLayout;
     QLabel *pollingRateLabel = new QLabel("Refresh/Polling Rate");
-    pollingRateLabel->setStyleSheet("font-weight: bold");
+    pollingRateLabel->setObjectName("pollingRateLabel");
     pollingRateGrid->addWidget(pollingRateLabel,1,1,1,2);
 
     RefreshRate=50;
-    QLabel *RefreshRate_label = new QLabel("Refresh/polling rate:");
-    QSpinBox *RefreshRate_spin = new QSpinBox;
-    RefreshRate_spin->setMinimum(1);
-    RefreshRate_spin->setMaximum(10000);
-    RefreshRate_spin->setValue(RefreshRate);
-    pollingRateGrid->addWidget(RefreshRate_label,2,1);
-    pollingRateGrid->addWidget(RefreshRate_spin,2,2);
-    connect(RefreshRate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
+    QLabel *refreshRateLabel = new QLabel("Refresh/polling rate:");
+    refreshRateLabel->setObjectName("refreshRateLabel");
+    QSpinBox *refreshRateSpin = new QSpinBox;
+    refreshRateSpin->setMinimum(1);
+    refreshRateSpin->setMaximum(10000);
+    refreshRateSpin->setValue(RefreshRate);
+    pollingRateGrid->addWidget(refreshRateLabel,2,1);
+    pollingRateGrid->addWidget(refreshRateSpin,2,2);
+    connect(refreshRateSpin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { RefreshRate=i; });
 
     //ARTS - Logging: Population & Environment
     QGridLayout *images_grid = new QGridLayout;
 
     QLabel *imagesLabel= new QLabel("Logging: Population/Enivronment");
-    imagesLabel->setStyleSheet("font-weight: bold");
+    imagesLabel->setObjectName("imagesLabel");
     images_grid->addWidget(imagesLabel,1,1,1,2);
 
     QLabel *imagesInfoLabel= new QLabel("Turn on/off these logging options to save images of the population/environment windows every refresh/poll.");
-    imagesInfoLabel->setStyleSheet("color: blue;");
+    imagesInfoLabel->setObjectName("imagesInfoLabel");
     imagesInfoLabel->setWordWrap(true);
     images_grid->addWidget(imagesInfoLabel,2,1,1,2);
 

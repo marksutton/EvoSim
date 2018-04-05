@@ -1,0 +1,7 @@
+QLabel#savePathLabel, QLabel#pollingRateLabel, QLabel#imagesLabel {
+    font-weight: bold;
+}
+
+QLabel#imagesInfoLabel {
+    color: green;
+}

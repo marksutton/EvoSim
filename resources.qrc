@@ -18,5 +18,6 @@
         <file alias="img.png">resources/img.png</file>
         <file alias="gplv3-logo.png">resources/gplv3-127x51.png</file>
         <file alias="icon.png">resources/icon.png</file>
+        <file alias="stylesheet.qss">resources/stylesheet.qss</file>
     </qresource>
 </RCC>
