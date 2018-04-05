@@ -2,10 +2,10 @@
  * @file
  * Main Window
  *
- * All REVOSIM code is released under the GNU General Public License.
+ * All REvoSim code is released under the GNU General Public License.
  * See LICENSE.md files in the programme directory.
  *
- * All REVOSIM code is Copyright 2018 by Mark Sutton, Russell Garwood,
+ * All REvoSim code is Copyright 2018 by Mark Sutton, Russell Garwood,
  * and Alan R.T. Spencer.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -124,10 +124,10 @@ MainWindow::MainWindow(QWidget *parent) :
     stopButton = new QAction(QIcon(QPixmap(":/toolbar/stopButton-Enabled.png")), QString("Stop"), this);
     resetButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton-Enabled.png")), QString("Reset"), this);
     reseedButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton_knowngenome-Enabled.png")), QString("Reseed"), this);
-    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/globesettingsButton-Enabled.png")), QString("Simulation"), this);
-    orgSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled.png")), QString("Organism"), this);
-    logSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/logButton-Enabled.png")), QString("Output"), this);
-    aboutButton = new QAction(QIcon(QPixmap(":/toolbar/aboutButton-Enabled.png")), QString("About"), this);
+    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/globesettingsButton-Enabled-white.png")), QString("Simulation"), this);
+    orgSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled-white.png")), QString("Organism"), this);
+    logSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/logButton-Enabled-white.png")), QString("Output"), this);
+    aboutButton = new QAction(QIcon(QPixmap(":/toolbar/aboutButton-Enabled-white.png")), QString("About"), this);
 
     //ARTS - Toolbar default settings
     //RJG - docker toggles defaults
@@ -1855,7 +1855,7 @@ void MainWindow::dump_run_data()
 
     QString FinalLoggingFile(path->text());
     if(!FinalLoggingFile.endsWith(QDir::separator()))FinalLoggingFile.append(QDir::separator());
-    FinalLoggingFile.append("REVOSIM_end_run_log");
+    FinalLoggingFile.append("REvoSim_end_run_log");
     if(batch_running)FinalLoggingFile.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
     FinalLoggingFile.append(".txt");
     QFile outputfile(FinalLoggingFile);
@@ -2039,15 +2039,15 @@ void MainWindow::on_actionCount_Peaks_triggered()
 
     QString count_peaks_file(path->text());
     if(!count_peaks_file.endsWith(QDir::separator()))count_peaks_file.append(QDir::separator());
-    count_peaks_file.append("REVOSIM_count_peaks.txt");
+    count_peaks_file.append("REvoSim_count_peaks.txt");
     QFile outputfile(count_peaks_file);
     outputfile.open(QIODevice::WriteOnly|QIODevice::Text);
     QTextStream out(&outputfile);
 
-    out<<"REVOSIM Peak Counting ";
+    out<<"REvoSim Peak Counting ";
     QDateTime t(QDateTime::currentDateTime());
     out<<t.toString(Qt::ISODate)<< "\n\n===================\n\n";
-    out<<"\nBelow is a histogram showing the different fitnesses for all potential 32-bit organisms in REVOSIM under the user-defined RGB levels.\n";
+    out<<"\nBelow is a histogram showing the different fitnesses for all potential 32-bit organisms in REvoSim under the user-defined RGB levels.\n";
     out<<"\n\n===================\n\n";
     out<<peaks;
 
@@ -2739,7 +2739,7 @@ void MainWindow::WriteLog()
     {
         SpeciesLoggingFile=path->text();
         if(!SpeciesLoggingFile.endsWith(QDir::separator()))SpeciesLoggingFile.append(QDir::separator());
-        SpeciesLoggingFile.append("REVOSIM_log");
+        SpeciesLoggingFile.append("REvoSim_log");
         if(batch_running)SpeciesLoggingFile.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
         SpeciesLoggingFile.append(".txt");
         QFile outputfile(SpeciesLoggingFile);
@@ -3361,4 +3361,10 @@ void MainWindow::save_settings()
         ui->statusBar->showMessage("File saved");
 
 
+}
+
+//ARTS - Exit the application
+void MainWindow::on_actionExit_triggered()
+{
+    QApplication::quit();
 }

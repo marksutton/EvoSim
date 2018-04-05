@@ -189,11 +189,11 @@
             <enum>Qt::ScrollBarAsNeeded</enum>
            </property>
            <property name="backgroundBrush">
-            <brush brushstyle="SolidPattern">
+            <brush brushstyle="NoBrush">
              <color alpha="255">
-              <red>128</red>
-              <green>128</green>
-              <blue>128</blue>
+              <red>13</red>
+              <green>13</green>
+              <blue>13</blue>
              </color>
             </brush>
            </property>
@@ -307,9 +307,9 @@
            <property name="backgroundBrush">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
-              <red>128</red>
-              <green>128</green>
-              <blue>128</blue>
+              <red>13</red>
+              <green>13</green>
+              <blue>13</blue>
              </color>
             </brush>
            </property>
@@ -829,6 +829,8 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionLoad_settings"/>
     <addaction name="separator"/>
     <addaction name="actionCount_peaks"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -1613,6 +1615,11 @@ p, li { white-space: pre-wrap; }
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
    </property>
   </action>
  </widget>

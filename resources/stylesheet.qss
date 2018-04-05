@@ -1,9 +1,351 @@
+/**
+ * @file
+ * Main REvoSim CSS styling
+ *
+ * All REvoSim code is released under the GNU General Public License.
+ * See LICENSE.md files in the programme directory.
+ *
+ * All REvoSim code is Copyright 2018 by Mark Sutton, Russell Garwood,
+ * and Alan R.T. Spencer.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or (at
+ * your option) any later version. This program is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY.
+ */
+
+
+/*
+ *	COLOR_DARK     = #0d0d0d //5% black
+ *	COLOR_MEDIUM   = #404040 //25% black
+ *	COLOR_MEDLIGHT = #666666 //40% black
+ *	COLOR_LIGHT    = #e6e6e6 //90% black
+ *	COLOR_ACCENT   = #448851 //40% green
+ */
+
+* {
+    background: #0d0d0d;
+    color: #e6e6e6;
+    border: 1px solid #666666;
+}
+
+QWidget {
+    border: none;
+}
+
+QWidget::item:selected {
+    background: #448851;
+}
+
+QCheckBox, QRadioButton {
+    border: none;
+}
+
+QRadioButton::indicator, QCheckBox::indicator {
+    width: 13px;
+    height: 13px;
+}
+
+QRadioButton::indicator::unchecked, QCheckBox::indicator::unchecked {
+    border: 1px solid #666666;
+    background: none;
+}
+
+QRadioButton::indicator:unchecked:hover, QCheckBox::indicator:unchecked:hover {
+    border: 1px solid #e6e6e6;
+}
+
+QRadioButton::indicator::checked, QCheckBox::indicator::checked {
+    border: 1px solid #666666;
+    background: #666666;
+}
+
+QRadioButton::indicator:checked:hover, QCheckBox::indicator:checked:hover {
+    border: 1px solid #e6e6e6;
+    background: #e6e6e6;
+}
+
+QGroupBox {
+    margin-top: 6px;
+}
+
+QGroupBox::title {
+    top: -7px;
+    left: 7px;
+}
+
+QScrollBar {
+    border: 1px solid #666666;
+    background: #0d0d0d;
+}
+
+QScrollBar:horizontal {
+    height: 15px;
+    margin: 0px 0px 0px 32px;
+}
+
+QScrollBar:vertical {
+    width: 15px;
+    margin: 32px 0px 0px 0px;
+}
+
+QScrollBar::handle {
+    background: #404040;
+    border: 1px solid #666666;
+}
+
+QScrollBar::handle:horizontal {
+    border-width: 0px 1px 0px 1px;
+}
+
+QScrollBar::handle:vertical {
+    border-width: 1px 0px 1px 0px;
+}
+
+QScrollBar::handle:horizontal {
+    min-width: 20px;
+}
+
+QScrollBar::handle:vertical {
+    min-height: 20px;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    background:#404040;
+    border: 1px solid #666666;
+    subcontrol-origin: margin;
+}
+
+QScrollBar::add-line {
+    position: absolute;
+}
+
+QScrollBar::add-line:horizontal {
+    width: 15px;
+    subcontrol-position: left;
+    left: 15px;
+}
+
+QScrollBar::add-line:vertical {
+    height: 15px;
+    subcontrol-position: top;
+    top: 15px;
+}
+
+QScrollBar::sub-line:horizontal {
+    width: 15px;
+    subcontrol-position: top left;
+}
+
+QScrollBar::sub-line:vertical {
+    height: 15px;
+    subcontrol-position: top;
+}
+
+QScrollBar:left-arrow, QScrollBar::right-arrow, QScrollBar::up-arrow, QScrollBar::down-arrow {
+    border: 1px solid #666666;
+    width: 3px;
+    height: 3px;
+}
+
+QScrollBar::add-page, QScrollBar::sub-page {
+    background: none;
+}
+
+QAbstractButton:hover {
+    background: #404040;
+}
+
+QAbstractButton:pressed {
+    background: #666666;
+}
+
+QAbstractItemView {
+    show-decoration-selected: 1;
+    selection-background-color: #448851;
+    selection-color: #e6e6e6;
+    alternate-background-color: #404040;
+}
+
+QHeaderView {
+    border: 1px solid #666666;
+}
+
+QHeaderView::section {
+    background: #0d0d0d;
+    border: 1px solid #666666;
+    padding: 4px;
+}
+
+QHeaderView::section:selected, QHeaderView::section::checked {
+    background: #404040;
+}
+
+QTableView {
+    gridline-color: #666666;
+}
+
+QTabBar {
+    margin-left: 2px;
+}
+
+QTabBar::tab {
+    border-radius: 0px;
+    padding: 4px;
+    margin: 4px;
+}
+
+QTabBar::tab:selected {
+    background: #404040;
+}
+
+QToolBar {
+
+}
+
+QPushButton {
+    border: 2px solid #666666;
+    border-radius: 6px;
+    padding: 2px;
+    background-color: #404040;
+    min-width: 80px;
+}
+
+QPushButton::hover:!pressed {
+    background-color: #448851;
+}
+
+QPushButton:flat {
+    border: none; /* no border for a flat push button */
+}
+
+QPushButton:default {
+    border-color: #448851; /* make the default button prominent */
+}
+
+QComboBox::down-arrow {
+    border: 1px solid #666666;
+    background: #404040;
+}
+
+QComboBox::drop-down {
+    border: 1px solid #666666;
+    background: #404040;
+}
+
+QComboBox::down-arrow {
+    width: 3px;
+    height: 3px;
+    border: 1px solid #666666;
+}
+
+QAbstractSpinBox {
+    padding-right: 15px;
+}
+
+QAbstractSpinBox::up-button, QAbstractSpinBox::down-button {
+    border: 1px solid #666666;
+    background: #404040;
+    subcontrol-origin: border;
+}
+
+QAbstractSpinBox::up-arrow, QAbstractSpinBox::down-arrow {
+    width: 3px;
+    height: 3px;
+    border: 1px solid #666666;
+}
+
+QSlider {
+    border: none;
+}
+
+QSlider::groove:horizontal {
+    height: 5px;
+    margin: 4px 0px 4px 0px;
+}
+
+QSlider::groove:vertical {
+    width: 5px;
+    margin: 0px 4px 0px 4px;
+}
+
+QSlider::handle {
+    border: 1px solid #666666;
+    background: #404040;
+}
+
+QSlider::handle:horizontal {
+    width: 15px;
+    margin: -4px 0px -4px 0px;
+}
+
+QSlider::handle:vertical {
+    height: 15px;
+    margin: 0px -4px 0px -4px;
+}
+
+QSlider::add-page:vertical, QSlider::sub-page:horizontal {
+    background: #448851;
+}
+
+QSlider::sub-page:vertical, QSlider::add-page:horizontal {
+    background: #404040;
+}
+
+QLabel {
+    border: none;
+}
+
+QProgressBar {
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    width: 1px;
+    background-color: #448851;
+}
+
+QMenuBar {
+
+}
+
+QMenuBar::item {
+
+}
+
+QMenuBar::item:selected {
+
+}
+
+QMenuBar::item:pressed {
+
+}
+
+QMenu::separator {
+    background: #404040;
+    height: 3px;
+}
+
+QLineEdit {
+    border: 1px solid #666666;
+}
+
+
+/**
+ * Indivdual object styling
+ */
+
+QWidget#GV_Population, QWidget#GV_Environment {
+    border: 1px solid #666666;
+}
+
 QLabel#savePathLabel, QLabel#pollingRateLabel, QLabel#imagesLabel, QLabel#outputSettingsLabel, QLabel#advancedSettingsLabel {
     font-weight: bold;
 }
 
 QLabel#imagesInfoLabel, QLabel#textLogInfoLabel, QLabel#textLogInfo1Label, QLabel#textLogInfo2Label, QLabel#textLogInfo3Label {
-    color: green;
+    color: #448851;
 }
 
 QCheckBox#saveAllImagesCheckbox {
