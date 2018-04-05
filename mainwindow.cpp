@@ -577,9 +577,9 @@ MainWindow::MainWindow(QWidget *parent) :
     fileLoggingGrid->addWidget(textLogInfo3Label,8,1,1,2);
 
     QCheckBox *exclude_without_issue_checkbox = new QCheckBox("Exclude species without issue");
-    exclude_without_issue_checkbox->setChecked(exclude_species_without_issue);
+    exclude_without_issue_checkbox->setChecked(allowexcludewithissue);
     fileLoggingGrid->addWidget(exclude_without_issue_checkbox,9,1,1,1);
-    connect(exclude_without_issue_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { exclude_species_without_issue=i; });
+    connect(exclude_without_issue_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { allowexcludewithissue=i; });
 
     QLabel *Min_species_size_label = new QLabel("Minimum species size:");
     QSpinBox *Min_species_size_spin = new QSpinBox;
@@ -926,7 +926,7 @@ void MainWindow::on_actionRun_for_triggered()
         i--;
     }
 
-    dump_run_data();
+    if(autodump_checkbox->isChecked())dump_run_data();
 
     //ARTS Show finish message and run FinshRun()
     if (stopflag==false) {
@@ -1058,7 +1058,7 @@ void MainWindow::on_actionBatch_triggered()
             i--;
         }
 
-        dump_run_data();
+        if(autodump_checkbox->isChecked())dump_run_data();
 
         runs++;
 
@@ -1144,7 +1144,7 @@ void MainWindow::RunSetUp()
     ui->actionReseed->setEnabled(false);
     reseedButton->setEnabled(false);
 
-    if(ui->actionWrite_phylogeny->isChecked()||ui->actionSpecies_logging->isChecked())ui->actionPhylogeny_metrics->setChecked(true);
+    if(logging && species_mode==SPECIES_MODE_NONE)QMessageBox::warning(this,"Be aware","Species tracking is off, so the log files won't show species information");
 
     ui->actionSettings->setEnabled(false); /* unused */
     ui->actionEnvironment_Files->setEnabled(false);
@@ -1248,7 +1248,7 @@ void MainWindow::Report()
 
     CalcSpecies();
     out="-";
-    if (speciesLogging || ui->actionSpecies->isChecked())
+    if (species_mode!=SPECIES_MODE_NONE)
     {
         int g5=0, g50=0;
         for (int i=0; i<oldspecieslist.count(); i++)
