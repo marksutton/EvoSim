@@ -624,7 +624,7 @@ MainWindow::MainWindow(QWidget *parent) :
     textLogInfo3Label->setWordWrap(true);
     fileLoggingGrid->addWidget(textLogInfo3Label,8,1,1,2);
 
-    QCheckBox *exclude_without_issue_checkbox = new QCheckBox("Exclude species without issue");
+    exclude_without_issue_checkbox = new QCheckBox("Exclude species without issue");
     exclude_without_issue_checkbox->setChecked(allowexcludewithissue);
     fileLoggingGrid->addWidget(exclude_without_issue_checkbox,9,1,1,1);
     connect(exclude_without_issue_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { allowexcludewithissue=i; });
