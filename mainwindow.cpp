@@ -65,6 +65,46 @@ Coding:
 -- Add Keyboard shortcuts where required
 -- Load and save settings still need to update gui
 
+QSpinBox *gridX_spin
+QSpinBox *gridY_spin
+QSpinBox *settleTolerance_spin
+QSpinBox *slots_spin
+QSpinBox *startAge_spin
+QSpinBox *dispersal_spin
+QSpinBox *energy_spin
+QSpinBox *breedCost_spin
+mutate
+QSpinBox *refreshRateSpin
+QSpinBox *pathogen_mutate_spin
+QSpinBox *pathogen_frequency_spin
+QSpinBox *maxDiff_spin
+QSpinBox *breedThreshold_spin
+QSpinBox *target_spin
+QSpinBox *environment_rate_spin
+yearsPerIteration
+speciesSamples
+speciesSensitivity
+timeSliceConnect
+minspeciessize
+
+QCheckBox *recalcFitness_checkbox
+QCheckBox *toroidal_checkbox
+QCheckBox *nonspatial_checkbox
+QCheckBox *breeddiff_checkbox
+QCheckBox *breedspecies_checkbox
+QCheckBox *pathogens_checkbox
+QCheckBox *variable_mutation_checkbox
+allowexcludewithissue
+QRadioButton *sexual_radio
+QRadioButton *asexual_radio
+QRadioButton *variableBreed_radio
+logging
+gui
+fitnessLoggingToFile
+
+
+path; QSpinBox *refreshRateSpin --> add to settings file
+
 Visualisation:
 -- Settles - does this work at all?
 -- Fails - check green scaling
@@ -217,7 +257,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //----RJG - Note in order to use a lamda not only do you need to use C++11, but there are two valueCHanged signals for spinbox - and int and a string. Need to cast it to an int
     connect(environment_rate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i ) { envchangerate=i; });
 
-    QCheckBox *toroidal_checkbox = new QCheckBox("Toroidal");
+    toroidal_checkbox = new QCheckBox("Toroidal");
     toroidal_checkbox->setChecked(toroidal);
     settings_grid->addWidget(toroidal_checkbox,2,1,1,2);
     connect(toroidal_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { toroidal=i; });
@@ -227,7 +267,7 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_grid->addWidget(simulation_size_label,3,1,1,2);
 
     QLabel *gridX_label = new QLabel("Grid X:");
-    QSpinBox *gridX_spin = new QSpinBox;
+    gridX_spin = new QSpinBox;
     gridX_spin->setMinimum(1);
     gridX_spin->setMaximum(256);
     gridX_spin->setValue(gridX);
@@ -236,7 +276,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(gridX_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { int oldrows=gridX; gridX=i;redoImages(oldrows,gridY);});
 
     QLabel *gridY_label = new QLabel("Grid Y:");
-    QSpinBox *gridY_spin = new QSpinBox;
+    gridY_spin = new QSpinBox;
     gridY_spin->setMinimum(1);
     gridY_spin->setMaximum(256);
     gridY_spin->setValue(gridY);
@@ -245,7 +285,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(gridY_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {int oldcols=gridY; gridY=i;redoImages(gridX,oldcols);});
 
     QLabel *slots_label = new QLabel("Slots:");
-    QSpinBox *slots_spin = new QSpinBox;
+    slots_spin = new QSpinBox;
     slots_spin->setMinimum(1);
     slots_spin->setMaximum(256);
     slots_spin->setValue(slotsPerSq);
@@ -258,7 +298,7 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_grid->addWidget(simulation_settings_label,7,1,1,2);
 
     QLabel *target_label = new QLabel("Fitness target:");
-    QSpinBox *target_spin = new QSpinBox;
+    target_spin = new QSpinBox;
     target_spin->setMinimum(1);
     target_spin->setMaximum(96);
     target_spin->setValue(target);
@@ -267,7 +307,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(target_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { target=i; });
 
     QLabel *energy_label = new QLabel("Energy input:");
-    QSpinBox *energy_spin = new QSpinBox;
+    energy_spin = new QSpinBox;
     energy_spin->setMinimum(1);
     energy_spin->setMaximum(20000);
     energy_spin->setValue(food);
@@ -276,7 +316,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(energy_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { food=i; });
 
     QLabel *settleTolerance_label = new QLabel("Settle tolerance:");
-    QSpinBox *settleTolerance_spin = new QSpinBox;
+    settleTolerance_spin = new QSpinBox;
     settleTolerance_spin->setMinimum(1);
     settleTolerance_spin->setMaximum(30);
     settleTolerance_spin->setValue(settleTolerance);
@@ -284,7 +324,7 @@ MainWindow::MainWindow(QWidget *parent) :
     settings_grid->addWidget(settleTolerance_spin,10,2);
     connect(settleTolerance_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { settleTolerance=i; });
 
-    QCheckBox *recalcFitness_checkbox = new QCheckBox("Recalculate fitness");
+    recalcFitness_checkbox = new QCheckBox("Recalculate fitness");
     recalcFitness_checkbox->setChecked(toroidal);
     settings_grid->addWidget(recalcFitness_checkbox,11,1,1,2);
     connect(recalcFitness_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { recalcFitness=i; });
@@ -340,13 +380,13 @@ MainWindow::MainWindow(QWidget *parent) :
     org_settings_grid->addWidget(mutate_spin,2,2);
     connect(mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {mutate=i;});
 
-    QCheckBox *variable_mutation_checkbox = new QCheckBox("Variable mutation");
+    variable_mutation_checkbox = new QCheckBox("Variable mutation");
     org_settings_grid->addWidget(variable_mutation_checkbox,3,1,1,1);
     variable_mutation_checkbox->setChecked(variableMutate);
     connect(variable_mutation_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { variableMutate=i; mutate_spin->setEnabled(!i); });
 
     QLabel *startAge_label = new QLabel("Start age:");
-    QSpinBox *startAge_spin = new QSpinBox;
+    startAge_spin = new QSpinBox;
     startAge_spin->setMinimum(1);
     startAge_spin->setMaximum(1000);
     startAge_spin->setValue(startAge);
@@ -359,7 +399,7 @@ MainWindow::MainWindow(QWidget *parent) :
     org_settings_grid->addWidget(breed_settings_label,5,1,1,2);
 
     QLabel *breedThreshold_label = new QLabel("Breed threshold:");
-    QSpinBox *breedThreshold_spin = new QSpinBox;
+    breedThreshold_spin = new QSpinBox;
     breedThreshold_spin->setMinimum(1);
     breedThreshold_spin->setMaximum(5000);
     breedThreshold_spin->setValue(breedThreshold);
@@ -368,7 +408,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(breedThreshold_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {breedThreshold=i;});
 
     QLabel *breedCost_label = new QLabel("Breed cost:");
-    QSpinBox *breedCost_spin = new QSpinBox;
+    breedCost_spin = new QSpinBox;
     breedCost_spin->setMinimum(1);
     breedCost_spin->setMaximum(10000);
     breedCost_spin->setValue(breedCost);
@@ -377,7 +417,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(breedCost_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {breedCost=i;});
 
     QLabel *maxDiff_label = new QLabel("Max difference to breed:");
-    QSpinBox *maxDiff_spin = new QSpinBox;
+    maxDiff_spin = new QSpinBox;
     maxDiff_spin->setMinimum(1);
     maxDiff_spin->setMaximum(31);
     maxDiff_spin->setValue(maxDiff);
@@ -385,21 +425,21 @@ MainWindow::MainWindow(QWidget *parent) :
     org_settings_grid->addWidget(maxDiff_spin,8,2);
     connect(maxDiff_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {maxDiff=i;});
 
-    QCheckBox *breeddiff_checkbox = new QCheckBox("Use max diff to breed");
+    breeddiff_checkbox = new QCheckBox("Use max diff to breed");
     org_settings_grid->addWidget(breeddiff_checkbox,9,1,1,1);
     breeddiff_checkbox->setChecked(breeddiff);
     connect(breeddiff_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { breeddiff=i;});
 
-    QCheckBox *breedspecies_checkbox = new QCheckBox("Breed only within species");
+    breedspecies_checkbox = new QCheckBox("Breed only within species");
     org_settings_grid->addWidget(breedspecies_checkbox,10,1,1,1);
     breedspecies_checkbox->setChecked(breedspecies);
     connect(breedspecies_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { breedspecies=i;});
 
     QLabel *breed_mode_label= new QLabel("Breed mode:");
     org_settings_grid->addWidget(breed_mode_label,11,1,1,2);
-    QRadioButton *sexual_radio = new QRadioButton("Sexual");
-    QRadioButton *asexual_radio = new QRadioButton("Asexual");
-    QRadioButton *variableBreed_radio = new QRadioButton("Variable");
+    sexual_radio = new QRadioButton("Sexual");
+    asexual_radio = new QRadioButton("Asexual");
+    variableBreed_radio = new QRadioButton("Variable");
     QButtonGroup *breeding_button_group = new QButtonGroup;
     breeding_button_group->addButton(sexual_radio,0);
     breeding_button_group->addButton(asexual_radio,1);
@@ -422,7 +462,7 @@ MainWindow::MainWindow(QWidget *parent) :
     org_settings_grid->addWidget(settle_settings_label,15,1,1,2);
 
     QLabel *dispersal_label = new QLabel("Dispersal:");
-    QSpinBox *dispersal_spin = new QSpinBox;
+    dispersal_spin = new QSpinBox;
     dispersal_spin->setMinimum(1);
     dispersal_spin->setMaximum(200);
     dispersal_spin->setValue(dispersal);
@@ -430,7 +470,7 @@ MainWindow::MainWindow(QWidget *parent) :
     org_settings_grid->addWidget(dispersal_spin,16,2);
     connect(dispersal_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {dispersal=i;});
 
-    QCheckBox *nonspatial_checkbox = new QCheckBox("Nonspatial settling");
+    nonspatial_checkbox = new QCheckBox("Nonspatial settling");
     org_settings_grid->addWidget(nonspatial_checkbox,17,1,1,2);
     nonspatial_checkbox->setChecked(nonspatial);
     connect(nonspatial_checkbox,&QCheckBox::stateChanged,[=](const bool &i) {nonspatial=i;});
@@ -439,13 +479,13 @@ MainWindow::MainWindow(QWidget *parent) :
     pathogen_settings_label->setStyleSheet("font-weight: bold");
     org_settings_grid->addWidget(pathogen_settings_label,18,1,1,2);
 
-    QCheckBox *pathogens_checkbox = new QCheckBox("Pathogens layer");
+    pathogens_checkbox = new QCheckBox("Pathogens layer");
     org_settings_grid->addWidget(pathogens_checkbox,19,1,1,2);
     pathogens_checkbox->setChecked(path_on);
     connect(pathogens_checkbox,&QCheckBox::stateChanged,[=](const bool &i) {path_on=i;});
 
     QLabel *pathogen_mutate_label = new QLabel("Pathogen mutation:");
-    QSpinBox *pathogen_mutate_spin = new QSpinBox;
+    pathogen_mutate_spin = new QSpinBox;
     pathogen_mutate_spin->setMinimum(1);
     pathogen_mutate_spin->setMaximum(255);
     pathogen_mutate_spin->setValue(pathogen_mutate);
@@ -454,7 +494,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(pathogen_mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {pathogen_mutate=i;});
 
     QLabel *pathogen_frequency_label = new QLabel("Pathogen frequency:");
-    QSpinBox *pathogen_frequency_spin = new QSpinBox;
+    pathogen_frequency_spin = new QSpinBox;
     pathogen_frequency_spin->setMinimum(1);
     pathogen_frequency_spin->setMaximum(1000);
     pathogen_frequency_spin->setValue(pathogen_frequency);
@@ -499,7 +539,7 @@ MainWindow::MainWindow(QWidget *parent) :
     RefreshRate=50;
     QLabel *refreshRateLabel = new QLabel("Refresh/polling rate:");
     refreshRateLabel->setObjectName("refreshRateLabel");
-    QSpinBox *refreshRateSpin = new QSpinBox;
+    refreshRateSpin = new QSpinBox;
     refreshRateSpin->setMinimum(1);
     refreshRateSpin->setMaximum(10000);
     refreshRateSpin->setValue(RefreshRate);
@@ -3158,8 +3198,6 @@ void MainWindow::load_settings()
                        if(settings_file_in.name() == "speciesSensitivity")speciesSensitivity=settings_file_in.readElementText().toInt();
                        if(settings_file_in.name() == "timeSliceConnect")timeSliceConnect=settings_file_in.readElementText().toInt();
                        if(settings_file_in.name() == "minspeciessize")minspeciessize=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "pathogen_mutate")pathogen_mutate=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "pathogen_frequency")pathogen_frequency=settings_file_in.readElementText().toInt();
 
                        //Bools
                        if(settings_file_in.name() == "recalcFitness")recalcFitness=settings_file_in.readElementText().toInt();
@@ -3175,7 +3213,6 @@ void MainWindow::load_settings()
                        if(settings_file_in.name() == "variableBreed")variableBreed=settings_file_in.readElementText().toInt();
                        if(settings_file_in.name() == "logging")logging=settings_file_in.readElementText().toInt();
                        if(settings_file_in.name() == "gui")gui=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "path_on")path_on=settings_file_in.readElementText().toInt();
                        if(settings_file_in.name() == "fitnessLoggingToFile")fitnessLoggingToFile=settings_file_in.readElementText().toInt();
                      }
                }
@@ -3286,14 +3323,6 @@ void MainWindow::save_settings()
         settings_file_out.writeCharacters(QString("%1").arg(minspeciessize));
         settings_file_out.writeEndElement();
 
-        settings_file_out.writeStartElement("pathogen_mutate");
-        settings_file_out.writeCharacters(QString("%1").arg(pathogen_mutate));
-        settings_file_out.writeEndElement();
-
-        settings_file_out.writeStartElement("pathogen_frequency");
-        settings_file_out.writeCharacters(QString("%1").arg(pathogen_frequency));
-        settings_file_out.writeEndElement();
-
         //Bools
         settings_file_out.writeStartElement("recalcFitness");
         settings_file_out.writeCharacters(QString("%1").arg(recalcFitness));
@@ -3344,10 +3373,6 @@ void MainWindow::save_settings()
         settings_file_out.writeEndElement();
 
         settings_file_out.writeStartElement("gui");
-        settings_file_out.writeCharacters(QString("%1").arg(gui));
-        settings_file_out.writeEndElement();
-
-        settings_file_out.writeStartElement("path_on");
         settings_file_out.writeCharacters(QString("%1").arg(gui));
         settings_file_out.writeEndElement();
 
