@@ -11,6 +11,10 @@
         <file alias="aboutButton-Enabled.png">resources/toolbar/aboutButton-Enabled.png</file>
         <file alias="logButton-Enabled.png">resources/toolbar/logButton-Enabled.png</file>
         <file alias="stopButton-Enabled.png">resources/toolbar/stopButton-Enabled.png</file>
+        <file alias="aboutButton-Enabled-white.png">resources/toolbar/aboutButton-Enabled_white.png</file>
+        <file alias="globesettingsButton-Enabled-white.png">resources/toolbar/globesettingsButton-Enabled-white.png</file>
+        <file alias="logButton-Enabled-white.png">resources/toolbar/logButton-Enabled-white.png</file>
+        <file alias="settingsButton-Enabled-white.png">resources/toolbar/settingsButton-Enabled-white.png</file>
     </qresource>
     <qresource prefix="/">
         <file alias="randoms.dat">resources/randoms.dat</file>
