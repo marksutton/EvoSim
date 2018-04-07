@@ -1,3 +1,20 @@
+/**
+ * @file
+ * Dark Style Theme
+ *
+ * All REvoSim code is released under the GNU General Public License.
+ * See LICENSE.md files in the programme directory.
+ *
+ * All REvoSim code is Copyright 2018 by Mark Sutton, Russell Garwood,
+ * and Alan R.T. Spencer.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or (at
+ * your option) any later version. This program is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY.
+ */
+
 #include "darkstyletheme.h"
 
 DarkStyleTheme::DarkStyleTheme():
@@ -51,17 +68,17 @@ void DarkStyleTheme::polish(QApplication *app)
 {
   if (!app) return;
 
-  // increase font size for better reading,
+  //ARTS - Increase font size for better reading,
   // setPointSize was reduced from +2 because when applied this way in Qt5, the font is larger than intended for some reason
   QFont defaultFont = QApplication::font();
   defaultFont.setPointSize(defaultFont.pointSize()+1);
   app->setFont(defaultFont);
 
-  // loadstylesheet
+  // Load CSS Stylesheet from resources
   QFile qfDarkstyle(QStringLiteral(":/darkstyle/stylesheet_dark.qss"));
   if (qfDarkstyle.open(QIODevice::ReadOnly | QIODevice::Text))
   {
-    // set stylesheet
+    // Set stylesheet
     QString qsStylesheet = QString::fromLatin1(qfDarkstyle.readAll());
     app->setStyleSheet(qsStylesheet);
     qfDarkstyle.close();
