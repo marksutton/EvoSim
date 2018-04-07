@@ -137,12 +137,15 @@
              </widget>
             </item>
             <item>
-             <widget class="QLabel" name="LabelVis">
-              <property name="text">
-               <string> Coding Genome</string>
+             <widget class="QComboBox" name="populationWindowComboBox">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
               </property>
-              <property name="alignment">
-               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+              <property name="currentIndex">
+               <number>-1</number>
               </property>
              </widget>
             </item>
@@ -800,7 +803,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>1220</width>
-     <height>23</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCommands">
@@ -831,22 +834,6 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionCount_peaks"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
-   </widget>
-   <widget class="QMenu" name="menuView">
-    <property name="title">
-     <string>Visualisation</string>
-    </property>
-    <addaction name="actionPopulation_Count"/>
-    <addaction name="actionMean_fitness"/>
-    <addaction name="actionGenome_as_colour"/>
-    <addaction name="actionNonCoding_genome_as_colour"/>
-    <addaction name="actionGene_Frequencies_012"/>
-    <addaction name="actionBreed_Attempts"/>
-    <addaction name="actionBreed_Fails"/>
-    <addaction name="actionSettle_Fails"/>
-    <addaction name="actionSettles"/>
-    <addaction name="actionSpecies"/>
-    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuEnvironment">
     <property name="title">
@@ -918,7 +905,6 @@ p, li { white-space: pre-wrap; }
    </widget>
    <addaction name="menuCommands"/>
    <addaction name="menuEnvironment"/>
-   <addaction name="menuView"/>
    <addaction name="menuFossil_Record"/>
    <addaction name="menuDocks"/>
    <addaction name="menuAnalysis_Tools"/>
