@@ -3123,9 +3123,6 @@ void MainWindow::load_settings()
             return;
             }
 
-
-//HERE - there is a crash somewhre in here
-
            QXmlStreamReader settings_file_in(&settings_file);
 
            while (!settings_file_in.atEnd()&& !settings_file_in.hasError())
@@ -3208,7 +3205,17 @@ void MainWindow::load_settings()
                             gui_checkbox->setChecked(gui);}
                        //No gui options for below
                        if(settings_file_in.name() == "fitnessLoggingToFile")fitnessLoggingToFile=settings_file_in.readElementText().toInt();
+                       //Only GUI options
                        if(settings_file_in.name() == "autodump")autodump_checkbox->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_population_count")save_population_count->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_mean_fitness")save_mean_fitness->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_coding_genome_as_colour")save_coding_genome_as_colour->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_species")save_species->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_non_coding_genome_as_colour")save_non_coding_genome_as_colour->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_gene_frequencies")save_gene_frequencies->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_settles")save_settles->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_fails_settles")save_fails_settles->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_environment")save_environment->setChecked(settings_file_in.readElementText().toInt());
 
                        //Strings
                        if(settings_file_in.name() == "path")path->setText(settings_file_in.readElementText());
@@ -3385,6 +3392,42 @@ void MainWindow::save_settings()
 
         settings_file_out.writeStartElement("autodump");
         settings_file_out.writeCharacters(QString("%1").arg(autodump_checkbox->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_population_count");
+        settings_file_out.writeCharacters(QString("%1").arg(save_population_count->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_mean_fitness");
+        settings_file_out.writeCharacters(QString("%1").arg(save_mean_fitness->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_coding_genome_as_colour");
+        settings_file_out.writeCharacters(QString("%1").arg(save_coding_genome_as_colour->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_species");
+        settings_file_out.writeCharacters(QString("%1").arg(save_species->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_non_coding_genome_as_colour");
+        settings_file_out.writeCharacters(QString("%1").arg(save_non_coding_genome_as_colour->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_gene_frequencies");
+        settings_file_out.writeCharacters(QString("%1").arg(save_gene_frequencies->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_settles");
+        settings_file_out.writeCharacters(QString("%1").arg(save_settles->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_fails_settles");
+        settings_file_out.writeCharacters(QString("%1").arg(save_fails_settles->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_environment");
+        settings_file_out.writeCharacters(QString("%1").arg(save_environment->isChecked()));
         settings_file_out.writeEndElement();
 
         //Strings
