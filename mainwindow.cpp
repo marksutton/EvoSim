@@ -156,6 +156,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ResizeCatcher *rescatch = new ResizeCatcher(this);
     ui->centralWidget->installEventFilter(rescatch);
 
+
     //ARTS - Toolbar buttons
     //RJG - docker toggles
     startButton = new QAction(QIcon(QPixmap(":/toolbar/startButton-Enabled.png")), QString("Run"), this);
