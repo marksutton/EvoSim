@@ -3138,8 +3138,6 @@ void MainWindow::load_settings()
                 if(token == QXmlStreamReader::StartDocument)continue;
                 if(token == QXmlStreamReader::StartElement)
                     {
-
-                    qDebug()<<settings_file_in.name();
                        //Ints
                        if(settings_file_in.name() == "revosim")continue;
                        if(settings_file_in.name() == "gridX"){gridX=settings_file_in.readElementText().toInt();
@@ -3170,25 +3168,20 @@ void MainWindow::load_settings()
                             breedThreshold_spin->setValue(breedThreshold);}
                        if(settings_file_in.name() == "target"){target=settings_file_in.readElementText().toInt();
                             target_spin->setValue(target);}
-                       qDebug()<<"AA";
                        if(settings_file_in.name() == "envchangerate"){envchangerate=settings_file_in.readElementText().toInt();
-                           qDebug()<<"Q"<<environment_rate_spin->value()<<envchangerate;
                             environment_rate_spin->setValue(envchangerate);}
-                       qDebug()<<"A";
                        if(settings_file_in.name() == "RefreshRate"){RefreshRate=settings_file_in.readElementText().toInt();
                             refreshRateSpin->setValue(RefreshRate);}
-                       qDebug()<<"B";
                        //No Gui options for the remaining settings as yet.
                        if(settings_file_in.name() == "speciesSamples")speciesSamples=settings_file_in.readElementText().toInt();
                        if(settings_file_in.name() == "speciesSensitivity")speciesSensitivity=settings_file_in.readElementText().toInt();
                        if(settings_file_in.name() == "timeSliceConnect")timeSliceConnect=settings_file_in.readElementText().toInt();
                        if(settings_file_in.name() == "minspeciessize")minspeciessize=settings_file_in.readElementText().toInt();
                        if(settings_file_in.name() == "yearsPerIteration")yearsPerIteration=settings_file_in.readElementText().toInt();
-                       qDebug()<<"C";
+
                        //Bools
                        if(settings_file_in.name() == "recalcFitness"){recalcFitness=settings_file_in.readElementText().toInt();
                             recalcFitness_checkbox->setChecked(recalcFitness);}
-                       qDebug()<<"D";
                        if(settings_file_in.name() == "toroidal"){toroidal=settings_file_in.readElementText().toInt();
                             toroidal_checkbox->setChecked(toroidal);}
                        if(settings_file_in.name() == "nonspatial"){nonspatial=settings_file_in.readElementText().toInt();
