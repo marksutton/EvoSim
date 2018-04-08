@@ -60,7 +60,6 @@ To do for paper:
 
 Coding:
 -- Load and Save don't include everything - they need to!
--- Genome comparison - say which is noncoding half / document
 -- Timer on calculting species - add progress bar and escape warning if needed to prevent crash
 -- Add Keyboard shortcuts where required
 -- Load and save settings still need to update gui
