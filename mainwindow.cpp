@@ -193,12 +193,177 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->actionLoad_settings, SIGNAL (triggered()), this, SLOT (load_settings()));
     QObject::connect(ui->actionCount_peaks, SIGNAL(triggered()), this, SLOT(on_actionCount_Peaks_triggered()));
 
-    //----RJG - set up settings docker.
-    settings_dock = new QDockWidget("Simulation", this);
-    settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
-    settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
-    addDockWidget(Qt::RightDockWidgetArea, settings_dock);
+    //RJG - set up settings docker.
+    simulationSettingsDock = createSimulationSettingsDock();
+    //----RJG - second settings docker.
+    organismSettingsDock = createOrganismSettingsDock();
+    //RJG - Third settings docker
+    outputSettingsDock = createOutputSettingsDock();
+
+    //RJG - Make docks tabbed
+    tabifyDockWidget(organismSettingsDock,simulationSettingsDock);
+    tabifyDockWidget(simulationSettingsDock,outputSettingsDock);
+    organismSettingsDock->hide();
+    simulationSettingsDock->hide();
+    outputSettingsDock->hide();
+
+    //ARTS - Add Genome Comparison UI
+    ui->genomeComparisonDock->hide();
+    genoneComparison = new GenomeComparison;
+    QVBoxLayout *genomeLayout = new QVBoxLayout;
+    genomeLayout->addWidget(genoneComparison);
+    ui->genomeComparisonContent->setLayout(genomeLayout);
+
+    //MDS - as above for fossil record dock and report dock
+    ui->fossRecDock->hide();
+    FRW = new FossRecWidget();
+    QVBoxLayout *frwLayout = new QVBoxLayout;
+    frwLayout->addWidget(FRW);
+    ui->fossRecDockContents->setLayout(frwLayout);
+    ui->reportViewerDock->hide();
+
+    viewgroup2 = new QActionGroup(this);
+    // These actions were created via qt designer
+    viewgroup2->addAction(ui->actionNone);
+    viewgroup2->addAction(ui->actionSorted_Summary);
+    viewgroup2->addAction(ui->actionGroups);
+    viewgroup2->addAction(ui->actionGroups2);
+    viewgroup2->addAction(ui->actionSimple_List);
+
+    envgroup = new QActionGroup(this);
+    envgroup->addAction(ui->actionStatic);
+    envgroup->addAction(ui->actionBounce);
+    envgroup->addAction(ui->actionOnce);
+    envgroup->addAction(ui->actionLoop);
+    ui->actionLoop->setChecked(true);
+
+    QObject::connect(viewgroup2, SIGNAL(triggered(QAction *)), this, SLOT(report_mode_changed(QAction *)));
+
+    //create scenes, add to the GVs
+    envscene = new EnvironmentScene;
+    ui->GV_Environment->setScene(envscene);
+    envscene->mw=this;
+
+    popscene = new PopulationScene;
+    popscene->mw=this;
+    ui->GV_Population->setScene(popscene);
+
+    //add images to the scenes
+    env_item= new QGraphicsPixmapItem();
+    envscene->addItem(env_item);
+    env_item->setZValue(0);
+
+    pop_item = new QGraphicsPixmapItem();
+    popscene->addItem(pop_item);
+
+    pop_image=new QImage(gridX, gridY, QImage::Format_Indexed8);
+    QVector <QRgb> clut(256);
+    for (int ic=0; ic<256; ic++) clut[ic]=qRgb(ic,ic,ic);
+    pop_image->setColorTable(clut);
+    pop_image->fill(0);
+
+    env_image=new QImage(gridX, gridY, QImage::Format_RGB32);
+    env_image->fill(0);
+
+    pop_image_colour=new QImage(gridX, gridY, QImage::Format_RGB32);
+    env_image->fill(0);
+
+    env_item->setPixmap(QPixmap::fromImage(*env_image));
+    pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+
+    //ARTS - Population Window dropdown must be after settings dock setup
+    // 0 = Population count
+    // 1 = Mean fitnessFails (R-Breed, G=Settle)
+    // 2 = Coding genome as colour
+    // 3 = NonCoding genome as colour
+    // 4 = Gene Frequencies
+    // 5 = Breed Attempts
+    // 6 = Breed Fails
+    // 7 = Settles
+    // 8 = Settle Fails
+    // 9 = Breed Fails 2
+    // 10 = Species
+    ui->populationWindowComboBox->addItem("Population count",QVariant(0));
+    ui->populationWindowComboBox->addItem("Mean fitnessFails (R-Breed, G=Settle)",QVariant(1));
+    ui->populationWindowComboBox->addItem("Coding genome as colour",QVariant(2));
+    ui->populationWindowComboBox->addItem("NonCoding genome as colour",QVariant(3));
+    ui->populationWindowComboBox->addItem("Gene Frequencies",QVariant(4));
+    //ui->populationWindowComboBox->addItem("Breed Attempts",QVariant(5));
+    //ui->populationWindowComboBox->addItem("Breed Fails",QVariant(6));
+    ui->populationWindowComboBox->addItem("Settles",QVariant(7));
+    ui->populationWindowComboBox->addItem("Settle Fails",QVariant(8));
+    //ui->populationWindowComboBox->addItem("Breed Fails 2",QVariant(9));
+    ui->populationWindowComboBox->addItem("Species",QVariant(10));
+
+    //ARTS -Population Window dropdown set current index. Note this value is the index not the data value.
+    ui->populationWindowComboBox->setCurrentIndex(2);
+
+    TheSimManager = new SimManager;
+
+    pauseflag = false;
+
+    //RJG - load default environment image to allow program to run out of box (quicker for testing)
+    EnvFiles.append(":/EvoSim_default_env.png");
+    CurrentEnvFile=0;
+    TheSimManager->loadEnvironmentFromFile(1);
+
+    FinishRun();//sets up enabling
+    TheSimManager->SetupRun();
+    NextRefresh=0;
+    Report();
+
+    //RJG - Set batch variables
+    batch_running=false;
+    runs=-1;
+    batch_iterations=-1;
+    batch_target_runs=-1;
+
+    showMaximized();
+
+    //RJG - seed pseudorandom numbers
+    qsrand(QTime::currentTime().msec());
+    //RJG - Now load randoms into program - portable rand is just plain pseudorandom number - initially used in makelookups (called from simmanager contructor) to write to randoms array
+    int seedoffset = TheSimManager->portable_rand();
+    QFile rfile(":/randoms.dat");
+    if (!rfile.exists()) QMessageBox::warning(this,"Oops","Error loading randoms. Please do so manually.");
+    rfile.open(QIODevice::ReadOnly);
+
+    rfile.seek(seedoffset);
+
+    //RJG - overwrite pseudorandoms with genuine randoms
+    int i=rfile.read((char *)randoms,65536);
+    if (i!=65536) QMessageBox::warning(this,"Oops","Failed to read 65536 bytes from file - random numbers may be compromised - try again or restart program");
+
+    //RJG - fill cumulative_normal_distribution with numbers for variable breeding
+    //These are a cumulative standard normal distribution from -3 to 3, created using the math.h complementary error function
+    //Then scaled to zero to 32 bit rand max, to allow for probabilities within each iteration through a random number
+    float x=-3., inc=(6./32.);
+    for(int cnt=0;cnt<33;cnt++)
+            {
+            double NSDF=(0.5 * erfc(-(x) * M_SQRT1_2));
+            cumulative_normal_distribution[cnt]=4294967296*NSDF;
+            x+=inc;
+            }
+
+    //RJG - fill pathogen probability distribution as required so pathogens can kill critters
+    //Start with linear, may want to change down the line.
+      for(int cnt=0;cnt<65;cnt++)
+        pathogen_prob_distribution[cnt]=(4294967296/2)+(cnt*(4294967295/128));
+}
+
+MainWindow::~MainWindow()
+{
+    delete ui;
+    delete TheSimManager;
+}
+
+QDockWidget *MainWindow::createSimulationSettingsDock()
+{
+    simulationSettingsDock = new QDockWidget("Simulation", this);
+    simulationSettingsDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    simulationSettingsDock->setFeatures(QDockWidget::DockWidgetMovable);
+    simulationSettingsDock->setFeatures(QDockWidget::DockWidgetFloatable);
+    addDockWidget(Qt::RightDockWidgetArea, simulationSettingsDock);
 
     QGridLayout *settings_grid = new QGridLayout;
     settings_grid->setAlignment(Qt::AlignTop);
@@ -314,164 +479,19 @@ MainWindow::MainWindow(QWidget *parent) :
     QWidget *settings_layout_widget = new QWidget;
     settings_layout_widget->setLayout(settings_grid);
     settings_layout_widget->setMinimumWidth(300);
-    settings_dock->setWidget(settings_layout_widget);
-    settings_dock->adjustSize();
+    simulationSettingsDock->setWidget(settings_layout_widget);
+    simulationSettingsDock->adjustSize();
 
-    //----RJG - second settings docker.
-    org_settings_dock = new QDockWidget("Organism", this);
-    org_settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    org_settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
-    org_settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
-    addDockWidget(Qt::RightDockWidgetArea, org_settings_dock);
+    return simulationSettingsDock;
+}
 
-    QGridLayout *org_settings_grid = new QGridLayout;
-    org_settings_grid->setAlignment(Qt::AlignTop);
-
-    QLabel *org_settings_label= new QLabel("Organism settings");
-    org_settings_label->setStyleSheet("font-weight: bold");
-    org_settings_grid->addWidget(org_settings_label,1,1,1,2);
-
-    QLabel *mutate_label = new QLabel("Chance of mutation:");
-    mutate_spin = new QSpinBox;
-    mutate_spin->setMinimum(0);
-    mutate_spin->setMaximum(255);
-    mutate_spin->setValue(mutate);
-    org_settings_grid->addWidget(mutate_label,2,1);
-    org_settings_grid->addWidget(mutate_spin,2,2);
-    connect(mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {mutate=i;});
-
-    variable_mutation_checkbox = new QCheckBox("Variable mutation");
-    org_settings_grid->addWidget(variable_mutation_checkbox,3,1,1,1);
-    variable_mutation_checkbox->setChecked(variableMutate);
-    connect(variable_mutation_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { variableMutate=i; mutate_spin->setEnabled(!i); });
-
-    QLabel *startAge_label = new QLabel("Start age:");
-    startAge_spin = new QSpinBox;
-    startAge_spin->setMinimum(1);
-    startAge_spin->setMaximum(1000);
-    startAge_spin->setValue(startAge);
-    org_settings_grid->addWidget(startAge_label,4,1);
-    org_settings_grid->addWidget(startAge_spin,4,2);
-    connect(startAge_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {startAge=i;});
-
-    QLabel *breed_settings_label= new QLabel("Breed settings");
-    breed_settings_label->setStyleSheet("font-weight: bold");
-    org_settings_grid->addWidget(breed_settings_label,5,1,1,2);
-
-    QLabel *breedThreshold_label = new QLabel("Breed threshold:");
-    breedThreshold_spin = new QSpinBox;
-    breedThreshold_spin->setMinimum(1);
-    breedThreshold_spin->setMaximum(5000);
-    breedThreshold_spin->setValue(breedThreshold);
-    org_settings_grid->addWidget(breedThreshold_label,6,1);
-    org_settings_grid->addWidget(breedThreshold_spin,6,2);
-    connect(breedThreshold_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {breedThreshold=i;});
-
-    QLabel *breedCost_label = new QLabel("Breed cost:");
-    breedCost_spin = new QSpinBox;
-    breedCost_spin->setMinimum(1);
-    breedCost_spin->setMaximum(10000);
-    breedCost_spin->setValue(breedCost);
-    org_settings_grid->addWidget(breedCost_label,7,1);
-    org_settings_grid->addWidget(breedCost_spin,7,2);
-    connect(breedCost_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {breedCost=i;});
-
-    QLabel *maxDiff_label = new QLabel("Max difference to breed:");
-    maxDiff_spin = new QSpinBox;
-    maxDiff_spin->setMinimum(1);
-    maxDiff_spin->setMaximum(31);
-    maxDiff_spin->setValue(maxDiff);
-    org_settings_grid->addWidget(maxDiff_label,8,1);
-    org_settings_grid->addWidget(maxDiff_spin,8,2);
-    connect(maxDiff_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {maxDiff=i;});
-
-    breeddiff_checkbox = new QCheckBox("Use max diff to breed");
-    org_settings_grid->addWidget(breeddiff_checkbox,9,1,1,1);
-    breeddiff_checkbox->setChecked(breeddiff);
-    connect(breeddiff_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { breeddiff=i;});
-
-    breedspecies_checkbox = new QCheckBox("Breed only within species");
-    org_settings_grid->addWidget(breedspecies_checkbox,10,1,1,1);
-    breedspecies_checkbox->setChecked(breedspecies);
-    connect(breedspecies_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { breedspecies=i;});
-
-    QLabel *breed_mode_label= new QLabel("Breed mode:");
-    org_settings_grid->addWidget(breed_mode_label,11,1,1,2);
-    sexual_radio = new QRadioButton("Sexual");
-    asexual_radio = new QRadioButton("Asexual");
-    variableBreed_radio = new QRadioButton("Variable");
-    QButtonGroup *breeding_button_group = new QButtonGroup;
-    breeding_button_group->addButton(sexual_radio,0);
-    breeding_button_group->addButton(asexual_radio,1);
-    breeding_button_group->addButton(variableBreed_radio,2);
-    sexual_radio->setChecked(sexual);
-    asexual_radio->setChecked(asexual);
-    variableBreed_radio->setChecked(variableBreed);
-    org_settings_grid->addWidget(sexual_radio,12,1,1,2);
-    org_settings_grid->addWidget(asexual_radio,13,1,1,2);
-    org_settings_grid->addWidget(variableBreed_radio,14,1,1,2);
-    connect(breeding_button_group, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i)
-        {
-        if(i==0){sexual=true;asexual=false;variableBreed=false;}
-        if(i==1){sexual=false;asexual=true;variableBreed=false;}
-        if(i==2){sexual=false;asexual=false;variableBreed=true;}
-        });
-
-    QLabel *settle_settings_label= new QLabel("Settle settings");
-    settle_settings_label->setStyleSheet("font-weight: bold");
-    org_settings_grid->addWidget(settle_settings_label,15,1,1,2);
-
-    QLabel *dispersal_label = new QLabel("Dispersal:");
-    dispersal_spin = new QSpinBox;
-    dispersal_spin->setMinimum(1);
-    dispersal_spin->setMaximum(200);
-    dispersal_spin->setValue(dispersal);
-    org_settings_grid->addWidget(dispersal_label,16,1);
-    org_settings_grid->addWidget(dispersal_spin,16,2);
-    connect(dispersal_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {dispersal=i;});
-
-    nonspatial_checkbox = new QCheckBox("Nonspatial settling");
-    org_settings_grid->addWidget(nonspatial_checkbox,17,1,1,2);
-    nonspatial_checkbox->setChecked(nonspatial);
-    connect(nonspatial_checkbox,&QCheckBox::stateChanged,[=](const bool &i) {nonspatial=i;});
-
-    QLabel *pathogen_settings_label= new QLabel("Pathogen settings");
-    pathogen_settings_label->setStyleSheet("font-weight: bold");
-    org_settings_grid->addWidget(pathogen_settings_label,18,1,1,2);
-
-    pathogens_checkbox = new QCheckBox("Pathogens layer");
-    org_settings_grid->addWidget(pathogens_checkbox,19,1,1,2);
-    pathogens_checkbox->setChecked(path_on);
-    connect(pathogens_checkbox,&QCheckBox::stateChanged,[=](const bool &i) {path_on=i;});
-
-    QLabel *pathogen_mutate_label = new QLabel("Pathogen mutation:");
-    pathogen_mutate_spin = new QSpinBox;
-    pathogen_mutate_spin->setMinimum(1);
-    pathogen_mutate_spin->setMaximum(255);
-    pathogen_mutate_spin->setValue(pathogen_mutate);
-    org_settings_grid->addWidget(pathogen_mutate_label,20,1);
-    org_settings_grid->addWidget(pathogen_mutate_spin,20,2);
-    connect(pathogen_mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {pathogen_mutate=i;});
-
-    QLabel *pathogen_frequency_label = new QLabel("Pathogen frequency:");
-    pathogen_frequency_spin = new QSpinBox;
-    pathogen_frequency_spin->setMinimum(1);
-    pathogen_frequency_spin->setMaximum(1000);
-    pathogen_frequency_spin->setValue(pathogen_frequency);
-    org_settings_grid->addWidget(pathogen_frequency_label,21,1);
-    org_settings_grid->addWidget(pathogen_frequency_spin,21,2);
-    connect(pathogen_frequency_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {pathogen_frequency=i;});
-
-    QWidget *org_settings_layout_widget = new QWidget;
-    org_settings_layout_widget->setLayout(org_settings_grid);
-    org_settings_dock->setWidget(org_settings_layout_widget);
-
-    //RJG - Third settings docker
-    output_settings_dock = new QDockWidget("Output", this);
-    output_settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    output_settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
-    output_settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
-    addDockWidget(Qt::RightDockWidgetArea, output_settings_dock);
+QDockWidget *MainWindow::createOutputSettingsDock()
+{
+    outputSettingsDock = new QDockWidget("Output", this);
+    outputSettingsDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    outputSettingsDock->setFeatures(QDockWidget::DockWidgetMovable);
+    outputSettingsDock->setFeatures(QDockWidget::DockWidgetFloatable);
+    addDockWidget(Qt::RightDockWidgetArea, outputSettingsDock);
 
     QGridLayout *output_settings_grid = new QGridLayout;
     output_settings_grid->setAlignment(Qt::AlignTop);
@@ -624,163 +644,161 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QWidget *output_settings_layout_widget = new QWidget;
     output_settings_layout_widget->setLayout(output_settings_grid);
-    output_settings_dock->setWidget(output_settings_layout_widget);
+    outputSettingsDock->setWidget(output_settings_layout_widget);
 
-    //RJG - Make docks tabbed
-    tabifyDockWidget(org_settings_dock,settings_dock);
-    tabifyDockWidget(settings_dock,output_settings_dock);
-    org_settings_dock->hide();
-    settings_dock->hide();
-    output_settings_dock->hide();
-
-    //ARTS - Add Genome Comparison UI
-    ui->genomeComparisonDock->hide();
-    genoneComparison = new GenomeComparison;
-    QVBoxLayout *genomeLayout = new QVBoxLayout;
-    genomeLayout->addWidget(genoneComparison);
-    ui->genomeComparisonContent->setLayout(genomeLayout);
-
-    //MDS - as above for fossil record dock and report dock
-    ui->fossRecDock->hide();
-    FRW = new FossRecWidget();
-    QVBoxLayout *frwLayout = new QVBoxLayout;
-    frwLayout->addWidget(FRW);
-    ui->fossRecDockContents->setLayout(frwLayout);
-    ui->reportViewerDock->hide();
-
-    viewgroup2 = new QActionGroup(this);
-    // These actions were created via qt designer
-    viewgroup2->addAction(ui->actionNone);
-    viewgroup2->addAction(ui->actionSorted_Summary);
-    viewgroup2->addAction(ui->actionGroups);
-    viewgroup2->addAction(ui->actionGroups2);
-    viewgroup2->addAction(ui->actionSimple_List);
-
-    envgroup = new QActionGroup(this);
-    envgroup->addAction(ui->actionStatic);
-    envgroup->addAction(ui->actionBounce);
-    envgroup->addAction(ui->actionOnce);
-    envgroup->addAction(ui->actionLoop);
-    ui->actionLoop->setChecked(true);
-
-    QObject::connect(viewgroup2, SIGNAL(triggered(QAction *)), this, SLOT(report_mode_changed(QAction *)));
-
-    //create scenes, add to the GVs
-    envscene = new EnvironmentScene;
-    ui->GV_Environment->setScene(envscene);
-    envscene->mw=this;
-
-    popscene = new PopulationScene;
-    popscene->mw=this;
-    ui->GV_Population->setScene(popscene);
-
-    //add images to the scenes
-    env_item= new QGraphicsPixmapItem();
-    envscene->addItem(env_item);
-    env_item->setZValue(0);
-
-    pop_item = new QGraphicsPixmapItem();
-    popscene->addItem(pop_item);
-
-    pop_image=new QImage(gridX, gridY, QImage::Format_Indexed8);
-    QVector <QRgb> clut(256);
-    for (int ic=0; ic<256; ic++) clut[ic]=qRgb(ic,ic,ic);
-    pop_image->setColorTable(clut);
-    pop_image->fill(0);
-
-    env_image=new QImage(gridX, gridY, QImage::Format_RGB32);
-    env_image->fill(0);
-
-    pop_image_colour=new QImage(gridX, gridY, QImage::Format_RGB32);
-    env_image->fill(0);
-
-    env_item->setPixmap(QPixmap::fromImage(*env_image));
-    pop_item->setPixmap(QPixmap::fromImage(*pop_image));
-
-    //ARTS - Population Window dropdown must be after settings dock setup
-    // 0 = Population count
-    // 1 = Mean fitnessFails (R-Breed, G=Settle)
-    // 2 = Coding genome as colour
-    // 3 = NonCoding genome as colour
-    // 4 = Gene Frequencies
-    // 5 = Breed Attempts
-    // 6 = Breed Fails
-    // 7 = Settles
-    // 8 = Settle Fails
-    // 9 = Breed Fails 2
-    // 10 = Species
-    ui->populationWindowComboBox->addItem("Population count",QVariant(0));
-    ui->populationWindowComboBox->addItem("Mean fitnessFails (R-Breed, G=Settle)",QVariant(1));
-    ui->populationWindowComboBox->addItem("Coding genome as colour",QVariant(2));
-    ui->populationWindowComboBox->addItem("NonCoding genome as colour",QVariant(3));
-    ui->populationWindowComboBox->addItem("Gene Frequencies",QVariant(4));
-    //ui->populationWindowComboBox->addItem("Breed Attempts",QVariant(5));
-    //ui->populationWindowComboBox->addItem("Breed Fails",QVariant(6));
-    ui->populationWindowComboBox->addItem("Settles",QVariant(7));
-    ui->populationWindowComboBox->addItem("Settle Fails",QVariant(8));
-    //ui->populationWindowComboBox->addItem("Breed Fails 2",QVariant(9));
-    ui->populationWindowComboBox->addItem("Species",QVariant(10));
-
-    //ARTS -Population Window dropdown set current index. Note this value is the index not the data value.
-    ui->populationWindowComboBox->setCurrentIndex(2);
-
-    TheSimManager = new SimManager;
-
-    pauseflag = false;
-
-    //RJG - load default environment image to allow program to run out of box (quicker for testing)
-    EnvFiles.append(":/EvoSim_default_env.png");
-    CurrentEnvFile=0;
-    TheSimManager->loadEnvironmentFromFile(1);
-
-    FinishRun();//sets up enabling
-    TheSimManager->SetupRun();
-    NextRefresh=0;
-    Report();
-
-    //RJG - Set batch variables
-    batch_running=false;
-    runs=-1;
-    batch_iterations=-1;
-    batch_target_runs=-1;
-
-    showMaximized();
-
-    //RJG - seed pseudorandom numbers
-    qsrand(QTime::currentTime().msec());
-    //RJG - Now load randoms into program - portable rand is just plain pseudorandom number - initially used in makelookups (called from simmanager contructor) to write to randoms array
-    int seedoffset = TheSimManager->portable_rand();
-    QFile rfile(":/randoms.dat");
-    if (!rfile.exists()) QMessageBox::warning(this,"Oops","Error loading randoms. Please do so manually.");
-    rfile.open(QIODevice::ReadOnly);
-
-    rfile.seek(seedoffset);
-
-    //RJG - overwrite pseudorandoms with genuine randoms
-    int i=rfile.read((char *)randoms,65536);
-    if (i!=65536) QMessageBox::warning(this,"Oops","Failed to read 65536 bytes from file - random numbers may be compromised - try again or restart program");
-
-    //RJG - fill cumulative_normal_distribution with numbers for variable breeding
-    //These are a cumulative standard normal distribution from -3 to 3, created using the math.h complementary error function
-    //Then scaled to zero to 32 bit rand max, to allow for probabilities within each iteration through a random number
-    float x=-3., inc=(6./32.);
-    for(int cnt=0;cnt<33;cnt++)
-            {
-            double NSDF=(0.5 * erfc(-(x) * M_SQRT1_2));
-            cumulative_normal_distribution[cnt]=4294967296*NSDF;
-            x+=inc;
-            }
-
-    //RJG - fill pathogen probability distribution as required so pathogens can kill critters
-    //Start with linear, may want to change down the line.
-      for(int cnt=0;cnt<65;cnt++)
-        pathogen_prob_distribution[cnt]=(4294967296/2)+(cnt*(4294967295/128));
+    return outputSettingsDock;
 }
 
-MainWindow::~MainWindow()
-{
-    delete ui;
-    delete TheSimManager;
+QDockWidget *MainWindow::createOrganismSettingsDock() {
+    organismSettingsDock = new QDockWidget("Organism", this);
+    organismSettingsDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    organismSettingsDock->setFeatures(QDockWidget::DockWidgetMovable);
+    organismSettingsDock->setFeatures(QDockWidget::DockWidgetFloatable);
+    addDockWidget(Qt::RightDockWidgetArea, organismSettingsDock);
+
+    QGridLayout *org_settings_grid = new QGridLayout;
+    org_settings_grid->setAlignment(Qt::AlignTop);
+
+    QLabel *org_settings_label= new QLabel("Organism settings");
+    org_settings_label->setStyleSheet("font-weight: bold");
+    org_settings_grid->addWidget(org_settings_label,1,1,1,2);
+
+    QLabel *mutate_label = new QLabel("Chance of mutation:");
+    mutate_spin = new QSpinBox;
+    mutate_spin->setMinimum(0);
+    mutate_spin->setMaximum(255);
+    mutate_spin->setValue(mutate);
+    org_settings_grid->addWidget(mutate_label,2,1);
+    org_settings_grid->addWidget(mutate_spin,2,2);
+    connect(mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {mutate=i;});
+
+    variable_mutation_checkbox = new QCheckBox("Variable mutation");
+    org_settings_grid->addWidget(variable_mutation_checkbox,3,1,1,1);
+    variable_mutation_checkbox->setChecked(variableMutate);
+    connect(variable_mutation_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { variableMutate=i; mutate_spin->setEnabled(!i); });
+
+    QLabel *startAge_label = new QLabel("Start age:");
+    startAge_spin = new QSpinBox;
+    startAge_spin->setMinimum(1);
+    startAge_spin->setMaximum(1000);
+    startAge_spin->setValue(startAge);
+    org_settings_grid->addWidget(startAge_label,4,1);
+    org_settings_grid->addWidget(startAge_spin,4,2);
+    connect(startAge_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {startAge=i;});
+
+    QLabel *breed_settings_label= new QLabel("Breed settings");
+    breed_settings_label->setStyleSheet("font-weight: bold");
+    org_settings_grid->addWidget(breed_settings_label,5,1,1,2);
+
+    QLabel *breedThreshold_label = new QLabel("Breed threshold:");
+    breedThreshold_spin = new QSpinBox;
+    breedThreshold_spin->setMinimum(1);
+    breedThreshold_spin->setMaximum(5000);
+    breedThreshold_spin->setValue(breedThreshold);
+    org_settings_grid->addWidget(breedThreshold_label,6,1);
+    org_settings_grid->addWidget(breedThreshold_spin,6,2);
+    connect(breedThreshold_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {breedThreshold=i;});
+
+    QLabel *breedCost_label = new QLabel("Breed cost:");
+    breedCost_spin = new QSpinBox;
+    breedCost_spin->setMinimum(1);
+    breedCost_spin->setMaximum(10000);
+    breedCost_spin->setValue(breedCost);
+    org_settings_grid->addWidget(breedCost_label,7,1);
+    org_settings_grid->addWidget(breedCost_spin,7,2);
+    connect(breedCost_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {breedCost=i;});
+
+    QLabel *maxDiff_label = new QLabel("Max difference to breed:");
+    maxDiff_spin = new QSpinBox;
+    maxDiff_spin->setMinimum(1);
+    maxDiff_spin->setMaximum(31);
+    maxDiff_spin->setValue(maxDiff);
+    org_settings_grid->addWidget(maxDiff_label,8,1);
+    org_settings_grid->addWidget(maxDiff_spin,8,2);
+    connect(maxDiff_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {maxDiff=i;});
+
+    breeddiff_checkbox = new QCheckBox("Use max diff to breed");
+    org_settings_grid->addWidget(breeddiff_checkbox,9,1,1,1);
+    breeddiff_checkbox->setChecked(breeddiff);
+    connect(breeddiff_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { breeddiff=i;});
+
+    breedspecies_checkbox = new QCheckBox("Breed only within species");
+    org_settings_grid->addWidget(breedspecies_checkbox,10,1,1,1);
+    breedspecies_checkbox->setChecked(breedspecies);
+    connect(breedspecies_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { breedspecies=i;});
+
+    QLabel *breed_mode_label= new QLabel("Breed mode:");
+    org_settings_grid->addWidget(breed_mode_label,11,1,1,2);
+    sexual_radio = new QRadioButton("Sexual");
+    asexual_radio = new QRadioButton("Asexual");
+    variableBreed_radio = new QRadioButton("Variable");
+    QButtonGroup *breeding_button_group = new QButtonGroup;
+    breeding_button_group->addButton(sexual_radio,0);
+    breeding_button_group->addButton(asexual_radio,1);
+    breeding_button_group->addButton(variableBreed_radio,2);
+    sexual_radio->setChecked(sexual);
+    asexual_radio->setChecked(asexual);
+    variableBreed_radio->setChecked(variableBreed);
+    org_settings_grid->addWidget(sexual_radio,12,1,1,2);
+    org_settings_grid->addWidget(asexual_radio,13,1,1,2);
+    org_settings_grid->addWidget(variableBreed_radio,14,1,1,2);
+    connect(breeding_button_group, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i)
+        {
+        if(i==0){sexual=true;asexual=false;variableBreed=false;}
+        if(i==1){sexual=false;asexual=true;variableBreed=false;}
+        if(i==2){sexual=false;asexual=false;variableBreed=true;}
+        });
+
+    QLabel *settle_settings_label= new QLabel("Settle settings");
+    settle_settings_label->setStyleSheet("font-weight: bold");
+    org_settings_grid->addWidget(settle_settings_label,15,1,1,2);
+
+    QLabel *dispersal_label = new QLabel("Dispersal:");
+    dispersal_spin = new QSpinBox;
+    dispersal_spin->setMinimum(1);
+    dispersal_spin->setMaximum(200);
+    dispersal_spin->setValue(dispersal);
+    org_settings_grid->addWidget(dispersal_label,16,1);
+    org_settings_grid->addWidget(dispersal_spin,16,2);
+    connect(dispersal_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {dispersal=i;});
+
+    nonspatial_checkbox = new QCheckBox("Nonspatial settling");
+    org_settings_grid->addWidget(nonspatial_checkbox,17,1,1,2);
+    nonspatial_checkbox->setChecked(nonspatial);
+    connect(nonspatial_checkbox,&QCheckBox::stateChanged,[=](const bool &i) {nonspatial=i;});
+
+    QLabel *pathogen_settings_label= new QLabel("Pathogen settings");
+    pathogen_settings_label->setStyleSheet("font-weight: bold");
+    org_settings_grid->addWidget(pathogen_settings_label,18,1,1,2);
+
+    pathogens_checkbox = new QCheckBox("Pathogens layer");
+    org_settings_grid->addWidget(pathogens_checkbox,19,1,1,2);
+    pathogens_checkbox->setChecked(path_on);
+    connect(pathogens_checkbox,&QCheckBox::stateChanged,[=](const bool &i) {path_on=i;});
+
+    QLabel *pathogen_mutate_label = new QLabel("Pathogen mutation:");
+    pathogen_mutate_spin = new QSpinBox;
+    pathogen_mutate_spin->setMinimum(1);
+    pathogen_mutate_spin->setMaximum(255);
+    pathogen_mutate_spin->setValue(pathogen_mutate);
+    org_settings_grid->addWidget(pathogen_mutate_label,20,1);
+    org_settings_grid->addWidget(pathogen_mutate_spin,20,2);
+    connect(pathogen_mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {pathogen_mutate=i;});
+
+    QLabel *pathogen_frequency_label = new QLabel("Pathogen frequency:");
+    pathogen_frequency_spin = new QSpinBox;
+    pathogen_frequency_spin->setMinimum(1);
+    pathogen_frequency_spin->setMaximum(1000);
+    pathogen_frequency_spin->setValue(pathogen_frequency);
+    org_settings_grid->addWidget(pathogen_frequency_label,21,1);
+    org_settings_grid->addWidget(pathogen_frequency_spin,21,2);
+    connect(pathogen_frequency_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {pathogen_frequency=i;});
+
+    QWidget *org_settings_layout_widget = new QWidget;
+    org_settings_layout_widget->setLayout(org_settings_grid);
+    organismSettingsDock->setWidget(org_settings_layout_widget);
+
+    return organismSettingsDock;
 }
 
 // ---- RJG: Change the save path for various stuff.
@@ -1998,14 +2016,14 @@ void MainWindow::redoImages(int oldrows, int oldcols)
 
 void MainWindow::on_actionSettings_triggered()
 {
-    if(settings_dock->isVisible())
+    if(simulationSettingsDock->isVisible())
     {
-        settings_dock->hide();
+        simulationSettingsDock->hide();
         settingsButton->setChecked(false);
     } else
     {
-        settings_dock->show();
-        settings_dock->raise();
+        simulationSettingsDock->show();
+        simulationSettingsDock->raise();
         settingsButton->setChecked(true);
     }
 }
@@ -2013,28 +2031,28 @@ void MainWindow::on_actionSettings_triggered()
 
 void MainWindow::orgSettings_triggered()
 {
-    if(org_settings_dock->isVisible())
+    if(organismSettingsDock->isVisible())
     {
-        org_settings_dock->hide();
+        organismSettingsDock->hide();
         orgSettingsButton->setChecked(false);        
     } else
     {
-        org_settings_dock->show();
-        org_settings_dock->raise();
+        organismSettingsDock->show();
+        organismSettingsDock->raise();
         orgSettingsButton->setChecked(true);
     }
 }
 
 void MainWindow::logSettings_triggered()
 {
-    if(output_settings_dock->isVisible())
+    if(outputSettingsDock->isVisible())
     {
-        output_settings_dock->hide();
+        outputSettingsDock->hide();
         logSettingsButton->setChecked(false);
     } else
     {
-        output_settings_dock->show();
-        output_settings_dock->raise();
+        outputSettingsDock->show();
+        outputSettingsDock->raise();
         logSettingsButton->setChecked(true);
     }
 }

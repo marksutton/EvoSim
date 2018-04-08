@@ -98,6 +98,9 @@ void EnvironmentScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event )
     x=(int)position.x();
     y=(int)position.y();
 
+    Q_UNUSED(x);
+    Q_UNUSED(y);
+
     return;
 }
 

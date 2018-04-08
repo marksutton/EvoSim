@@ -55,6 +55,9 @@ public:
     void RefreshEnvironment();
     void setStatusBarText(QString text);
     Ui::MainWindow *ui;
+    QDockWidget* createSimulationSettingsDock();
+    QDockWidget* createOutputSettingsDock();
+    QDockWidget* createOrganismSettingsDock();
 
     int RefreshRate;
 
@@ -93,7 +96,7 @@ private:
     PopulationScene *popscene;
     QActionGroup *viewgroup, *viewgroup2, *speciesgroup;
     QActionGroup *envgroup;
-    QDockWidget *settings_dock, *org_settings_dock, *output_settings_dock;
+    QDockWidget *simulationSettingsDock, *organismSettingsDock, *outputSettingsDock;
 
     //RJG - GUI buttons and settings docker options which need to be accessible via slots, especially for load settings function
     QAction *startButton, *stopButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton, *orgSettingsButton, *logSettingsButton, *aboutButton;
