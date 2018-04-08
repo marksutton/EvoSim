@@ -304,15 +304,6 @@
            <property name="frameShadow">
             <enum>QFrame::Sunken</enum>
            </property>
-           <property name="backgroundBrush">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>13</red>
-              <green>13</green>
-              <blue>13</blue>
-             </color>
-            </brush>
-           </property>
           </widget>
          </item>
         </layout>
@@ -800,7 +791,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>1220</width>
-     <height>23</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCommands">
