@@ -115,7 +115,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ResizeCatcher *rescatch = new ResizeCatcher(this);
     ui->centralWidget->installEventFilter(rescatch);
 
-
     //ARTS - Toolbar buttons
     //RJG - docker toggles
     startButton = new QAction(QIcon(QPixmap(":/toolbar/startButton-Enabled.png")), QString("Run"), this);
@@ -203,6 +202,8 @@ MainWindow::MainWindow(QWidget *parent) :
     //RJG - Make docks tabbed
     tabifyDockWidget(organismSettingsDock,simulationSettingsDock);
     tabifyDockWidget(simulationSettingsDock,outputSettingsDock);
+
+    //ARST - Hide docks by default
     organismSettingsDock->hide();
     simulationSettingsDock->hide();
     outputSettingsDock->hide();
@@ -339,15 +340,15 @@ MainWindow::MainWindow(QWidget *parent) :
     //Then scaled to zero to 32 bit rand max, to allow for probabilities within each iteration through a random number
     float x=-3., inc=(6./32.);
     for(int cnt=0;cnt<33;cnt++)
-            {
-            double NSDF=(0.5 * erfc(-(x) * M_SQRT1_2));
-            cumulative_normal_distribution[cnt]=4294967296*NSDF;
-            x+=inc;
-            }
+    {
+        double NSDF=(0.5 * erfc(-(x) * M_SQRT1_2));
+        cumulative_normal_distribution[cnt]=4294967296*NSDF;
+        x+=inc;
+    }
 
     //RJG - fill pathogen probability distribution as required so pathogens can kill critters
     //Start with linear, may want to change down the line.
-      for(int cnt=0;cnt<65;cnt++)
+    for(int cnt=0;cnt<65;cnt++)
         pathogen_prob_distribution[cnt]=(4294967296/2)+(cnt*(4294967295/128));
 }
 

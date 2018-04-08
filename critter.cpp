@@ -33,7 +33,7 @@ Critter::Critter()
 
     //Temporary variable breed tag. Probably better way of doing this but short on time
     int variableBreedAsex = 0;
-
+    Q_UNUSED(variableBreedAsex);
 }
 
 void Critter::initialise(quint64 gen, quint8 *env, int x, int y, int z, quint64 species)
