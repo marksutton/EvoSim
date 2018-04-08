@@ -649,19 +649,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->fossRecDockContents->setLayout(frwLayout);
     ui->reportViewerDock->hide();
 
-    /*viewgroup = new QActionGroup(this);
-    // These actions were created via qt designer
-    viewgroup->addAction(ui->actionPopulation_Count);
-    viewgroup->addAction(ui->actionMean_fitness);
-    viewgroup->addAction(ui->actionGenome_as_colour);
-    viewgroup->addAction(ui->actionNonCoding_genome_as_colour);
-    viewgroup->addAction(ui->actionGene_Frequencies_012);
-    viewgroup->addAction(ui->actionSpecies);
-    viewgroup->addAction(ui->actionBreed_Fails_2);
-    viewgroup->addAction(ui->actionSettles);
-    viewgroup->addAction(ui->actionSettle_Fails);
-    QObject::connect(viewgroup, SIGNAL(triggered(QAction *)), this, SLOT(view_mode_changed(QAction *)));*/
-
     viewgroup2 = new QActionGroup(this);
     // These actions were created via qt designer
     viewgroup2->addAction(ui->actionNone);
@@ -711,7 +698,7 @@ MainWindow::MainWindow(QWidget *parent) :
     env_item->setPixmap(QPixmap::fromImage(*env_image));
     pop_item->setPixmap(QPixmap::fromImage(*pop_image));
 
-    //ARTS - population windows dropdown must be after settings dock setup
+    //ARTS - Population Window dropdown must be after settings dock setup
     // 0 = Population count
     // 1 = Mean fitnessFails (R-Breed, G=Settle)
     // 2 = Coding genome as colour
@@ -735,7 +722,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //ui->populationWindowComboBox->addItem("Breed Fails 2",QVariant(9));
     ui->populationWindowComboBox->addItem("Species",QVariant(10));
 
-    // Set current index
+    //ARTS -Population Window dropdown set current index. Note this value is the index not the data value.
     ui->populationWindowComboBox->setCurrentIndex(2);
 
     TheSimManager = new SimManager;
@@ -1041,8 +1028,6 @@ void MainWindow::on_actionBatch_triggered()
     } else {
         return;
     }
-
-
 
     //ARTS - run the batch
     do {
@@ -1417,8 +1402,8 @@ void MainWindow::on_populationWindowComboBox_currentIndexChanged(int index)
     // 8 = Settle Fails
     // 9 = Breed Fails 2
     // 10 = Species
-
     int currentSelectedMode = ui->populationWindowComboBox->itemData(index).toInt();
+    Q_UNUSED(currentSelectedMode);
 
     //view_mode_changed();
     RefreshPopulations();
@@ -1427,15 +1412,14 @@ void MainWindow::on_populationWindowComboBox_currentIndexChanged(int index)
 void MainWindow::RefreshPopulations()
 //Refreshes of left window - also run species ident
 {
-
     //RJG - make path if required - this way as if user adds file name to path, this will create a subfolder with the same file name as logs
     QString save_path(path->text());
     if(!save_path.endsWith(QDir::separator()))save_path.append(QDir::separator());
     if(batch_running)
-        {
+    {
         save_path.append(QString("Images_run_%1").arg(runs, 4, 10, QChar('0')));
         save_path.append(QDir::separator());
-        }
+    }
     QDir save_dir(save_path);
 
     // 0 = Population count
@@ -1450,8 +1434,7 @@ void MainWindow::RefreshPopulations()
     // 9 = Breed Fails 2
     // 10 = Species
 
-    //check to see what the mode is
-
+    //ARTS - Check to see what the mode is from the Population Window QComboBox; return the data as int.
     int currentSelectedMode = ui->populationWindowComboBox->itemData(ui->populationWindowComboBox->currentIndex()).toInt();
 
     // (0) Population Count
@@ -1476,12 +1459,11 @@ void MainWindow::RefreshPopulations()
         //if (ui->actionPopulation_Count->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
         if (currentSelectedMode==0)pop_item->setPixmap(QPixmap::fromImage(*pop_image));
         if (save_population_count->isChecked())
-                 if(save_dir.mkpath("population/"))
-                             pop_image_colour->save(QString(save_dir.path()+"/population/EvoSim_population_it_%1.png").arg(generation, 7, 10, QChar('0')));
+            if(save_dir.mkpath("population/"))
+                pop_image_colour->save(QString(save_dir.path()+"/population/EvoSim_population_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
     // (1) Fitness
-    //if (ui->actionMean_fitness->isChecked()||save_mean_fitness->isChecked())
     if (currentSelectedMode==1||save_mean_fitness->isChecked())
     {
         //Popcount
@@ -1500,15 +1482,13 @@ void MainWindow::RefreshPopulations()
             pop_image->setPixel(n,m,(totalfit[n][m] * multiplier) / count);
 
         }
-        //if (ui->actionMean_fitness->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
         if (currentSelectedMode==1)pop_item->setPixmap(QPixmap::fromImage(*pop_image));
         if (save_mean_fitness->isChecked())
-                 if(save_dir.mkpath("fitness/"))
-                             pop_image_colour->save(QString(save_dir.path()+"/fitness/EvoSim_mean_fitness_it_%1.png").arg(generation, 7, 10, QChar('0')));
+            if(save_dir.mkpath("fitness/"))
+                pop_image_colour->save(QString(save_dir.path()+"/fitness/EvoSim_mean_fitness_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
     // (2) Genome as colour
-    //if (ui->actionGenome_as_colour->isChecked()||save_coding_genome_as_colour->isChecked())
     if (currentSelectedMode==2||save_coding_genome_as_colour->isChecked())
     {
         //find modal genome in each square, convert to colour
@@ -1572,15 +1552,13 @@ void MainWindow::RefreshPopulations()
 
        }
 
-       //if (ui->actionGenome_as_colour->isChecked()) pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
-       if (currentSelectedMode==2) pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
-       if (save_coding_genome_as_colour->isChecked())
-                if(save_dir.mkpath("coding/"))
-                            pop_image_colour->save(QString(save_dir.path()+"/coding/EvoSim_coding_genome_it_%1.png").arg(generation, 7, 10, QChar('0')));
+        if (currentSelectedMode==2) pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if (save_coding_genome_as_colour->isChecked())
+            if(save_dir.mkpath("coding/"))
+            pop_image_colour->save(QString(save_dir.path()+"/coding/EvoSim_coding_genome_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
     // (3) Non-coding Genome
-    //if (ui->actionNonCoding_genome_as_colour->isChecked()||save_non_coding_genome_as_colour->isChecked())
     if (currentSelectedMode==3||save_non_coding_genome_as_colour->isChecked())
     {
         //find modal genome in each square, convert non-coding to colour
@@ -1643,16 +1621,14 @@ void MainWindow::RefreshPopulations()
                 pop_image_colour->setPixel(n,m,qRgb(r, g, b));
             }
        }
-        //if(ui->actionNonCoding_genome_as_colour->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+
         if(currentSelectedMode==3)pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
         if(save_non_coding_genome_as_colour->isChecked())
-                 if(save_dir.mkpath("non_coding/"))
-                             pop_image_colour->save(QString(save_dir.path()+"/non_coding/EvoSim_non_coding_it_%1.png").arg(generation, 7, 10, QChar('0')));
-
+            if(save_dir.mkpath("non_coding/"))
+                 pop_image_colour->save(QString(save_dir.path()+"/non_coding/EvoSim_non_coding_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
     // (4) Gene Frequencies
-    //if (ui->actionGene_Frequencies_012->isChecked()||save_gene_frequencies->isChecked())
     if (currentSelectedMode==4||save_gene_frequencies->isChecked())
     {
         //Popcount
@@ -1682,17 +1658,15 @@ void MainWindow::RefreshPopulations()
                 pop_image_colour->setPixel(n,m,qRgb(r, g, b));
             }
           }
-          //if (ui->actionGene_Frequencies_012->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
-          if (currentSelectedMode==4)pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
-          if(save_gene_frequencies->isChecked())
-                 if(save_dir.mkpath("gene_freq/"))
-                             pop_image_colour->save(QString(save_dir.path()+"/gene_freq/EvoSim_gene_freq_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
+        if (currentSelectedMode==4)pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if(save_gene_frequencies->isChecked())
+            if(save_dir.mkpath("gene_freq/"))
+                pop_image_colour->save(QString(save_dir.path()+"/gene_freq/EvoSim_gene_freq_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
     // (5) Breed Attempts
     //RJG - No save option as no longer in the menu as an option.
-    //if (ui->actionBreed_Attempts->isChecked())
     if (currentSelectedMode==5)
     {
         //Popcount
@@ -1725,7 +1699,6 @@ void MainWindow::RefreshPopulations()
     }
 
     // (7) Settles
-    //if (ui->actionSettles->isChecked()||save_settles->isChecked())
     if (currentSelectedMode==7||save_settles->isChecked())
     {
         //Popcount
@@ -1737,17 +1710,14 @@ void MainWindow::RefreshPopulations()
             pop_image->setPixel(n,m,value);
         }
 
-       //if(ui->actionSettles->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
-       if(currentSelectedMode==7)pop_item->setPixmap(QPixmap::fromImage(*pop_image));
-       if(save_settles->isChecked())
-               if(save_dir.mkpath("settles/"))
-                           pop_image_colour->save(QString(save_dir.path()+"/settles/EvoSim_settles_it_%1.png").arg(generation, 7, 10, QChar('0')));
-
+        if(currentSelectedMode==7)pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        if(save_settles->isChecked())
+            if(save_dir.mkpath("settles/"))
+                pop_image_colour->save(QString(save_dir.path()+"/settles/EvoSim_settles_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
     // (8) Settle Fails === Fails
-    //this now combines breed fails (red) and settle fails (green)
-    //if (ui->actionSettle_Fails->isChecked()||save_fails_settles->isChecked())
+    //RJG - this now combines breed fails (red) and settle fails (green)
     if (currentSelectedMode==8||save_fails_settles->isChecked())
     {
         //work out max and ratios
@@ -1778,16 +1748,15 @@ void MainWindow::RefreshPopulations()
             int g=ScaleFails(settlefails[n][m],gens);
             pop_image_colour->setPixel(n,m,qRgb(r, g, 0));
         }
-        //if(ui->actionSettle_Fails->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+
         if(currentSelectedMode==8)pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
         if(save_fails_settles->isChecked())
-                if(save_dir.mkpath("settles_fails/"))
-                            pop_image_colour->save(QString(save_dir.path()+"/settles_fails/EvoSim_settles_fails_it_%1.png").arg(generation, 7, 10, QChar('0')));
+            if(save_dir.mkpath("settles_fails/"))
+                pop_image_colour->save(QString(save_dir.path()+"/settles_fails/EvoSim_settles_fails_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
     }
 
     // (9) Breed Fails 2
-    //if (ui->actionBreed_Fails_2->isChecked())
     if (currentSelectedMode==9)
     {
         //Popcount
@@ -1806,7 +1775,6 @@ void MainWindow::RefreshPopulations()
     }
 
     // (10) Species
-    //if (ui->actionSpecies->isChecked()||save_species->isChecked()) //do visualisation if necessary
     if (currentSelectedMode==10||save_species->isChecked()) //do visualisation if necessary
     {
         for (int n=0; n<gridX; n++)
@@ -1829,11 +1797,11 @@ void MainWindow::RefreshPopulations()
                 pop_image_colour->setPixel(n,m,species_colours[thisspecies % 65536]);
             }
         }
-         //if (ui->actionSpecies->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+
         if (currentSelectedMode==10)pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
-         if (save_species->isChecked())
-                  if(save_dir.mkpath("species/"))
-                              pop_image_colour->save(QString(save_dir.path()+"/species/EvoSim_species_it_%1.png").arg(generation, 7, 10, QChar('0')));
+        if (save_species->isChecked())
+            if(save_dir.mkpath("species/"))
+                pop_image_colour->save(QString(save_dir.path()+"/species/EvoSim_species_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
     }
 
@@ -1859,7 +1827,8 @@ void MainWindow::RefreshEnvironment()
     env_item->setPixmap(QPixmap::fromImage(*env_image));
     if(save_environment->isChecked())
         if(save_dir.mkpath("environment/"))
-                    env_image->save(QString(save_dir.path()+"/environment/EvoSim_environment_it_%1.png").arg(generation, 7, 10, QChar('0')));
+            env_image->save(QString(save_dir.path()+"/environment/EvoSim_environment_it_%1.png").arg(generation, 7, 10, QChar('0')));
+
     //Draw on fossil records
     envscene->DrawLocations(FRW->FossilRecords,ui->actionShow_positions->isChecked());
 }
@@ -2031,44 +2000,41 @@ void MainWindow::redoImages(int oldrows, int oldcols)
 void MainWindow::on_actionSettings_triggered()
 {
     if(settings_dock->isVisible())
-        {
+    {
         settings_dock->hide();
         settingsButton->setChecked(false);
-        }
-    else
-        {
+    } else
+    {
         settings_dock->show();
         settingsButton->setChecked(true);
-        }
+    }
 }
 
 
 void MainWindow::orgSettings_triggered()
 {
     if(org_settings_dock->isVisible())
-        {
+    {
         org_settings_dock->hide();
         orgSettingsButton->setChecked(false);
-        }
-    else
-        {
+    } else
+    {
         org_settings_dock->show();
         orgSettingsButton->setChecked(true);
-        }
+    }
 }
 
 void MainWindow::logSettings_triggered()
 {
     if(output_settings_dock->isVisible())
-        {
+    {
         output_settings_dock->hide();
         logSettingsButton->setChecked(false);
-        }
-    else
-        {
+    } else
+    {
         output_settings_dock->show();
         logSettingsButton->setChecked(true);
-        }
+    }
 }
 
 
@@ -2150,12 +2116,10 @@ void MainWindow::on_actionChoose_Log_Directory_triggered()
 {
     QString dirname = QFileDialog::getExistingDirectory(this,"Select directory to log fossil record to");
 
-
     if (dirname.length()==0) return;
     FRW->LogDirectory=dirname;
     FRW->LogDirectoryChosen=true;
     FRW->HideWarnLabel();
-
 }
 
 //RJG - Fitness logging to file not sorted on save as yet.
@@ -2174,7 +2138,6 @@ void MainWindow::on_actionSave_triggered()
     outfile.open(QIODevice::WriteOnly|QIODevice::Text);
 
     QDataStream out(&outfile);
-
 
     out<<QString("EVOSIM file");
     out<<(int)FILEVERSION;
@@ -2370,7 +2333,6 @@ void MainWindow::on_actionLoad_triggered()
     if (filename.length()==0) return;
 
     if (stopflag==false) stopflag=true;
-
 
     //Otherwise - serialise all my crap
     QFile infile(filename);
@@ -2688,14 +2650,12 @@ void MainWindow::on_actionSet_Inactive_triggered()
 
 void MainWindow::on_actionSet_Sparsity_triggered()
 {
-
     bool ok;
 
     int value=QInputDialog::getInt(this,"","Sparsity",10,1,100000,1,&ok);
     if (!ok) return;
 
     FRW->SelectedSparse(value);
-
 }
 
 void MainWindow::on_actionShow_positions_triggered()
@@ -2768,7 +2728,6 @@ void MainWindow::CalcSpecies()
             lastSpeciesCalc=generation;
         }
         */
-
     }
 }
 
@@ -3135,7 +3094,6 @@ QString MainWindow::print_settings()
     settings_out<<"; Years per iteration: "<<yearsPerIteration;
     settings_out<<"; Minimum species size:"<<minspeciessize;
 
-
     settings_out<<". Bools - recalculate fitness: "<<recalcFitness;
     settings_out<<"; Toroidal environment: "<<toroidal;
     settings_out<<"; Nonspatial setling: "<<nonspatial;
@@ -3483,8 +3441,6 @@ void MainWindow::save_settings()
         settings_file.close();
 
        setStatusBarText("File saved");
-
-
 }
 
 //ARTS - Exit the application
