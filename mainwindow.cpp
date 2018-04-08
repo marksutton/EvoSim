@@ -365,17 +365,20 @@ QDockWidget *MainWindow::createSimulationSettingsDock()
     // Environment Settings
     QGridLayout *environmentSettingsGrid = new QGridLayout;
 
-    QPushButton *changeEnvironmentFilesButton = new QPushButton("&Change Enviroment Files");
-    changeEnvironmentFilesButton->setObjectName("changeEnvironmentFilesButton");
-    environmentSettingsGrid->addWidget(changeEnvironmentFilesButton,0,1,1,2);
-    connect(changeEnvironmentFilesButton, SIGNAL (clicked()), this, SLOT(on_actionEnvironment_Files_triggered()));
-
     QLabel *environment_label= new QLabel("Environmental Settings");
     environment_label->setStyleSheet("font-weight: bold");
-    environmentSettingsGrid->addWidget(environment_label,1,1,1,2);
+    environmentSettingsGrid->addWidget(environment_label,0,1,1,2);
+
+    QPushButton *changeEnvironmentFilesButton = new QPushButton("&Change Enviroment Files");
+    changeEnvironmentFilesButton->setObjectName("changeEnvironmentFilesButton");
+    changeEnvironmentFilesButton->setToolTip("<font>REvoSim allow you to customise the enviroment by loading one or more image files.</font>");
+    environmentSettingsGrid->addWidget(changeEnvironmentFilesButton,1,1,1,2);
+    connect(changeEnvironmentFilesButton, SIGNAL (clicked()), this, SLOT(on_actionEnvironment_Files_triggered()));
 
     QLabel *environment_rate_label = new QLabel("Environment refresh rate:");
+    environment_rate_label->setToolTip("<font>This is the rate of change for the selected enviromental images.</font>");
     environment_rate_spin = new QSpinBox;
+    environment_rate_spin->setToolTip("<font>This is the rate of change for the selected enviromental images.</font>");
     environment_rate_spin->setMinimum(0);
     environment_rate_spin->setMaximum(100000);
     environment_rate_spin->setValue(envchangerate);
@@ -386,11 +389,16 @@ QDockWidget *MainWindow::createSimulationSettingsDock()
 
     QLabel *environment_mode_label = new QLabel("Environment mode:");
     environmentSettingsGrid->addWidget(environment_mode_label,3,1,1,2);
+
     QGridLayout *environmentModeGrid = new QGridLayout;
     environmentModeStaticButton = new QRadioButton("Static");
+    environmentModeStaticButton->setToolTip("<font>'Static' uses a single environment image.</font>");
     environmentModeOnceButton = new QRadioButton("Once");
+    environmentModeOnceButton->setToolTip("<font>'Once' uses each image only once, simulation stops after last image.</font>");
     environmentModeLoopButton = new QRadioButton("Loop");
+    environmentModeLoopButton->setToolTip("<font>'Loop' uses each image in order in a loop</font>");
     environmentModeBounceButton = new QRadioButton("Bounce");
+    environmentModeBounceButton->setToolTip("<font>'Bounce' rebounds between the first and last image in a loop.</font>");
     QButtonGroup* environmentModeButtonGroup = new QButtonGroup;
     environmentModeButtonGroup->addButton(environmentModeStaticButton,ENV_MODE_STATIC);
     environmentModeButtonGroup->addButton(environmentModeOnceButton,ENV_MODE_ONCE);
@@ -406,11 +414,13 @@ QDockWidget *MainWindow::createSimulationSettingsDock()
 
     interpolateCheckbox = new QCheckBox("Interpolate between images");
     interpolateCheckbox->setChecked(enviroment_interpolate);
+    interpolateCheckbox->setToolTip("<font>Turning this ON will iterpolate the environment between individual images.</font>");
     environmentSettingsGrid->addWidget(interpolateCheckbox,5,1,1,2);
     connect(interpolateCheckbox,&QCheckBox::stateChanged,[=](const bool &i) { enviroment_interpolate=i; });
 
     toroidal_checkbox = new QCheckBox("Toroidal enviroment");
     toroidal_checkbox->setChecked(toroidal);
+    toroidal_checkbox->setToolTip("<font>Turning this ON will allow dispersal of progeny in an unbounded warparound enviroment. Progeny leaving one side of the population window will immediately reappear on the opposite side.</font>");
     environmentSettingsGrid->addWidget(toroidal_checkbox,6,1,1,2);
     connect(toroidal_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { toroidal=i; });
 
