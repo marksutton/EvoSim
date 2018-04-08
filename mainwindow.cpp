@@ -649,7 +649,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->fossRecDockContents->setLayout(frwLayout);
     ui->reportViewerDock->hide();
 
-    viewgroup = new QActionGroup(this);
+    /*viewgroup = new QActionGroup(this);
     // These actions were created via qt designer
     viewgroup->addAction(ui->actionPopulation_Count);
     viewgroup->addAction(ui->actionMean_fitness);
@@ -660,7 +660,7 @@ MainWindow::MainWindow(QWidget *parent) :
     viewgroup->addAction(ui->actionBreed_Fails_2);
     viewgroup->addAction(ui->actionSettles);
     viewgroup->addAction(ui->actionSettle_Fails);
-    QObject::connect(viewgroup, SIGNAL(triggered(QAction *)), this, SLOT(view_mode_changed(QAction *)));
+    QObject::connect(viewgroup, SIGNAL(triggered(QAction *)), this, SLOT(view_mode_changed(QAction *)));*/
 
     viewgroup2 = new QActionGroup(this);
     // These actions were created via qt designer
@@ -710,6 +710,33 @@ MainWindow::MainWindow(QWidget *parent) :
 
     env_item->setPixmap(QPixmap::fromImage(*env_image));
     pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+
+    //ARTS - population windows dropdown must be after settings dock setup
+    // 0 = Population count
+    // 1 = Mean fitnessFails (R-Breed, G=Settle)
+    // 2 = Coding genome as colour
+    // 3 = NonCoding genome as colour
+    // 4 = Gene Frequencies
+    // 5 = Breed Attempts
+    // 6 = Breed Fails
+    // 7 = Settles
+    // 8 = Settle Fails
+    // 9 = Breed Fails 2
+    // 10 = Species
+    ui->populationWindowComboBox->addItem("Population count",QVariant(0));
+    ui->populationWindowComboBox->addItem("Mean fitnessFails (R-Breed, G=Settle)",QVariant(1));
+    ui->populationWindowComboBox->addItem("Coding genome as colour",QVariant(2));
+    ui->populationWindowComboBox->addItem("NonCoding genome as colour",QVariant(3));
+    ui->populationWindowComboBox->addItem("Gene Frequencies",QVariant(4));
+    //ui->populationWindowComboBox->addItem("Breed Attempts",QVariant(5));
+    //ui->populationWindowComboBox->addItem("Breed Fails",QVariant(6));
+    ui->populationWindowComboBox->addItem("Settles",QVariant(7));
+    ui->populationWindowComboBox->addItem("Settle Fails",QVariant(8));
+    //ui->populationWindowComboBox->addItem("Breed Fails 2",QVariant(9));
+    ui->populationWindowComboBox->addItem("Species",QVariant(10));
+
+    // Set current index
+    ui->populationWindowComboBox->setCurrentIndex(2);
 
     TheSimManager = new SimManager;
 
@@ -809,7 +836,7 @@ void MainWindow::on_actionReset_triggered()
 
     //ARTS - Update views based on the new reset simulation
     RefreshReport();
-    UpdateTitles();
+    //UpdateTitles();
     RefreshPopulations();
 }
 
@@ -1287,7 +1314,6 @@ void MainWindow::Report()
 
 void MainWindow::RefreshReport()
 {
-    UpdateTitles();
 
     QTime refreshtimer;
     refreshtimer.restart();
@@ -1365,43 +1391,6 @@ void MainWindow::RefreshReport()
 
 }
 
-void MainWindow::UpdateTitles()
-{
-    if (ui->actionPopulation_Count->isChecked())
-        ui->LabelVis->setText("Population Count");
-
-    if (ui->actionMean_fitness->isChecked())
-        ui->LabelVis->setText("Mean Fitness");
-
-
-    if (ui->actionGenome_as_colour->isChecked())
-        ui->LabelVis->setText("Coding Genome bitcount as colour (modal critter)");
-
-    if (ui->actionNonCoding_genome_as_colour->isChecked())
-        ui->LabelVis->setText("Non-Coding Genome bitcount as colour (modal critter)");
-
-    if (ui->actionSpecies->isChecked())
-        ui->LabelVis->setText("Species");
-
-    if (ui->actionGene_Frequencies_012->isChecked())
-        ui->LabelVis->setText("Frequences genes 0,1,2 (all critters in square)");
-
-    if (ui->actionBreed_Attempts->isChecked())
-        ui->LabelVis->setText("Breed Attempts");
-
-    if (ui->actionBreed_Fails->isChecked())
-        ui->LabelVis->setText("Breed Fails");
-
-    if (ui->actionSettles->isChecked())
-        ui->LabelVis->setText("Successful Settles");
-
-    if (ui->actionSettle_Fails->isChecked())
-        ui->LabelVis->setText("Breed Fails (red) and Settle Fails (green)");
-
-    if (ui->actionBreed_Fails_2->isChecked())
-        ui->LabelVis->setText("Breed Fails 2 (unused?)");
-}
-
 int MainWindow::ScaleFails(int fails, float gens)
 {
     //scale colour of fail count, correcting for generations, and scaling high values to something saner
@@ -1412,6 +1401,27 @@ int MainWindow::ScaleFails(int fails, float gens)
 
     if (ffails>255.0) ffails=255.0;
     return (int)ffails;
+}
+
+
+void MainWindow::on_populationWindowComboBox_currentIndexChanged(int index)
+{
+    // 0 = Population count
+    // 1 = Mean fitnessFails (R-Breed, G=Settle)
+    // 2 = Coding genome as colour
+    // 3 = NonCoding genome as colour
+    // 4 = Gene Frequencies
+    // 5 = Breed Attempts
+    // 6 = Breed Fails
+    // 7 = Settles
+    // 8 = Settle Fails
+    // 9 = Breed Fails 2
+    // 10 = Species
+
+    int currentSelectedMode = ui->populationWindowComboBox->itemData(index).toInt();
+
+    //view_mode_changed();
+    RefreshPopulations();
 }
 
 void MainWindow::RefreshPopulations()
@@ -1428,8 +1438,25 @@ void MainWindow::RefreshPopulations()
         }
     QDir save_dir(save_path);
 
+    // 0 = Population count
+    // 1 = Mean fitness
+    // 2 = Coding genome as colour
+    // 3 = NonCoding genome as colour
+    // 4 = Gene Frequencies
+    // 5 = Breed Attempts
+    // 6 = Breed Fails
+    // 7 = Settles
+    // 8 = Settle Fails === Fails (R-Breed, G=Settle)
+    // 9 = Breed Fails 2
+    // 10 = Species
+
     //check to see what the mode is
-    if (ui->actionPopulation_Count->isChecked()||save_population_count->isChecked())
+
+    int currentSelectedMode = ui->populationWindowComboBox->itemData(ui->populationWindowComboBox->currentIndex()).toInt();
+
+    // (0) Population Count
+    //if (ui->actionPopulation_Count->isChecked()||save_population_count->isChecked())
+    if (currentSelectedMode==0||save_population_count->isChecked())
     {
         //Popcount
         int bigcount=0;
@@ -1446,13 +1473,16 @@ void MainWindow::RefreshPopulations()
             if (count>255) count=255;
             pop_image->setPixel(n,m,count);
         }
-        if (ui->actionPopulation_Count->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        //if (ui->actionPopulation_Count->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        if (currentSelectedMode==0)pop_item->setPixmap(QPixmap::fromImage(*pop_image));
         if (save_population_count->isChecked())
                  if(save_dir.mkpath("population/"))
                              pop_image_colour->save(QString(save_dir.path()+"/population/EvoSim_population_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
-    if (ui->actionMean_fitness->isChecked()||save_mean_fitness->isChecked())
+    // (1) Fitness
+    //if (ui->actionMean_fitness->isChecked()||save_mean_fitness->isChecked())
+    if (currentSelectedMode==1||save_mean_fitness->isChecked())
     {
         //Popcount
         int multiplier=255/settleTolerance;
@@ -1470,13 +1500,16 @@ void MainWindow::RefreshPopulations()
             pop_image->setPixel(n,m,(totalfit[n][m] * multiplier) / count);
 
         }
-        if (ui->actionMean_fitness->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        //if (ui->actionMean_fitness->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        if (currentSelectedMode==1)pop_item->setPixmap(QPixmap::fromImage(*pop_image));
         if (save_mean_fitness->isChecked())
                  if(save_dir.mkpath("fitness/"))
                              pop_image_colour->save(QString(save_dir.path()+"/fitness/EvoSim_mean_fitness_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
-    if (ui->actionGenome_as_colour->isChecked()||save_coding_genome_as_colour->isChecked())
+    // (2) Genome as colour
+    //if (ui->actionGenome_as_colour->isChecked()||save_coding_genome_as_colour->isChecked())
+    if (currentSelectedMode==2||save_coding_genome_as_colour->isChecked())
     {
         //find modal genome in each square, convert to colour
         for (int n=0; n<gridX; n++)
@@ -1539,42 +1572,16 @@ void MainWindow::RefreshPopulations()
 
        }
 
-       if (ui->actionGenome_as_colour->isChecked()) pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+       //if (ui->actionGenome_as_colour->isChecked()) pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+       if (currentSelectedMode==2) pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
        if (save_coding_genome_as_colour->isChecked())
                 if(save_dir.mkpath("coding/"))
                             pop_image_colour->save(QString(save_dir.path()+"/coding/EvoSim_coding_genome_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
-    if (ui->actionSpecies->isChecked()||save_species->isChecked()) //do visualisation if necessary
-    {
-        for (int n=0; n<gridX; n++)
-        for (int m=0; m<gridY; m++)
-        {
-
-            if (totalfit[n][m]==0) pop_image_colour->setPixel(n,m,0); //black if square is empty
-            else
-            {
-                quint64 thisspecies=0;
-                for (int c=0; c<slotsPerSq; c++)
-                {
-                    if (critters[n][m][c].age>0)
-                    {
-                        thisspecies=critters[n][m][c].speciesid;
-                        break;
-                    }
-                }
-
-                pop_image_colour->setPixel(n,m,species_colours[thisspecies % 65536]);
-            }
-        }
-         if (ui->actionSpecies->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
-         if (save_species->isChecked())
-                  if(save_dir.mkpath("species/"))
-                              pop_image_colour->save(QString(save_dir.path()+"/species/EvoSim_species_it_%1.png").arg(generation, 7, 10, QChar('0')));
-
-    }
-
-    if (ui->actionNonCoding_genome_as_colour->isChecked()||save_non_coding_genome_as_colour->isChecked())
+    // (3) Non-coding Genome
+    //if (ui->actionNonCoding_genome_as_colour->isChecked()||save_non_coding_genome_as_colour->isChecked())
+    if (currentSelectedMode==3||save_non_coding_genome_as_colour->isChecked())
     {
         //find modal genome in each square, convert non-coding to colour
         for (int n=0; n<gridX; n++)
@@ -1636,14 +1643,17 @@ void MainWindow::RefreshPopulations()
                 pop_image_colour->setPixel(n,m,qRgb(r, g, b));
             }
        }
-        if(ui->actionNonCoding_genome_as_colour->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        //if(ui->actionNonCoding_genome_as_colour->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if(currentSelectedMode==3)pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
         if(save_non_coding_genome_as_colour->isChecked())
                  if(save_dir.mkpath("non_coding/"))
                              pop_image_colour->save(QString(save_dir.path()+"/non_coding/EvoSim_non_coding_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
     }
 
-    if (ui->actionGene_Frequencies_012->isChecked()||save_gene_frequencies->isChecked())
+    // (4) Gene Frequencies
+    //if (ui->actionGene_Frequencies_012->isChecked()||save_gene_frequencies->isChecked())
+    if (currentSelectedMode==4||save_gene_frequencies->isChecked())
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -1672,15 +1682,18 @@ void MainWindow::RefreshPopulations()
                 pop_image_colour->setPixel(n,m,qRgb(r, g, b));
             }
           }
-          if (ui->actionGene_Frequencies_012->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+          //if (ui->actionGene_Frequencies_012->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+          if (currentSelectedMode==4)pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
           if(save_gene_frequencies->isChecked())
                  if(save_dir.mkpath("gene_freq/"))
                              pop_image_colour->save(QString(save_dir.path()+"/gene_freq/EvoSim_gene_freq_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
     }
 
+    // (5) Breed Attempts
     //RJG - No save option as no longer in the menu as an option.
-    if (ui->actionBreed_Attempts->isChecked())
+    //if (ui->actionBreed_Attempts->isChecked())
+    if (currentSelectedMode==5)
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -1693,8 +1706,9 @@ void MainWindow::RefreshPopulations()
         pop_item->setPixmap(QPixmap::fromImage(*pop_image));
     }
 
+    // (6) Breed Fails
     //RJG - No save option as no longer in the menu as an option.
-    if (ui->actionBreed_Fails->isChecked())
+    if (currentSelectedMode==6)
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -1710,7 +1724,9 @@ void MainWindow::RefreshPopulations()
         pop_item->setPixmap(QPixmap::fromImage(*pop_image));
     }
 
-    if (ui->actionSettles->isChecked()||save_settles->isChecked())
+    // (7) Settles
+    //if (ui->actionSettles->isChecked()||save_settles->isChecked())
+    if (currentSelectedMode==7||save_settles->isChecked())
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -1721,15 +1737,18 @@ void MainWindow::RefreshPopulations()
             pop_image->setPixel(n,m,value);
         }
 
-       if(ui->actionSettles->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+       //if(ui->actionSettles->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+       if(currentSelectedMode==7)pop_item->setPixmap(QPixmap::fromImage(*pop_image));
        if(save_settles->isChecked())
                if(save_dir.mkpath("settles/"))
                            pop_image_colour->save(QString(save_dir.path()+"/settles/EvoSim_settles_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
     }
 
-    if (ui->actionSettle_Fails->isChecked()||save_fails_settles->isChecked())
+    // (8) Settle Fails === Fails
     //this now combines breed fails (red) and settle fails (green)
+    //if (ui->actionSettle_Fails->isChecked()||save_fails_settles->isChecked())
+    if (currentSelectedMode==8||save_fails_settles->isChecked())
     {
         //work out max and ratios
         /*int maxbf=1;
@@ -1759,14 +1778,17 @@ void MainWindow::RefreshPopulations()
             int g=ScaleFails(settlefails[n][m],gens);
             pop_image_colour->setPixel(n,m,qRgb(r, g, 0));
         }
-        if(ui->actionSettle_Fails->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        //if(ui->actionSettle_Fails->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if(currentSelectedMode==8)pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
         if(save_fails_settles->isChecked())
                 if(save_dir.mkpath("settles_fails/"))
                             pop_image_colour->save(QString(save_dir.path()+"/settles_fails/EvoSim_settles_fails_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
     }
 
-    if (ui->actionBreed_Fails_2->isChecked())
+    // (9) Breed Fails 2
+    //if (ui->actionBreed_Fails_2->isChecked())
+    if (currentSelectedMode==9)
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -1781,6 +1803,38 @@ void MainWindow::RefreshPopulations()
             }
         }
         pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+    }
+
+    // (10) Species
+    //if (ui->actionSpecies->isChecked()||save_species->isChecked()) //do visualisation if necessary
+    if (currentSelectedMode==10||save_species->isChecked()) //do visualisation if necessary
+    {
+        for (int n=0; n<gridX; n++)
+        for (int m=0; m<gridY; m++)
+        {
+
+            if (totalfit[n][m]==0) pop_image_colour->setPixel(n,m,0); //black if square is empty
+            else
+            {
+                quint64 thisspecies=0;
+                for (int c=0; c<slotsPerSq; c++)
+                {
+                    if (critters[n][m][c].age>0)
+                    {
+                        thisspecies=critters[n][m][c].speciesid;
+                        break;
+                    }
+                }
+
+                pop_image_colour->setPixel(n,m,species_colours[thisspecies % 65536]);
+            }
+        }
+         //if (ui->actionSpecies->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if (currentSelectedMode==10)pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+         if (save_species->isChecked())
+                  if(save_dir.mkpath("species/"))
+                              pop_image_colour->save(QString(save_dir.path()+"/species/EvoSim_species_it_%1.png").arg(generation, 7, 10, QChar('0')));
+
     }
 
     lastReport=generation;
@@ -1822,14 +1876,6 @@ void MainWindow::Resize()
     ui->GV_Population->fitInView(pop_item,Qt::KeepAspectRatio);
     ui->GV_Environment->fitInView(env_item,Qt::KeepAspectRatio);
 }
-
-//ARTS - action triggered to update the population window on view mode change
-void MainWindow::view_mode_changed(QAction * /* unused */)
-{
-    UpdateTitles();
-    RefreshPopulations();
-}
-
 
 void MainWindow::gui_checkbox_state_changed(bool dont_update)
 {
@@ -2160,17 +2206,7 @@ void MainWindow::on_actionSave_triggered()
     out<<emode;
 
     int vmode=0;
-    if (ui->actionPopulation_Count->isChecked()) vmode=0;
-    if (ui->actionMean_fitness->isChecked()) vmode=1;
-    if (ui->actionGenome_as_colour->isChecked()) vmode=2;
-    if (ui->actionNonCoding_genome_as_colour->isChecked()) vmode=3;
-    if (ui->actionGene_Frequencies_012->isChecked()) vmode=4;
-    if (ui->actionBreed_Attempts->isChecked()) vmode=5;
-    if (ui->actionBreed_Fails->isChecked()) vmode=6;
-    if (ui->actionSettles->isChecked()) vmode=7;
-    if (ui->actionSettle_Fails->isChecked()) vmode=8;
-    if (ui->actionBreed_Fails_2->isChecked()) vmode=9;
-    if (ui->actionSpecies->isChecked()) vmode=10;
+    vmode = ui->populationWindowComboBox->itemData(ui->populationWindowComboBox->currentIndex()).toInt();
 
     out<<vmode;
 
@@ -2379,19 +2415,23 @@ void MainWindow::on_actionLoad_triggered()
     if (emode==3) ui->actionBounce->setChecked(true);
     if (emode==2) ui->actionLoop->setChecked(true);
 
+    // 0 = Population count
+    // 1 = Mean fitnessFails (R-Breed, G=Settle)
+    // 2 = Coding genome as colour
+    // 3 = NonCoding genome as colour
+    // 4 = Gene Frequencies
+    // 5 = Breed Attempts
+    // 6 = Breed Fails
+    // 7 = Settles
+    // 8 = Settle Fails
+    // 9 = Breed Fails 2
+    // 10 = Species
     int vmode;
     in>>vmode;
-    if (vmode==0) ui->actionPopulation_Count->setChecked(true);
-    if (vmode==1) ui->actionMean_fitness->setChecked(true);
-    if (vmode==2) ui->actionGenome_as_colour->setChecked(true);
-    if (vmode==3) ui->actionNonCoding_genome_as_colour->setChecked(true);
-    if (vmode==4) ui->actionGene_Frequencies_012->setChecked(true);
-    if (vmode==5) ui->actionBreed_Attempts->setChecked(true);
-    if (vmode==6) ui->actionBreed_Fails->setChecked(true);
-    if (vmode==7) ui->actionSettles->setChecked(true);
-    if (vmode==8) ui->actionSettle_Fails->setChecked(true);
-    if (vmode==9) ui->actionBreed_Fails_2->setChecked(true);
-    if (vmode==10) ui->actionSpecies->setChecked(true);
+    int index = ui->populationWindowComboBox->findData(vmode);
+    if ( index != -1 ) { // -1 for not found
+       ui->populationWindowComboBox->setCurrentIndex(index);
+    }
 
     int rmode;
     in>>rmode;

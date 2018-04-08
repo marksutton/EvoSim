@@ -78,7 +78,6 @@ private:
     void RunSetUp();
     void FinishRun();
     void RefreshPopulations();
-    void UpdateTitles();
     void resetInformationBar();
 
     //RJG - some imporant variables
@@ -138,7 +137,6 @@ private slots:
     void logSettings_triggered();
     void on_actionCount_Peaks_triggered();
     void on_actionMisc_triggered();
-    void view_mode_changed(QAction *);
     void report_mode_changed(QAction *);
     void gui_checkbox_state_changed(bool);
     void save_all_checkbox_state_changed(bool);
@@ -169,6 +167,7 @@ private slots:
     void changepath_triggered();
     void on_actionAbout_triggered();
     void on_actionExit_triggered();
+    void on_populationWindowComboBox_currentIndexChanged(int index);
 };
 
 
