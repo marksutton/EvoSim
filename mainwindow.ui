@@ -1349,7 +1349,7 @@ p, li { white-space: pre-wrap; }
   </action>
   <action name="actionReseed">
    <property name="checkable">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="text">
     <string>Reseed with known genome...</string>
