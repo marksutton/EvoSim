@@ -826,19 +826,6 @@ p, li { white-space: pre-wrap; }
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
-   <widget class="QMenu" name="menuEnvironment">
-    <property name="title">
-     <string>Environment</string>
-    </property>
-    <addaction name="actionStatic"/>
-    <addaction name="actionOnce"/>
-    <addaction name="actionLoop"/>
-    <addaction name="actionBounce"/>
-    <addaction name="separator"/>
-    <addaction name="actionInterpolate"/>
-    <addaction name="separator"/>
-    <addaction name="actionEnvironment_Files"/>
-   </widget>
    <widget class="QMenu" name="menuDocks">
     <property name="title">
      <string>Genome Comparison</string>
@@ -895,7 +882,6 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuCommands"/>
-   <addaction name="menuEnvironment"/>
    <addaction name="menuFossil_Record"/>
    <addaction name="menuDocks"/>
    <addaction name="menuAnalysis_Tools"/>
@@ -1152,41 +1138,6 @@ p, li { white-space: pre-wrap; }
     <string>Ctrl+O</string>
    </property>
   </action>
-  <action name="actionLoop">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Loop</string>
-   </property>
-  </action>
-  <action name="actionBounce">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Bounce</string>
-   </property>
-  </action>
-  <action name="actionOnce">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Once</string>
-   </property>
-  </action>
-  <action name="actionStatic">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Static</string>
-   </property>
-  </action>
   <action name="actionInformation">
    <property name="checkable">
     <bool>true</bool>
@@ -1291,17 +1242,6 @@ p, li { white-space: pre-wrap; }
   <action name="actionSet_Inactive">
    <property name="text">
     <string>Set Inactive</string>
-   </property>
-  </action>
-  <action name="actionInterpolate">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Interpolate</string>
    </property>
   </action>
   <action name="actionSpecies">

@@ -231,13 +231,6 @@ MainWindow::MainWindow(QWidget *parent) :
     viewgroup2->addAction(ui->actionGroups2);
     viewgroup2->addAction(ui->actionSimple_List);
 
-    envgroup = new QActionGroup(this);
-    envgroup->addAction(ui->actionStatic);
-    envgroup->addAction(ui->actionBounce);
-    envgroup->addAction(ui->actionOnce);
-    envgroup->addAction(ui->actionLoop);
-    ui->actionLoop->setChecked(true);
-
     QObject::connect(viewgroup2, SIGNAL(triggered(QAction *)), this, SLOT(report_mode_changed(QAction *)));
 
     //create scenes, add to the GVs
@@ -369,36 +362,72 @@ QDockWidget *MainWindow::createSimulationSettingsDock()
     QGridLayout *settings_grid = new QGridLayout;
     settings_grid->setAlignment(Qt::AlignTop);
 
+    // Environment Settings
+    QGridLayout *environmentSettingsGrid = new QGridLayout;
+
+    QPushButton *changeEnvironmentFilesButton = new QPushButton("&Change Enviroment Files");
+    changeEnvironmentFilesButton->setObjectName("changeEnvironmentFilesButton");
+    environmentSettingsGrid->addWidget(changeEnvironmentFilesButton,0,1,1,2);
+    connect(changeEnvironmentFilesButton, SIGNAL (clicked()), this, SLOT(on_actionEnvironment_Files_triggered()));
+
     QLabel *environment_label= new QLabel("Environmental Settings");
     environment_label->setStyleSheet("font-weight: bold");
-    settings_grid->addWidget(environment_label,0,1,1,2);
+    environmentSettingsGrid->addWidget(environment_label,1,1,1,2);
 
     QLabel *environment_rate_label = new QLabel("Environment refresh rate:");
     environment_rate_spin = new QSpinBox;
     environment_rate_spin->setMinimum(0);
     environment_rate_spin->setMaximum(100000);
     environment_rate_spin->setValue(envchangerate);
-    settings_grid->addWidget(environment_rate_label,1,1);
-    settings_grid->addWidget(environment_rate_spin,1,2);
-    //----RJG - Note in order to use a lamda not only do you need to use C++11, but there are two valueCHanged signals for spinbox - and int and a string. Need to cast it to an int
+    environmentSettingsGrid->addWidget(environment_rate_label,2,1);
+    environmentSettingsGrid->addWidget(environment_rate_spin,2,2);
+    //RJG - Note in order to use a lamda not only do you need to use C++11, but there are two valueChanged signals for spinbox - and int and a string. Need to cast it to an int
     connect(environment_rate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i ) { envchangerate=i; });
 
-    toroidal_checkbox = new QCheckBox("Toroidal");
+    QLabel *environment_mode_label = new QLabel("Environment mode:");
+    environmentSettingsGrid->addWidget(environment_mode_label,3,1,1,2);
+    QGridLayout *environmentModeGrid = new QGridLayout;
+    environmentModeStaticButton = new QRadioButton("Static");
+    environmentModeOnceButton = new QRadioButton("Once");
+    environmentModeLoopButton = new QRadioButton("Loop");
+    environmentModeBounceButton = new QRadioButton("Bounce");
+    QButtonGroup* environmentModeButtonGroup = new QButtonGroup;
+    environmentModeButtonGroup->addButton(environmentModeStaticButton,ENV_MODE_STATIC);
+    environmentModeButtonGroup->addButton(environmentModeOnceButton,ENV_MODE_ONCE);
+    environmentModeButtonGroup->addButton(environmentModeLoopButton,ENV_MODE_LOOP);
+    environmentModeButtonGroup->addButton(environmentModeBounceButton,ENV_MODE_BOUNCE);
+    environmentModeLoopButton->setChecked(true);
+    environmentModeGrid->addWidget(environmentModeStaticButton,1,1,1,2);
+    environmentModeGrid->addWidget(environmentModeOnceButton,1,2,1,2);
+    environmentModeGrid->addWidget(environmentModeLoopButton,2,1,1,2);
+    environmentModeGrid->addWidget(environmentModeBounceButton,2,2,1,2);
+    connect(environmentModeButtonGroup, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i) { environment_mode_changed(i); });
+    environmentSettingsGrid->addLayout(environmentModeGrid,4,1,1,2);
+
+    interpolateCheckbox = new QCheckBox("Interpolate between images");
+    interpolateCheckbox->setChecked(enviroment_interpolate);
+    environmentSettingsGrid->addWidget(interpolateCheckbox,5,1,1,2);
+    connect(interpolateCheckbox,&QCheckBox::stateChanged,[=](const bool &i) { enviroment_interpolate=i; });
+
+    toroidal_checkbox = new QCheckBox("Toroidal enviroment");
     toroidal_checkbox->setChecked(toroidal);
-    settings_grid->addWidget(toroidal_checkbox,2,1,1,2);
+    environmentSettingsGrid->addWidget(toroidal_checkbox,6,1,1,2);
     connect(toroidal_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { toroidal=i; });
+
+    // Simulation Size Settings
+    QGridLayout *simulationSizeSettingsGrid = new QGridLayout;
 
     QLabel *simulation_size_label= new QLabel("Simulation size");
     simulation_size_label->setStyleSheet("font-weight: bold");
-    settings_grid->addWidget(simulation_size_label,3,1,1,2);
+    simulationSizeSettingsGrid->addWidget(simulation_size_label,0,1,1,2);
 
     QLabel *gridX_label = new QLabel("Grid X:");
     gridX_spin = new QSpinBox;
     gridX_spin->setMinimum(1);
     gridX_spin->setMaximum(256);
     gridX_spin->setValue(gridX);
-    settings_grid->addWidget(gridX_label,4,1);
-    settings_grid->addWidget(gridX_spin,4,2);
+    simulationSizeSettingsGrid->addWidget(gridX_label,2,1);
+    simulationSizeSettingsGrid->addWidget(gridX_spin,2,2);
     connect(gridX_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { int oldrows=gridX; gridX=i;redoImages(oldrows,gridY);});
 
     QLabel *gridY_label = new QLabel("Grid Y:");
@@ -406,8 +435,8 @@ QDockWidget *MainWindow::createSimulationSettingsDock()
     gridY_spin->setMinimum(1);
     gridY_spin->setMaximum(256);
     gridY_spin->setValue(gridY);
-    settings_grid->addWidget(gridY_label,5,1);
-    settings_grid->addWidget(gridY_spin,5,2);
+    simulationSizeSettingsGrid->addWidget(gridY_label,3,1);
+    simulationSizeSettingsGrid->addWidget(gridY_spin,3,2);
     connect(gridY_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {int oldcols=gridY; gridY=i;redoImages(gridX,oldcols);});
 
     QLabel *slots_label = new QLabel("Slots:");
@@ -415,21 +444,24 @@ QDockWidget *MainWindow::createSimulationSettingsDock()
     slots_spin->setMinimum(1);
     slots_spin->setMaximum(256);
     slots_spin->setValue(slotsPerSq);
-    settings_grid->addWidget(slots_label,6,1);
-    settings_grid->addWidget(slots_spin,6,2);
+    simulationSizeSettingsGrid->addWidget(slots_label,4,1);
+    simulationSizeSettingsGrid->addWidget(slots_spin,4,2);
     connect(slots_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { slotsPerSq=i;redoImages(gridX,gridY); });
+
+    // Simulation Settings
+    QGridLayout *simulationSettingsGrid = new QGridLayout;
 
     QLabel *simulation_settings_label= new QLabel("Simulation settings");
     simulation_settings_label->setStyleSheet("font-weight: bold");
-    settings_grid->addWidget(simulation_settings_label,7,1,1,2);
+    simulationSettingsGrid->addWidget(simulation_settings_label,0,1,1,2);
 
     QLabel *target_label = new QLabel("Fitness target:");
     target_spin = new QSpinBox;
     target_spin->setMinimum(1);
     target_spin->setMaximum(96);
     target_spin->setValue(target);
-    settings_grid->addWidget(target_label,8,1);
-    settings_grid->addWidget(target_spin,8,2);
+    simulationSettingsGrid->addWidget(target_label,1,1);
+    simulationSettingsGrid->addWidget(target_spin,1,2);
     connect(target_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { target=i; });
 
     QLabel *energy_label = new QLabel("Energy input:");
@@ -437,8 +469,8 @@ QDockWidget *MainWindow::createSimulationSettingsDock()
     energy_spin->setMinimum(1);
     energy_spin->setMaximum(20000);
     energy_spin->setValue(food);
-    settings_grid->addWidget(energy_label,9,1);
-    settings_grid->addWidget(energy_spin,9,2);
+    simulationSettingsGrid->addWidget(energy_label,2,1);
+    simulationSettingsGrid->addWidget(energy_spin,2,2);
     connect(energy_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { food=i; });
 
     QLabel *settleTolerance_label = new QLabel("Settle tolerance:");
@@ -446,18 +478,21 @@ QDockWidget *MainWindow::createSimulationSettingsDock()
     settleTolerance_spin->setMinimum(1);
     settleTolerance_spin->setMaximum(30);
     settleTolerance_spin->setValue(settleTolerance);
-    settings_grid->addWidget(settleTolerance_label,10,1);
-    settings_grid->addWidget(settleTolerance_spin,10,2);
+    simulationSettingsGrid->addWidget(settleTolerance_label,3,1);
+    simulationSettingsGrid->addWidget(settleTolerance_spin,3,2);
     connect(settleTolerance_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { settleTolerance=i; });
 
     recalcFitness_checkbox = new QCheckBox("Recalculate fitness");
     recalcFitness_checkbox->setChecked(toroidal);
-    settings_grid->addWidget(recalcFitness_checkbox,11,1,1,2);
+    simulationSettingsGrid->addWidget(recalcFitness_checkbox,4,1,1,2);
     connect(recalcFitness_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { recalcFitness=i; });
+
+    //Phylogeny Settings
+    QGridLayout *phylogenySettingsGrid = new QGridLayout;
 
     QLabel *phylogeny_settings_label= new QLabel("Phylogeny settings");
     phylogeny_settings_label->setStyleSheet("font-weight: bold");
-    settings_grid->addWidget(phylogeny_settings_label,12,1,1,1);
+    phylogenySettingsGrid->addWidget(phylogeny_settings_label,0,1,1,1);
 
     QGridLayout *phylogeny_grid = new QGridLayout;
     phylogeny_off_button = new QRadioButton("Off");
@@ -475,7 +510,13 @@ QDockWidget *MainWindow::createSimulationSettingsDock()
     phylogeny_grid->addWidget(phylogeny_button,2,1,1,2);
     phylogeny_grid->addWidget(phylogeny_and_metrics_button,2,2,1,2);
     connect(phylogeny_button_group, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i) { species_mode_changed(i); });
-    settings_grid->addLayout(phylogeny_grid,13,1,1,2);
+    phylogenySettingsGrid->addLayout(phylogeny_grid,1,1,1,2);
+
+    //ARTS - Dock Grid Layout
+    settings_grid->addLayout(environmentSettingsGrid,0,1);
+    settings_grid->addLayout(simulationSizeSettingsGrid,1,1);
+    settings_grid->addLayout(simulationSettingsGrid,2,1);
+    settings_grid->addLayout(phylogenySettingsGrid,3,1);
 
     QWidget *settings_layout_widget = new QWidget;
     settings_layout_widget->setLayout(settings_grid);
@@ -889,6 +930,8 @@ void MainWindow::changeEvent(QEvent *e)
 //ARTS - "Run" action
 void MainWindow::on_actionStart_Sim_triggered()
 {
+    qDebug() << enviroment_interpolate;
+
     if (CurrentEnvFile==-1)
     {
         QMessageBox::critical(0,"","Cannot start simulation without environment");
@@ -911,12 +954,9 @@ void MainWindow::on_actionStart_Sim_triggered()
         Report();
         qApp->processEvents();
         if (ui->actionGo_Slow->isChecked()) Sleeper::msleep(30);
-        int environment_mode=0;
-        if (ui->actionOnce->isChecked()) environment_mode=1;
-        if (ui->actionBounce->isChecked()) environment_mode=3;
-        if (ui->actionLoop->isChecked()) environment_mode=2;
+
         //ARTS - set Stop flag to returns true if reached end... but why? It will fire the FinishRun() function at the end.
-        if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) stopflag=true;
+        if (TheSimManager->iterate(environment_mode,enviroment_interpolate)) stopflag=true;
         FRW->MakeRecords();
     }
 
@@ -953,11 +993,8 @@ void MainWindow::on_actionRun_for_triggered()
 
         Report();
         qApp->processEvents();
-        int environment_mode=0;
-        if (ui->actionOnce->isChecked()) environment_mode=1;
-        if (ui->actionBounce->isChecked()) environment_mode=3;
-        if (ui->actionLoop->isChecked()) environment_mode=2;
-        if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) stopflag=true;
+
+        if (TheSimManager->iterate(environment_mode,enviroment_interpolate)) stopflag=true;
         FRW->MakeRecords();
         i--;
     }
@@ -1054,10 +1091,6 @@ void MainWindow::on_actionBatch_triggered()
         if(repeat_environment)
         {
             CurrentEnvFile=environment_start;
-            int environment_mode=0;
-            if (ui->actionOnce->isChecked()) environment_mode=1;
-            if (ui->actionBounce->isChecked()) environment_mode=3;
-            if (ui->actionLoop->isChecked()) environment_mode=2;
             TheSimManager->loadEnvironmentFromFile(environment_mode);
         }
 
@@ -1083,11 +1116,8 @@ void MainWindow::on_actionBatch_triggered()
 
             Report();
             qApp->processEvents();
-            int environment_mode=0;
-            if (ui->actionOnce->isChecked()) environment_mode=1;
-            if (ui->actionBounce->isChecked()) environment_mode=3;
-            if (ui->actionLoop->isChecked()) environment_mode=2;
-            TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked());
+
+            TheSimManager->iterate(environment_mode,enviroment_interpolate);
             FRW->MakeRecords();
             i--;
         }
@@ -1908,6 +1938,16 @@ void MainWindow::dump_run_data()
     outputfile.close();
 }
 
+void MainWindow::environment_mode_changed(int change_environment_mode)
+{
+    int new_environment_mode=ENV_MODE_STATIC;
+    if (change_environment_mode==ENV_MODE_ONCE) new_environment_mode=ENV_MODE_ONCE;
+    if (change_environment_mode==ENV_MODE_LOOP) new_environment_mode=ENV_MODE_LOOP;
+    if (change_environment_mode==ENV_MODE_BOUNCE) new_environment_mode=ENV_MODE_BOUNCE;
+
+    environment_mode=new_environment_mode;
+}
+
 void MainWindow::species_mode_changed(int change_species_mode)
 {
     int new_species_mode=SPECIES_MODE_NONE;
@@ -2089,7 +2129,7 @@ void MainWindow::on_actionCount_Peaks_triggered()
     outputfile.close();
 }
 
-bool  MainWindow::on_actionEnvironment_Files_triggered()
+bool MainWindow::on_actionEnvironment_Files_triggered()
 {
     //Select files
     QStringList files = QFileDialog::getOpenFileNames(
@@ -2102,23 +2142,19 @@ bool  MainWindow::on_actionEnvironment_Files_triggered()
 
     bool notsquare=false, different_size=false;
     for(int i=0;i<files.length();i++)
-        {
+    {
         QImage LoadImage(files[i]);
         int x=LoadImage.width();
         int y=LoadImage.height();
         if(x!=y)notsquare=true;
         if(x!=100||y!=100)different_size=true;
-        }
-        if(notsquare||different_size)QMessageBox::warning(this,"FYI","For speed REvoSim currently has static arrays for the environment, which limits out of the box functionality to 100 x 100 square environments. "
-        "It looks like some of your Environment images don't meet this requirement. Anything smaller than 100 x 100 will be stretched (irrespective of aspect ratio) to 100x100. Anything bigger, and we'll use the top left corner. Should you wish to use a different size environment, please email RJG or MDS.");
+    }
+    if(notsquare||different_size)QMessageBox::warning(this,"FYI","For speed REvoSim currently has static arrays for the environment, which limits out of the box functionality to 100 x 100 square environments. "
+    "It looks like some of your Environment images don't meet this requirement. Anything smaller than 100 x 100 will be stretched (irrespective of aspect ratio) to 100x100. Anything bigger, and we'll use the top left corner. Should you wish to use a different size environment, please email RJG or MDS.");
 
     EnvFiles = files;
     CurrentEnvFile=0;
-    int enviroment_mode=0;
-    if (ui->actionOnce->isChecked()) enviroment_mode=1;
-    if (ui->actionBounce->isChecked()) enviroment_mode=3;
-    if (ui->actionLoop->isChecked()) enviroment_mode=2;
-    TheSimManager->loadEnvironmentFromFile(enviroment_mode);
+    TheSimManager->loadEnvironmentFromFile(environment_mode);
     RefreshEnvironment();
 
     //RJG - Reset for this new environment
@@ -2182,12 +2218,8 @@ void MainWindow::on_actionSave_triggered()
     out<<RefreshRate;
     out<<generation;
 
-    //action group settings
-    int emode=0;
-    if (ui->actionOnce->isChecked()) emode=1;
-    if (ui->actionBounce->isChecked()) emode=3;
-    if (ui->actionLoop->isChecked()) emode=2;
-    out<<emode;
+    //Environment mode
+    out<<environment_mode;
 
     int vmode=0;
     vmode = ui->populationWindowComboBox->itemData(ui->populationWindowComboBox->currentIndex()).toInt();
@@ -2278,7 +2310,7 @@ void MainWindow::on_actionSave_triggered()
     out<<ui->actionGenomeComparison->isChecked();
 
     //interpolate environment stuff
-    out<<ui->actionInterpolate->isChecked();
+    out<<enviroment_interpolate;
     for (int i=0; i<gridX; i++)
     for (int j=0; j<gridY; j++)
     {
@@ -2391,12 +2423,16 @@ void MainWindow::on_actionLoad_triggered()
     in>>RefreshRate;
     in>>generation;
 
-    int emode;
-    in>>emode;
-    if (emode==0) ui->actionStatic->setChecked(true);
-    if (emode==1) ui->actionOnce->setChecked(true);
-    if (emode==3) ui->actionBounce->setChecked(true);
-    if (emode==2) ui->actionLoop->setChecked(true);
+    // 0 = Static
+    // 1 = Once
+    // 2 = Looped (default)
+    // 3 = Bounce
+    environment_mode=ENV_MODE_LOOP;
+    in>>environment_mode;
+    if (environment_mode==0) environmentModeStaticButton->setChecked(true);
+    if (environment_mode==1) environmentModeOnceButton->setChecked(true);
+    if (environment_mode==2) environmentModeLoopButton->setChecked(true);
+    if (environment_mode==3) environmentModeBounceButton->setChecked(true);
 
     // 0 = Population count
     // 1 = Mean fitnessFails (R-Breed, G=Settle)
@@ -2511,8 +2547,8 @@ void MainWindow::on_actionLoad_triggered()
     in>>btemp; ui->actionGenomeComparison->setChecked(btemp);
 
     //interpolate environment stuff
-    in>>btemp;
-    ui->actionInterpolate->setChecked(btemp);
+    enviroment_interpolate = true;
+    in>>enviroment_interpolate;
 
     for (int i=0; i<gridX; i++)
     for (int j=0; j<gridY; j++)
