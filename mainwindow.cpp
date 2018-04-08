@@ -2006,6 +2006,7 @@ void MainWindow::on_actionSettings_triggered()
     } else
     {
         settings_dock->show();
+        settings_dock->raise();
         settingsButton->setChecked(true);
     }
 }
@@ -2016,10 +2017,11 @@ void MainWindow::orgSettings_triggered()
     if(org_settings_dock->isVisible())
     {
         org_settings_dock->hide();
-        orgSettingsButton->setChecked(false);
+        orgSettingsButton->setChecked(false);        
     } else
     {
         org_settings_dock->show();
+        org_settings_dock->raise();
         orgSettingsButton->setChecked(true);
     }
 }
@@ -2033,6 +2035,7 @@ void MainWindow::logSettings_triggered()
     } else
     {
         output_settings_dock->show();
+        output_settings_dock->raise();
         logSettingsButton->setChecked(true);
     }
 }
