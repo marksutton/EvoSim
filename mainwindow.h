@@ -46,8 +46,6 @@ public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
     FossRecWidget *FRW;
-
-    //---- ARTS: Add Genome Comparison UI
     GenomeComparison *genoneComparison;
     bool genomeComparisonAdd();
     void RefreshReport();
@@ -55,17 +53,11 @@ public:
     void RefreshEnvironment();
     void setStatusBarText(QString text);
     Ui::MainWindow *ui;
+    QDockWidget* createSimulationSettingsDock();
+    QDockWidget* createOutputSettingsDock();
+    QDockWidget* createOrganismSettingsDock();
 
     int RefreshRate;
-
-    //If you want to have Max/Min/Close buttons, look at how QWinWidget uses these
-    QPushButton* maximizeButton = nullptr;
-    QPushButton* minimizeButton = nullptr;
-    QPushButton* closeButton = nullptr;
-
-    //If you want to enable dragging the window when the mouse is over top of, say, a QToolBar,
-    //then look at how QWinWidget uses this
-    QToolBar* toolBar = nullptr;
 
 protected:
     void changeEvent(QEvent *e);
@@ -78,32 +70,28 @@ private:
     void RunSetUp();
     void FinishRun();
     void RefreshPopulations();
-    void UpdateTitles();
     void resetInformationBar();
 
     //RJG - some imporant variables
     bool stopflag;
-
     bool pauseflag;
     int waitUntilPauseSignalIsEmitted();
-
     int NextRefresh;
 
     //RJG - GUI stuff
     EnvironmentScene *envscene;
     PopulationScene *popscene;
-    QActionGroup *viewgroup, *viewgroup2, *speciesgroup;
-    QActionGroup *envgroup;
-    QDockWidget *settings_dock, *org_settings_dock, *output_settings_dock;
+    QActionGroup *viewgroup2;
+    QDockWidget *simulationSettingsDock, *organismSettingsDock, *outputSettingsDock;
 
     //RJG - GUI buttons and settings docker options which need to be accessible via slots, especially for load settings function
     QAction *startButton, *stopButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton, *orgSettingsButton, *logSettingsButton, *aboutButton;
     //RJG - Save images checkboxes
-    QCheckBox *gui_checkbox, *save_population_count, *save_mean_fitness, *save_coding_genome_as_colour, *save_species, *save_non_coding_genome_as_colour, *save_gene_frequencies, *save_settles, *save_fails_settles, *save_environment;
-   //RJG - other checkboxes
+    QCheckBox *gui_checkbox, *save_population_count, *save_mean_fitness, *save_coding_genome_as_colour, *save_species, *save_non_coding_genome_as_colour, *save_gene_frequencies, *save_settles, *save_fails_settles, *save_environment, *interpolateCheckbox;
+    //RJG - other checkboxes
     QCheckBox *recalcFitness_checkbox, *toroidal_checkbox, *nonspatial_checkbox, *breeddiff_checkbox, *breedspecies_checkbox, *pathogens_checkbox, *variable_mutation_checkbox, *exclude_without_issue_checkbox, *logging_checkbox, *autodump_checkbox;
     //RJG - radios and spins
-    QRadioButton *phylogeny_off_button, *basic_phylogeny_button, *phylogeny_button, *phylogeny_and_metrics_button, *sexual_radio, *asexual_radio, *variableBreed_radio;
+    QRadioButton *phylogeny_off_button, *basic_phylogeny_button, *phylogeny_button, *phylogeny_and_metrics_button, *sexual_radio, *asexual_radio, *variableBreed_radio, *environmentModeBounceButton, *environmentModeLoopButton, *environmentModeOnceButton, *environmentModeStaticButton;
     QSpinBox *mutate_spin, *refreshRateSpin, *pathogen_mutate_spin, *pathogen_frequency_spin , *maxDiff_spin, *breedThreshold_spin, *target_spin , *environment_rate_spin, *gridX_spin , *gridY_spin, *settleTolerance_spin, *slots_spin, *startAge_spin, *dispersal_spin, *energy_spin, *breedCost_spin;
     //RJG - global save path for all outputs
     QLineEdit *path;
@@ -138,7 +126,6 @@ private slots:
     void logSettings_triggered();
     void on_actionCount_Peaks_triggered();
     void on_actionMisc_triggered();
-    void view_mode_changed(QAction *);
     void report_mode_changed(QAction *);
     void gui_checkbox_state_changed(bool);
     void save_all_checkbox_state_changed(bool);
@@ -164,11 +151,13 @@ private slots:
     void on_actionLoad_Random_Numbers_triggered();
     void on_SelectLogFile_pressed();
     void species_mode_changed(int change_species_mode);
+    void environment_mode_changed(int change_environment_mode);
     void on_actionGenerate_NWK_tree_file_triggered();
     void on_actionSpecies_sizes_triggered();
     void changepath_triggered();
     void on_actionAbout_triggered();
     void on_actionExit_triggered();
+    void on_populationWindowComboBox_currentIndexChanged(int index);
 };
 
 

@@ -64,7 +64,7 @@ void PopulationScene::mouseMoveEvent(QGraphicsSceneMouseEvent * event)
 }
 
 
-void PopulationScene::mousePressEvent(QGraphicsSceneMouseEvent * event )
+void PopulationScene::mousePressEvent(QGraphicsSceneMouseEvent * event)
 {
     QPointF position=event->scenePos();
     int x,y;
@@ -80,8 +80,10 @@ void PopulationScene::mousePressEvent(QGraphicsSceneMouseEvent * event )
     return;
 }
 
-void PopulationScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event )
+void PopulationScene::mouseReleaseEvent (QGraphicsSceneMouseEvent * event)
 {
+    Q_UNUSED(event);
+
     //don't do anything
     return;
 }

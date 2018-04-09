@@ -137,12 +137,15 @@
              </widget>
             </item>
             <item>
-             <widget class="QLabel" name="LabelVis">
-              <property name="text">
-               <string> Coding Genome</string>
+             <widget class="QComboBox" name="populationWindowComboBox">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
               </property>
-              <property name="alignment">
-               <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+              <property name="currentIndex">
+               <number>-1</number>
               </property>
              </widget>
             </item>
@@ -823,35 +826,6 @@ p, li { white-space: pre-wrap; }
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
-   <widget class="QMenu" name="menuView">
-    <property name="title">
-     <string>Visualisation</string>
-    </property>
-    <addaction name="actionPopulation_Count"/>
-    <addaction name="actionMean_fitness"/>
-    <addaction name="actionGenome_as_colour"/>
-    <addaction name="actionNonCoding_genome_as_colour"/>
-    <addaction name="actionGene_Frequencies_012"/>
-    <addaction name="actionBreed_Attempts"/>
-    <addaction name="actionBreed_Fails"/>
-    <addaction name="actionSettle_Fails"/>
-    <addaction name="actionSettles"/>
-    <addaction name="actionSpecies"/>
-    <addaction name="separator"/>
-   </widget>
-   <widget class="QMenu" name="menuEnvironment">
-    <property name="title">
-     <string>Environment</string>
-    </property>
-    <addaction name="actionStatic"/>
-    <addaction name="actionOnce"/>
-    <addaction name="actionLoop"/>
-    <addaction name="actionBounce"/>
-    <addaction name="separator"/>
-    <addaction name="actionInterpolate"/>
-    <addaction name="separator"/>
-    <addaction name="actionEnvironment_Files"/>
-   </widget>
    <widget class="QMenu" name="menuDocks">
     <property name="title">
      <string>Genome Comparison</string>
@@ -908,8 +882,6 @@ p, li { white-space: pre-wrap; }
     <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuCommands"/>
-   <addaction name="menuEnvironment"/>
-   <addaction name="menuView"/>
    <addaction name="menuFossil_Record"/>
    <addaction name="menuDocks"/>
    <addaction name="menuAnalysis_Tools"/>
@@ -1166,41 +1138,6 @@ p, li { white-space: pre-wrap; }
     <string>Ctrl+O</string>
    </property>
   </action>
-  <action name="actionLoop">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Loop</string>
-   </property>
-  </action>
-  <action name="actionBounce">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Bounce</string>
-   </property>
-  </action>
-  <action name="actionOnce">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Once</string>
-   </property>
-  </action>
-  <action name="actionStatic">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Static</string>
-   </property>
-  </action>
   <action name="actionInformation">
    <property name="checkable">
     <bool>true</bool>
@@ -1305,17 +1242,6 @@ p, li { white-space: pre-wrap; }
   <action name="actionSet_Inactive">
    <property name="text">
     <string>Set Inactive</string>
-   </property>
-  </action>
-  <action name="actionInterpolate">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Interpolate</string>
    </property>
   </action>
   <action name="actionSpecies">
@@ -1423,7 +1349,7 @@ p, li { white-space: pre-wrap; }
   </action>
   <action name="actionReseed">
    <property name="checkable">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="text">
     <string>Reseed with known genome...</string>

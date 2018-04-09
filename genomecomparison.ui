@@ -6,14 +6,21 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>600</width>
+    <width>744</width>
     <height>400</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" stretch="7,1,1">
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="0,7,1,1">
+   <item>
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Columns: 1-32 = coding genome; 1-64 = non-coding genome; E = environment colour; G = coding genome colour; N = non-coding genome colour; F = fitness.</string>
+     </property>
+    </widget>
+   </item>
    <item>
     <widget class="QTableWidget" name="genomeTableWidget">
      <property name="horizontalScrollBarPolicy">
