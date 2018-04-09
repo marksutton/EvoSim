@@ -158,6 +158,8 @@ private slots:
     void on_actionAbout_triggered();
     void on_actionExit_triggered();
     void on_populationWindowComboBox_currentIndexChanged(int index);
+    void on_actionCode_on_GitHub_triggered();
+    void on_actionOnline_User_Manual_triggered();
 };
 
 

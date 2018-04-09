@@ -58,7 +58,6 @@ int mutate = 10;
 int pathogen_mutate = 5;
 int pathogen_frequency =5;
 int envchangerate=100;
-int yearsPerIteration=1;
 int speciesSamples=1;
 int speciesSensitivity=2;
 int timeSliceConnect=5;
