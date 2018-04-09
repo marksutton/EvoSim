@@ -63,7 +63,6 @@ Coding:
 -- Load and Save don't include everything - they need to!
 -- Timer on calculting species - add progress bar and escape warning if needed to prevent crash
 -- Add Keyboard shortcuts where required
--- Load and save settings still need to update gui
 
 Visualisation:
 -- Settles - does this work at all?
@@ -410,7 +409,7 @@ QDockWidget *MainWindow::createSimulationSettingsDock()
     environmentModeGrid->addWidget(environmentModeOnceButton,1,2,1,2);
     environmentModeGrid->addWidget(environmentModeLoopButton,2,1,1,2);
     environmentModeGrid->addWidget(environmentModeBounceButton,2,2,1,2);
-    connect(environmentModeButtonGroup, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i) { environment_mode_changed(i); });
+    connect(environmentModeButtonGroup, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i) { environment_mode_changed(i,false); });
     environmentSettingsGrid->addLayout(environmentModeGrid,4,1,1,2);
 
     interpolateCheckbox = new QCheckBox("Interpolate between images");
@@ -919,9 +918,6 @@ void MainWindow::on_actionReseed_triggered()
 {
     reseed reseed_dialogue;
     reseed_dialogue.exec();
-
-    ui->actionReseed->setChecked(reseedKnown);
-
     on_actionReset_triggered();
 }
 
@@ -941,7 +937,6 @@ void MainWindow::changeEvent(QEvent *e)
 //ARTS - "Run" action
 void MainWindow::on_actionStart_Sim_triggered()
 {
-    qDebug() << enviroment_interpolate;
 
     if (CurrentEnvFile==-1)
     {
@@ -1949,12 +1944,21 @@ void MainWindow::dump_run_data()
     outputfile.close();
 }
 
-void MainWindow::environment_mode_changed(int change_environment_mode)
+void MainWindow::environment_mode_changed(int change_environment_mode, bool update_gui)
 {
     int new_environment_mode=ENV_MODE_STATIC;
     if (change_environment_mode==ENV_MODE_ONCE) new_environment_mode=ENV_MODE_ONCE;
     if (change_environment_mode==ENV_MODE_LOOP) new_environment_mode=ENV_MODE_LOOP;
     if (change_environment_mode==ENV_MODE_BOUNCE) new_environment_mode=ENV_MODE_BOUNCE;
+
+    if(update_gui)
+        {
+        if (change_environment_mode==ENV_MODE_STATIC)environmentModeStaticButton->setChecked(true);
+        if (change_environment_mode==ENV_MODE_ONCE)environmentModeOnceButton->setChecked(true);
+        if (change_environment_mode==ENV_MODE_LOOP)environmentModeLoopButton->setChecked(true);
+        if (change_environment_mode==ENV_MODE_BOUNCE)environmentModeBounceButton->setChecked(true);
+
+        }
 
     environment_mode=new_environment_mode;
 }
@@ -3161,9 +3165,11 @@ QString MainWindow::print_settings()
     settings_out<<"; Environmental change rate: "<<envchangerate;
     settings_out<<"; Years per iteration: "<<yearsPerIteration;
     settings_out<<"; Minimum species size:"<<minspeciessize;
+    settings_out<<"; Environment mode:"<<environment_mode;
 
     settings_out<<". Bools - recalculate fitness: "<<recalcFitness;
     settings_out<<"; Toroidal environment: "<<toroidal;
+    settings_out<<"; Interpolate environment: "<<enviroment_interpolate;
     settings_out<<"; Nonspatial setling: "<<nonspatial;
     settings_out<<"; Enforce max diff to breed:"<<breeddiff;
     settings_out<<"; Only breed within species:"<<breedspecies;
@@ -3236,6 +3242,7 @@ void MainWindow::load_settings()
                             environment_rate_spin->setValue(envchangerate);}
                        if(settings_file_in.name() == "RefreshRate"){RefreshRate=settings_file_in.readElementText().toInt();
                             refreshRateSpin->setValue(RefreshRate);}
+                       if(settings_file_in.name() == "environment_mode")environment_mode_changed(settings_file_in.readElementText().toInt(),true);
                        //No Gui options for the remaining settings as yet.
                        if(settings_file_in.name() == "speciesSamples")speciesSamples=settings_file_in.readElementText().toInt();
                        if(settings_file_in.name() == "speciesSensitivity")speciesSensitivity=settings_file_in.readElementText().toInt();
@@ -3270,6 +3277,8 @@ void MainWindow::load_settings()
                             logging_checkbox->setChecked(logging);}
                        if(settings_file_in.name() == "gui"){gui=settings_file_in.readElementText().toInt();
                             gui_checkbox->setChecked(gui);}
+                       if(settings_file_in.name() == "enviroment_interpolate"){enviroment_interpolate=settings_file_in.readElementText().toInt();
+                            interpolateCheckbox->setChecked(enviroment_interpolate);}
                        //No gui options for below
                        if(settings_file_in.name() == "fitnessLoggingToFile")fitnessLoggingToFile=settings_file_in.readElementText().toInt();
                        //Only GUI options
@@ -3376,6 +3385,10 @@ void MainWindow::save_settings()
         settings_file_out.writeCharacters(QString("%1").arg(envchangerate));
         settings_file_out.writeEndElement();
 
+        settings_file_out.writeStartElement("environment_mode");
+        settings_file_out.writeCharacters(QString("%1").arg(environment_mode));
+        settings_file_out.writeEndElement();
+
         settings_file_out.writeStartElement("yearsPerIteration");
         settings_file_out.writeCharacters(QString("%1").arg(yearsPerIteration));
         settings_file_out.writeEndElement();
@@ -3451,6 +3464,10 @@ void MainWindow::save_settings()
 
         settings_file_out.writeStartElement("gui");
         settings_file_out.writeCharacters(QString("%1").arg(gui));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("enviroment_interpolate");
+        settings_file_out.writeCharacters(QString("%1").arg(enviroment_interpolate));
         settings_file_out.writeEndElement();
 
         settings_file_out.writeStartElement("fitnessLoggingToFile");
