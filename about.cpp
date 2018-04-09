@@ -47,6 +47,7 @@ About::About(QWidget *parent) :
                        "<br><br>Reports are appreciated, and comments, suggestions, and feature requests are welcome.");
     ui->textLabel_2->setAlignment(Qt::AlignCenter);
 
+
     ui->textLabel_3->setWordWrap(true);
     ui->textLabel_3->setText("<b>Copyright and License:</b>"
                              "<br><br>" + QString(COPYRIGHT) +
