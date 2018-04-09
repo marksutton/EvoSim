@@ -3164,9 +3164,11 @@ QString MainWindow::print_settings()
     settings_out<<"; Environmental change rate: "<<envchangerate;
     settings_out<<"; Years per iteration: "<<yearsPerIteration;
     settings_out<<"; Minimum species size:"<<minspeciessize;
+    settings_out<<"; Environment mode:"<<environment_mode;
 
     settings_out<<". Bools - recalculate fitness: "<<recalcFitness;
     settings_out<<"; Toroidal environment: "<<toroidal;
+    settings_out<<"; Interpolate environment: "<<enviroment_interpolate;
     settings_out<<"; Nonspatial setling: "<<nonspatial;
     settings_out<<"; Enforce max diff to breed:"<<breeddiff;
     settings_out<<"; Only breed within species:"<<breedspecies;
