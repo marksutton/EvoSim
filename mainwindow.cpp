@@ -901,8 +901,7 @@ void MainWindow::resetInformationBar()
     //ARTS - reset the bottom information bar
     ui->LabelBatch->setText(tr("1/1"));
     ui->LabelIteration->setText(tr("0"));
-    ui->LabelYears->setText(tr("0"));
-    ui->LabelMyPerHour->setText(tr("0.00"));
+    ui->LabelIterationsPerHour->setText(tr("0.00"));
     ui->LabelCritters->setText(tr("0"));
     ui->LabelSpeed->setText(tr("0.00"));
     ui->LabelFitness->setText(tr("0.00%"));
@@ -1294,11 +1293,8 @@ void MainWindow::Report()
     o<<generation; //need to use to avoid int64 issues
     ui->LabelIteration->setText(out);
 
-    out.sprintf("%d",out.toInt()/yearsPerIteration);
-    ui->LabelYears->setText(out);
-
-    out.sprintf("%.3f",(3600000/(atime*yearsPerIteration))/1000000);
-    ui->LabelMyPerHour->setText(out);
+    out.sprintf("%.3f",(3600000/atime)/1000000);
+    ui->LabelIterationsPerHour->setText(out);
 
     //now back to sprintf for convenience
     if (CurrentEnvFile>=EnvFiles.count())
@@ -2302,9 +2298,6 @@ void MainWindow::on_actionSave_triggered()
     FRW->WriteFiles(); //make sure all is flushed
     out<<FRW->SaveState();
 
-    //New Year Per Iteration variable
-    out<<yearsPerIteration;
-
     //Some more stuff that was missing from first version
     out<<ui->actionShow_positions->isChecked();
 
@@ -2535,9 +2528,6 @@ void MainWindow::on_actionLoad_triggered()
     //and fossil record stuff
     in>>Temp;
     FRW->RestoreState(Temp);
-
-    //New Year Per Iteration variable
-    in>>yearsPerIteration;
 
     //Some more stuff that was missing from first version
     bool btemp;
@@ -3163,7 +3153,6 @@ QString MainWindow::print_settings()
     settings_out<<"; Slots per square: "<<slotsPerSq;
     settings_out<<"; Fitness target: "<<target;
     settings_out<<"; Environmental change rate: "<<envchangerate;
-    settings_out<<"; Years per iteration: "<<yearsPerIteration;
     settings_out<<"; Minimum species size:"<<minspeciessize;
     settings_out<<"; Environment mode:"<<environment_mode;
 
@@ -3248,7 +3237,6 @@ void MainWindow::load_settings()
                        if(settings_file_in.name() == "speciesSensitivity")speciesSensitivity=settings_file_in.readElementText().toInt();
                        if(settings_file_in.name() == "timeSliceConnect")timeSliceConnect=settings_file_in.readElementText().toInt();
                        if(settings_file_in.name() == "minspeciessize")minspeciessize=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "yearsPerIteration")yearsPerIteration=settings_file_in.readElementText().toInt();
 
                        //Bools
                        if(settings_file_in.name() == "recalcFitness"){recalcFitness=settings_file_in.readElementText().toInt();
@@ -3387,10 +3375,6 @@ void MainWindow::save_settings()
 
         settings_file_out.writeStartElement("environment_mode");
         settings_file_out.writeCharacters(QString("%1").arg(environment_mode));
-        settings_file_out.writeEndElement();
-
-        settings_file_out.writeStartElement("yearsPerIteration");
-        settings_file_out.writeCharacters(QString("%1").arg(yearsPerIteration));
         settings_file_out.writeEndElement();
 
         settings_file_out.writeStartElement("RefreshRate");

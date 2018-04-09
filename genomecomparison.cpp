@@ -37,6 +37,8 @@ GenomeComparison::GenomeComparison(QWidget *parent) :
     spacerCol = QColor(255,255,255); //White
     highlight = QColor(127,127,127); //Gray
 
+    columnWidth = 30;
+
     //Render Genome Tables
     QFont fnt;
     fnt.setPointSize(8);
@@ -44,12 +46,29 @@ GenomeComparison::GenomeComparison(QWidget *parent) :
 
     ui->genomeTableWidget->setFont(fnt);
     ui->genomeTableWidget->setColumnWidth(1,100);
-    ui->genomeTableWidget->setColumnWidth(34,2); // Spacer
-    renderGenomesTable();
 
     ui->compareTableWidget->setFont(fnt);
     ui->compareTableWidget->setColumnWidth(1,100);
+
+    int i = 2;
+    while(i < 34)
+    {
+        ui->genomeTableWidget->setColumnWidth(i,columnWidth);
+        ui->compareTableWidget->setColumnWidth(i,columnWidth);
+        i++;
+    }
+
+    ui->genomeTableWidget->setColumnWidth(34,2); // Spacer
     ui->compareTableWidget->setColumnWidth(34,2);
+
+    i = 35;
+    while(i < 67)
+    {
+        ui->genomeTableWidget->setColumnWidth(i,columnWidth);
+        ui->compareTableWidget->setColumnWidth(i,columnWidth);
+        i++;
+    }
+    renderGenomesTable();
 
     //Signal to capture name change
     connect(ui->genomeTableWidget, SIGNAL(cellChanged(int, int)), this, SLOT(updateGenomeName(int, int)));
@@ -122,16 +141,16 @@ bool GenomeComparison::renderGenomesTable(){
             i++;
         }
     }
-    ui->genomeTableWidget->setColumnWidth(i,30);
+    ui->genomeTableWidget->setColumnWidth(i,columnWidth);
     ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("E")));
     i++;
-    ui->genomeTableWidget->setColumnWidth(i,30);
+    ui->genomeTableWidget->setColumnWidth(i,columnWidth);
     ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("G")));
     i++;
-    ui->genomeTableWidget->setColumnWidth(i,30);
+    ui->genomeTableWidget->setColumnWidth(i,columnWidth);
     ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("N")));
     i++;
-    ui->genomeTableWidget->setColumnWidth(i,30);
+    ui->genomeTableWidget->setColumnWidth(i,columnWidth);
     ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("F")));
 
     //Add rows if genomeList.count() != 0
@@ -318,11 +337,11 @@ bool GenomeComparison::renderCompareTable() {
     ui->compareTableWidget->hide();
     ui->compareTableWidget->clear();
     ui->compareTableWidget->setRowCount(0);
-    ui->compareTableWidget->setColumnWidth(0,20);
-    ui->compareTableWidget->setColumnWidth(67,30);
-    ui->compareTableWidget->setColumnWidth(68,30);
-    ui->compareTableWidget->setColumnWidth(69,30);
-    ui->compareTableWidget->setColumnWidth(70,30);
+    ui->compareTableWidget->setColumnWidth(0,columnWidth);
+    ui->compareTableWidget->setColumnWidth(67,columnWidth);
+    ui->compareTableWidget->setColumnWidth(68,columnWidth);
+    ui->compareTableWidget->setColumnWidth(69,columnWidth);
+    ui->compareTableWidget->setColumnWidth(70,columnWidth);
 
     //Setup
     if (!compareList.empty()) {

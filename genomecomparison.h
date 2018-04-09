@@ -87,7 +87,7 @@ private:
     QList< QMap<QString,QString> > genomeList, compareList;
     QColor first32, last32, spacerCol, highlight;
     bool autoComparison;
-
+    int columnWidth;
 };
 
 #endif // GENOMECOMPARISON_H

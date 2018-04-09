@@ -119,7 +119,6 @@ extern int newgenomeDisp[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
 extern quint64 newgenomespecies[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
 extern int newgenomecount;
 extern int envchangerate;
-extern int yearsPerIteration;
 extern int speciesSamples; //no longer used - keep for backwards compat of files
 extern int speciesSensitivity; //no longer used - keep for backwards compat of files
 extern int timeSliceConnect; //no longer used - keep for backwards compat of files
