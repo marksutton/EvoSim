@@ -2,10 +2,10 @@
  * @file
  * Critter
  *
- * All REVOSIM code is released under the GNU General Public License.
+ * All REvoSim code is released under the GNU General Public License.
  * See LICENSE.md files in the programme directory.
  *
- * All REVOSIM code is Copyright 2018 by Mark Sutton, Russell Garwood,
+ * All REvoSim code is Copyright 2018 by Mark Sutton, Russell Garwood,
  * and Alan R.T. Spencer.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -33,7 +33,7 @@ Critter::Critter()
 
     //Temporary variable breed tag. Probably better way of doing this but short on time
     int variableBreedAsex = 0;
-
+    Q_UNUSED(variableBreedAsex);
 }
 
 void Critter::initialise(quint64 gen, quint8 *env, int x, int y, int z, quint64 species)

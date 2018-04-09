@@ -2,10 +2,10 @@
  * @file
  * Environment Scene
  *
- * All REVOSIM code is released under the GNU General Public License.
+ * All REvoSim code is released under the GNU General Public License.
  * See LICENSE.md files in the programme directory.
  *
- * All REVOSIM code is Copyright 2018 by Mark Sutton, Russell Garwood,
+ * All REvoSim code is Copyright 2018 by Mark Sutton, Russell Garwood,
  * and Alan R.T. Spencer.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -97,6 +97,9 @@ void EnvironmentScene::mouseReleaseEvent ( QGraphicsSceneMouseEvent * event )
 
     x=(int)position.x();
     y=(int)position.y();
+
+    Q_UNUSED(x);
+    Q_UNUSED(y);
 
     return;
 }

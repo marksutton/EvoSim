@@ -2,10 +2,10 @@
  * @file
  * Header: Simulation Manager
  *
- * All REVOSIM code is released under the GNU General Public License.
+ * All REvoSim code is released under the GNU General Public License.
  * See LICENSE.md files in the programme directory.
  *
- * All REVOSIM code is Copyright 2018 by Mark Sutton, Russell Garwood,
+ * All REvoSim code is Copyright 2018 by Mark Sutton, Russell Garwood,
  * and Alan R.T. Spencer.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -119,7 +119,6 @@ extern int newgenomeDisp[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
 extern quint64 newgenomespecies[GRID_X*GRID_Y*SLOTS_PER_GRID_SQUARE*2];
 extern int newgenomecount;
 extern int envchangerate;
-extern int yearsPerIteration;
 extern int speciesSamples; //no longer used - keep for backwards compat of files
 extern int speciesSensitivity; //no longer used - keep for backwards compat of files
 extern int timeSliceConnect; //no longer used - keep for backwards compat of files
@@ -165,6 +164,13 @@ extern quint8 species_mode;
 #define SPECIES_MODE_BASIC 1
 #define SPECIES_MODE_PHYLOGENY 2
 #define SPECIES_MODE_PHYLOGENY_AND_METRICS 3
+
+extern quint8 environment_mode;
+#define ENV_MODE_STATIC 0
+#define ENV_MODE_ONCE 1
+#define ENV_MODE_LOOP 2
+#define ENV_MODE_BOUNCE 3
+extern bool enviroment_interpolate;
 
 extern quint64 minspeciessize;
 extern bool allowexcludewithissue;

@@ -2,10 +2,10 @@
  * @file
  * About Dialog
  *
- * All REVOSIM code is released under the GNU General Public License.
+ * All REvoSim code is released under the GNU General Public License.
  * See LICENSE.md files in the programme directory.
  *
- * All REVOSIM code is Copyright 2018 by Mark Sutton, Russell Garwood,
+ * All REvoSim code is Copyright 2018 by Mark Sutton, Russell Garwood,
  * and Alan R.T. Spencer.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -46,6 +46,7 @@ About::About(QWidget *parent) :
                        "<br><br><b>Mark Sutton</b> (m.sutton@imperial.ac.uk)<br><b>Russell Garwood</b> (russell.garwood@manchester.ac.uk)<br><b>Alan R.T. Spencer</b> (alan.spencer@imperial.ac.uk)"
                        "<br><br>Reports are appreciated, and comments, suggestions, and feature requests are welcome.");
     ui->textLabel_2->setAlignment(Qt::AlignCenter);
+
 
     ui->textLabel_3->setWordWrap(true);
     ui->textLabel_3->setText("<b>Copyright and License:</b>"

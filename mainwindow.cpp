@@ -2,10 +2,10 @@
  * @file
  * Main Window
  *
- * All REVOSIM code is released under the GNU General Public License.
+ * All REvoSim code is released under the GNU General Public License.
  * See LICENSE.md files in the programme directory.
  *
- * All REVOSIM code is Copyright 2018 by Mark Sutton, Russell Garwood,
+ * All REvoSim code is Copyright 2018 by Mark Sutton, Russell Garwood,
  * and Alan R.T. Spencer.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -40,6 +40,7 @@
 #include <QStringList>
 #include <QFile>
 #include <QXmlStreamReader>
+#include <QDesktopServices>
 
 #include "analysistools.h"
 #include "version.h"
@@ -60,7 +61,6 @@ To do for paper:
 
 Coding:
 -- Load and Save don't include everything - they need to!
--- Genome comparison - say which is noncoding half / document
 -- Timer on calculting species - add progress bar and escape warning if needed to prevent crash
 -- Add Keyboard shortcuts where required
 
@@ -124,10 +124,10 @@ MainWindow::MainWindow(QWidget *parent) :
     stopButton = new QAction(QIcon(QPixmap(":/toolbar/stopButton-Enabled.png")), QString("Stop"), this);
     resetButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton-Enabled.png")), QString("Reset"), this);
     reseedButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton_knowngenome-Enabled.png")), QString("Reseed"), this);
-    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/globesettingsButton-Enabled.png")), QString("Simulation"), this);
-    orgSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled.png")), QString("Organism"), this);
-    logSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/logButton-Enabled.png")), QString("Output"), this);
-    aboutButton = new QAction(QIcon(QPixmap(":/toolbar/aboutButton-Enabled.png")), QString("About"), this);
+    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/globesettingsButton-Enabled-white.png")), QString("Simulation"), this);
+    orgSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled-white.png")), QString("Organism"), this);
+    logSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/logButton-Enabled-white.png")), QString("Output"), this);
+    aboutButton = new QAction(QIcon(QPixmap(":/toolbar/aboutButton-Enabled-white.png")), QString("About"), this);
 
     //ARTS - Toolbar default settings
     //RJG - docker toggles defaults
@@ -190,106 +190,319 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QObject::connect(ui->actionSave_settings, SIGNAL (triggered()), this, SLOT (save_settings()));
     QObject::connect(ui->actionLoad_settings, SIGNAL (triggered()), this, SLOT (load_settings()));
+    QObject::connect(ui->actionCount_peaks, SIGNAL(triggered()), this, SLOT(on_actionCount_Peaks_triggered()));
 
-    //----RJG - set up settings docker.
-    settings_dock = new QDockWidget("Simulation", this);
-    settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
-    settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
-    addDockWidget(Qt::RightDockWidgetArea, settings_dock);
+    //RJG - set up settings docker.
+    simulationSettingsDock = createSimulationSettingsDock();
+    //----RJG - second settings docker.
+    organismSettingsDock = createOrganismSettingsDock();
+    //RJG - Third settings docker
+    outputSettingsDock = createOutputSettingsDock();
+
+    //RJG - Make docks tabbed
+    tabifyDockWidget(organismSettingsDock,simulationSettingsDock);
+    tabifyDockWidget(simulationSettingsDock,outputSettingsDock);
+
+    //ARST - Hide docks by default
+    organismSettingsDock->hide();
+    simulationSettingsDock->hide();
+    outputSettingsDock->hide();
+
+    //ARTS - Add Genome Comparison UI
+    ui->genomeComparisonDock->hide();
+    genoneComparison = new GenomeComparison;
+    QVBoxLayout *genomeLayout = new QVBoxLayout;
+    genomeLayout->addWidget(genoneComparison);
+    ui->genomeComparisonContent->setLayout(genomeLayout);
+
+    //MDS - as above for fossil record dock and report dock
+    ui->fossRecDock->hide();
+    FRW = new FossRecWidget();
+    QVBoxLayout *frwLayout = new QVBoxLayout;
+    frwLayout->addWidget(FRW);
+    ui->fossRecDockContents->setLayout(frwLayout);
+    ui->reportViewerDock->hide();
+
+    viewgroup2 = new QActionGroup(this);
+    // These actions were created via qt designer
+    viewgroup2->addAction(ui->actionNone);
+    viewgroup2->addAction(ui->actionSorted_Summary);
+    viewgroup2->addAction(ui->actionGroups);
+    viewgroup2->addAction(ui->actionGroups2);
+    viewgroup2->addAction(ui->actionSimple_List);
+
+    QObject::connect(viewgroup2, SIGNAL(triggered(QAction *)), this, SLOT(report_mode_changed(QAction *)));
+
+    //create scenes, add to the GVs
+    envscene = new EnvironmentScene;
+    ui->GV_Environment->setScene(envscene);
+    envscene->mw=this;
+
+    popscene = new PopulationScene;
+    popscene->mw=this;
+    ui->GV_Population->setScene(popscene);
+
+    //add images to the scenes
+    env_item= new QGraphicsPixmapItem();
+    envscene->addItem(env_item);
+    env_item->setZValue(0);
+
+    pop_item = new QGraphicsPixmapItem();
+    popscene->addItem(pop_item);
+
+    pop_image=new QImage(gridX, gridY, QImage::Format_Indexed8);
+    QVector <QRgb> clut(256);
+    for (int ic=0; ic<256; ic++) clut[ic]=qRgb(ic,ic,ic);
+    pop_image->setColorTable(clut);
+    pop_image->fill(0);
+
+    env_image=new QImage(gridX, gridY, QImage::Format_RGB32);
+    env_image->fill(0);
+
+    pop_image_colour=new QImage(gridX, gridY, QImage::Format_RGB32);
+    env_image->fill(0);
+
+    env_item->setPixmap(QPixmap::fromImage(*env_image));
+    pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+
+    //ARTS - Population Window dropdown must be after settings dock setup
+    // 0 = Population count
+    // 1 = Mean fitnessFails (R-Breed, G=Settle)
+    // 2 = Coding genome as colour
+    // 3 = NonCoding genome as colour
+    // 4 = Gene Frequencies
+    // 5 = Breed Attempts
+    // 6 = Breed Fails
+    // 7 = Settles
+    // 8 = Settle Fails
+    // 9 = Breed Fails 2
+    // 10 = Species
+    ui->populationWindowComboBox->addItem("Population count",QVariant(0));
+    ui->populationWindowComboBox->addItem("Mean fitnessFails (R-Breed, G=Settle)",QVariant(1));
+    ui->populationWindowComboBox->addItem("Coding genome as colour",QVariant(2));
+    ui->populationWindowComboBox->addItem("NonCoding genome as colour",QVariant(3));
+    ui->populationWindowComboBox->addItem("Gene Frequencies",QVariant(4));
+    //ui->populationWindowComboBox->addItem("Breed Attempts",QVariant(5));
+    //ui->populationWindowComboBox->addItem("Breed Fails",QVariant(6));
+    ui->populationWindowComboBox->addItem("Settles",QVariant(7));
+    ui->populationWindowComboBox->addItem("Settle Fails",QVariant(8));
+    //ui->populationWindowComboBox->addItem("Breed Fails 2",QVariant(9));
+    ui->populationWindowComboBox->addItem("Species",QVariant(10));
+
+    //ARTS -Population Window dropdown set current index. Note this value is the index not the data value.
+    ui->populationWindowComboBox->setCurrentIndex(2);
+
+    TheSimManager = new SimManager;
+
+    pauseflag = false;
+
+    //RJG - load default environment image to allow program to run out of box (quicker for testing)
+    EnvFiles.append(":/EvoSim_default_env.png");
+    CurrentEnvFile=0;
+    TheSimManager->loadEnvironmentFromFile(1);
+
+    FinishRun();//sets up enabling
+    TheSimManager->SetupRun();
+    NextRefresh=0;
+    Report();
+
+    //RJG - Set batch variables
+    batch_running=false;
+    runs=-1;
+    batch_iterations=-1;
+    batch_target_runs=-1;
+
+    showMaximized();
+
+    //RJG - seed pseudorandom numbers
+    qsrand(QTime::currentTime().msec());
+    //RJG - Now load randoms into program - portable rand is just plain pseudorandom number - initially used in makelookups (called from simmanager contructor) to write to randoms array
+    int seedoffset = TheSimManager->portable_rand();
+    QFile rfile(":/randoms.dat");
+    if (!rfile.exists()) QMessageBox::warning(this,"Oops","Error loading randoms. Please do so manually.");
+    rfile.open(QIODevice::ReadOnly);
+
+    rfile.seek(seedoffset);
+
+    //RJG - overwrite pseudorandoms with genuine randoms
+    int i=rfile.read((char *)randoms,65536);
+    if (i!=65536) QMessageBox::warning(this,"Oops","Failed to read 65536 bytes from file - random numbers may be compromised - try again or restart program");
+
+    //RJG - fill cumulative_normal_distribution with numbers for variable breeding
+    //These are a cumulative standard normal distribution from -3 to 3, created using the math.h complementary error function
+    //Then scaled to zero to 32 bit rand max, to allow for probabilities within each iteration through a random number
+    float x=-3., inc=(6./32.);
+    for(int cnt=0;cnt<33;cnt++)
+    {
+        double NSDF=(0.5 * erfc(-(x) * M_SQRT1_2));
+        cumulative_normal_distribution[cnt]=4294967296*NSDF;
+        x+=inc;
+    }
+
+    //RJG - fill pathogen probability distribution as required so pathogens can kill critters
+    //Start with linear, may want to change down the line.
+    for(int cnt=0;cnt<65;cnt++)
+        pathogen_prob_distribution[cnt]=(4294967296/2)+(cnt*(4294967295/128));
+}
+
+MainWindow::~MainWindow()
+{
+    delete ui;
+    delete TheSimManager;
+}
+
+QDockWidget *MainWindow::createSimulationSettingsDock()
+{
+    simulationSettingsDock = new QDockWidget("Simulation", this);
+    simulationSettingsDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    simulationSettingsDock->setFeatures(QDockWidget::DockWidgetMovable);
+    simulationSettingsDock->setFeatures(QDockWidget::DockWidgetFloatable);
+    addDockWidget(Qt::RightDockWidgetArea, simulationSettingsDock);
 
     QGridLayout *settings_grid = new QGridLayout;
     settings_grid->setAlignment(Qt::AlignTop);
 
+    // Environment Settings
+    QGridLayout *environmentSettingsGrid = new QGridLayout;
+
     QLabel *environment_label= new QLabel("Environmental Settings");
     environment_label->setStyleSheet("font-weight: bold");
-    settings_grid->addWidget(environment_label,0,1,1,2);
+    environmentSettingsGrid->addWidget(environment_label,0,1,1,2);
+
+    QPushButton *changeEnvironmentFilesButton = new QPushButton("&Change Enviroment Files");
+    changeEnvironmentFilesButton->setObjectName("changeEnvironmentFilesButton");
+    changeEnvironmentFilesButton->setToolTip("<font>REvoSim allow you to customise the enviroment by loading one or more image files.</font>");
+    environmentSettingsGrid->addWidget(changeEnvironmentFilesButton,1,1,1,2);
+    connect(changeEnvironmentFilesButton, SIGNAL (clicked()), this, SLOT(on_actionEnvironment_Files_triggered()));
 
     QLabel *environment_rate_label = new QLabel("Environment refresh rate:");
-    QSpinBox *environment_rate_spin = new QSpinBox;
+    environment_rate_label->setToolTip("<font>This is the rate of change for the selected enviromental images.</font>");
+    environment_rate_spin = new QSpinBox;
+    environment_rate_spin->setToolTip("<font>This is the rate of change for the selected enviromental images.</font>");
     environment_rate_spin->setMinimum(0);
     environment_rate_spin->setMaximum(100000);
     environment_rate_spin->setValue(envchangerate);
-    settings_grid->addWidget(environment_rate_label,1,1);
-    settings_grid->addWidget(environment_rate_spin,1,2);
-    //----RJG - Note in order to use a lamda not only do you need to use C++11, but there are two valueCHanged signals for spinbox - and int and a string. Need to cast it to an int
+    environmentSettingsGrid->addWidget(environment_rate_label,2,1);
+    environmentSettingsGrid->addWidget(environment_rate_spin,2,2);
+    //RJG - Note in order to use a lamda not only do you need to use C++11, but there are two valueChanged signals for spinbox - and int and a string. Need to cast it to an int
     connect(environment_rate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i ) { envchangerate=i; });
 
-    QCheckBox *toroidal_checkbox = new QCheckBox("Toroidal");
+    QLabel *environment_mode_label = new QLabel("Environment mode:");
+    environmentSettingsGrid->addWidget(environment_mode_label,3,1,1,2);
+
+    QGridLayout *environmentModeGrid = new QGridLayout;
+    environmentModeStaticButton = new QRadioButton("Static");
+    environmentModeStaticButton->setToolTip("<font>'Static' uses a single environment image.</font>");
+    environmentModeOnceButton = new QRadioButton("Once");
+    environmentModeOnceButton->setToolTip("<font>'Once' uses each image only once, simulation stops after last image.</font>");
+    environmentModeLoopButton = new QRadioButton("Loop");
+    environmentModeLoopButton->setToolTip("<font>'Loop' uses each image in order in a loop</font>");
+    environmentModeBounceButton = new QRadioButton("Bounce");
+    environmentModeBounceButton->setToolTip("<font>'Bounce' rebounds between the first and last image in a loop.</font>");
+    QButtonGroup* environmentModeButtonGroup = new QButtonGroup;
+    environmentModeButtonGroup->addButton(environmentModeStaticButton,ENV_MODE_STATIC);
+    environmentModeButtonGroup->addButton(environmentModeOnceButton,ENV_MODE_ONCE);
+    environmentModeButtonGroup->addButton(environmentModeLoopButton,ENV_MODE_LOOP);
+    environmentModeButtonGroup->addButton(environmentModeBounceButton,ENV_MODE_BOUNCE);
+    environmentModeLoopButton->setChecked(true);
+    environmentModeGrid->addWidget(environmentModeStaticButton,1,1,1,2);
+    environmentModeGrid->addWidget(environmentModeOnceButton,1,2,1,2);
+    environmentModeGrid->addWidget(environmentModeLoopButton,2,1,1,2);
+    environmentModeGrid->addWidget(environmentModeBounceButton,2,2,1,2);
+    connect(environmentModeButtonGroup, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i) { environment_mode_changed(i,false); });
+    environmentSettingsGrid->addLayout(environmentModeGrid,4,1,1,2);
+
+    interpolateCheckbox = new QCheckBox("Interpolate between images");
+    interpolateCheckbox->setChecked(enviroment_interpolate);
+    interpolateCheckbox->setToolTip("<font>Turning this ON will iterpolate the environment between individual images.</font>");
+    environmentSettingsGrid->addWidget(interpolateCheckbox,5,1,1,2);
+    connect(interpolateCheckbox,&QCheckBox::stateChanged,[=](const bool &i) { enviroment_interpolate=i; });
+
+    toroidal_checkbox = new QCheckBox("Toroidal enviroment");
     toroidal_checkbox->setChecked(toroidal);
-    settings_grid->addWidget(toroidal_checkbox,2,1,1,2);
+    toroidal_checkbox->setToolTip("<font>Turning this ON will allow dispersal of progeny in an unbounded warparound enviroment. Progeny leaving one side of the population window will immediately reappear on the opposite side.</font>");
+    environmentSettingsGrid->addWidget(toroidal_checkbox,6,1,1,2);
     connect(toroidal_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { toroidal=i; });
+
+    // Simulation Size Settings
+    QGridLayout *simulationSizeSettingsGrid = new QGridLayout;
 
     QLabel *simulation_size_label= new QLabel("Simulation size");
     simulation_size_label->setStyleSheet("font-weight: bold");
-    settings_grid->addWidget(simulation_size_label,3,1,1,2);
+    simulationSizeSettingsGrid->addWidget(simulation_size_label,0,1,1,2);
 
     QLabel *gridX_label = new QLabel("Grid X:");
-    QSpinBox *gridX_spin = new QSpinBox;
+    gridX_spin = new QSpinBox;
     gridX_spin->setMinimum(1);
     gridX_spin->setMaximum(256);
     gridX_spin->setValue(gridX);
-    settings_grid->addWidget(gridX_label,4,1);
-    settings_grid->addWidget(gridX_spin,4,2);
+    simulationSizeSettingsGrid->addWidget(gridX_label,2,1);
+    simulationSizeSettingsGrid->addWidget(gridX_spin,2,2);
     connect(gridX_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { int oldrows=gridX; gridX=i;redoImages(oldrows,gridY);});
 
     QLabel *gridY_label = new QLabel("Grid Y:");
-    QSpinBox *gridY_spin = new QSpinBox;
+    gridY_spin = new QSpinBox;
     gridY_spin->setMinimum(1);
     gridY_spin->setMaximum(256);
     gridY_spin->setValue(gridY);
-    settings_grid->addWidget(gridY_label,5,1);
-    settings_grid->addWidget(gridY_spin,5,2);
+    simulationSizeSettingsGrid->addWidget(gridY_label,3,1);
+    simulationSizeSettingsGrid->addWidget(gridY_spin,3,2);
     connect(gridY_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {int oldcols=gridY; gridY=i;redoImages(gridX,oldcols);});
 
     QLabel *slots_label = new QLabel("Slots:");
-    QSpinBox *slots_spin = new QSpinBox;
+    slots_spin = new QSpinBox;
     slots_spin->setMinimum(1);
     slots_spin->setMaximum(256);
     slots_spin->setValue(slotsPerSq);
-    settings_grid->addWidget(slots_label,6,1);
-    settings_grid->addWidget(slots_spin,6,2);
+    simulationSizeSettingsGrid->addWidget(slots_label,4,1);
+    simulationSizeSettingsGrid->addWidget(slots_spin,4,2);
     connect(slots_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { slotsPerSq=i;redoImages(gridX,gridY); });
+
+    // Simulation Settings
+    QGridLayout *simulationSettingsGrid = new QGridLayout;
 
     QLabel *simulation_settings_label= new QLabel("Simulation settings");
     simulation_settings_label->setStyleSheet("font-weight: bold");
-    settings_grid->addWidget(simulation_settings_label,7,1,1,2);
+    simulationSettingsGrid->addWidget(simulation_settings_label,0,1,1,2);
 
     QLabel *target_label = new QLabel("Fitness target:");
-    QSpinBox *target_spin = new QSpinBox;
+    target_spin = new QSpinBox;
     target_spin->setMinimum(1);
     target_spin->setMaximum(96);
     target_spin->setValue(target);
-    settings_grid->addWidget(target_label,8,1);
-    settings_grid->addWidget(target_spin,8,2);
+    simulationSettingsGrid->addWidget(target_label,1,1);
+    simulationSettingsGrid->addWidget(target_spin,1,2);
     connect(target_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { target=i; });
 
     QLabel *energy_label = new QLabel("Energy input:");
-    QSpinBox *energy_spin = new QSpinBox;
+    energy_spin = new QSpinBox;
     energy_spin->setMinimum(1);
     energy_spin->setMaximum(20000);
     energy_spin->setValue(food);
-    settings_grid->addWidget(energy_label,9,1);
-    settings_grid->addWidget(energy_spin,9,2);
+    simulationSettingsGrid->addWidget(energy_label,2,1);
+    simulationSettingsGrid->addWidget(energy_spin,2,2);
     connect(energy_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { food=i; });
 
     QLabel *settleTolerance_label = new QLabel("Settle tolerance:");
-    QSpinBox *settleTolerance_spin = new QSpinBox;
+    settleTolerance_spin = new QSpinBox;
     settleTolerance_spin->setMinimum(1);
     settleTolerance_spin->setMaximum(30);
     settleTolerance_spin->setValue(settleTolerance);
-    settings_grid->addWidget(settleTolerance_label,10,1);
-    settings_grid->addWidget(settleTolerance_spin,10,2);
+    simulationSettingsGrid->addWidget(settleTolerance_label,3,1);
+    simulationSettingsGrid->addWidget(settleTolerance_spin,3,2);
     connect(settleTolerance_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) { settleTolerance=i; });
 
-    QCheckBox *recalcFitness_checkbox = new QCheckBox("Recalculate fitness");
+    recalcFitness_checkbox = new QCheckBox("Recalculate fitness");
     recalcFitness_checkbox->setChecked(toroidal);
-    settings_grid->addWidget(recalcFitness_checkbox,11,1,1,2);
+    simulationSettingsGrid->addWidget(recalcFitness_checkbox,4,1,1,2);
     connect(recalcFitness_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { recalcFitness=i; });
+
+    //Phylogeny Settings
+    QGridLayout *phylogenySettingsGrid = new QGridLayout;
 
     QLabel *phylogeny_settings_label= new QLabel("Phylogeny settings");
     phylogeny_settings_label->setStyleSheet("font-weight: bold");
-    settings_grid->addWidget(phylogeny_settings_label,12,1,1,1);
+    phylogenySettingsGrid->addWidget(phylogeny_settings_label,0,1,1,1);
 
     QGridLayout *phylogeny_grid = new QGridLayout;
     phylogeny_off_button = new QRadioButton("Off");
@@ -307,169 +520,30 @@ MainWindow::MainWindow(QWidget *parent) :
     phylogeny_grid->addWidget(phylogeny_button,2,1,1,2);
     phylogeny_grid->addWidget(phylogeny_and_metrics_button,2,2,1,2);
     connect(phylogeny_button_group, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i) { species_mode_changed(i); });
-    settings_grid->addLayout(phylogeny_grid,13,1,1,2);
+    phylogenySettingsGrid->addLayout(phylogeny_grid,1,1,1,2);
+
+    //ARTS - Dock Grid Layout
+    settings_grid->addLayout(environmentSettingsGrid,0,1);
+    settings_grid->addLayout(simulationSizeSettingsGrid,1,1);
+    settings_grid->addLayout(simulationSettingsGrid,2,1);
+    settings_grid->addLayout(phylogenySettingsGrid,3,1);
 
     QWidget *settings_layout_widget = new QWidget;
     settings_layout_widget->setLayout(settings_grid);
     settings_layout_widget->setMinimumWidth(300);
-    settings_dock->setWidget(settings_layout_widget);
-    settings_dock->adjustSize();
+    simulationSettingsDock->setWidget(settings_layout_widget);
+    simulationSettingsDock->adjustSize();
 
-    //----RJG - second settings docker.
-    org_settings_dock = new QDockWidget("Organism", this);
-    org_settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    org_settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
-    org_settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
-    addDockWidget(Qt::RightDockWidgetArea, org_settings_dock);
+    return simulationSettingsDock;
+}
 
-    QGridLayout *org_settings_grid = new QGridLayout;
-    org_settings_grid->setAlignment(Qt::AlignTop);
-
-    QLabel *org_settings_label= new QLabel("Organism settings");
-    org_settings_label->setStyleSheet("font-weight: bold");
-    org_settings_grid->addWidget(org_settings_label,1,1,1,2);
-
-    QLabel *mutate_label = new QLabel("Chance of mutation:");
-    mutate_spin = new QSpinBox;
-    mutate_spin->setMinimum(0);
-    mutate_spin->setMaximum(255);
-    mutate_spin->setValue(mutate);
-    org_settings_grid->addWidget(mutate_label,2,1);
-    org_settings_grid->addWidget(mutate_spin,2,2);
-    connect(mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {mutate=i;});
-
-    QCheckBox *variable_mutation_checkbox = new QCheckBox("Variable mutation");
-    org_settings_grid->addWidget(variable_mutation_checkbox,3,1,1,1);
-    variable_mutation_checkbox->setChecked(variableMutate);
-    connect(variable_mutation_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { variableMutate=i; mutate_spin->setEnabled(!i); });
-
-    QLabel *startAge_label = new QLabel("Start age:");
-    QSpinBox *startAge_spin = new QSpinBox;
-    startAge_spin->setMinimum(1);
-    startAge_spin->setMaximum(1000);
-    startAge_spin->setValue(startAge);
-    org_settings_grid->addWidget(startAge_label,4,1);
-    org_settings_grid->addWidget(startAge_spin,4,2);
-    connect(startAge_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {startAge=i;});
-
-    QLabel *breed_settings_label= new QLabel("Breed settings");
-    breed_settings_label->setStyleSheet("font-weight: bold");
-    org_settings_grid->addWidget(breed_settings_label,5,1,1,2);
-
-    QLabel *breedThreshold_label = new QLabel("Breed threshold:");
-    QSpinBox *breedThreshold_spin = new QSpinBox;
-    breedThreshold_spin->setMinimum(1);
-    breedThreshold_spin->setMaximum(5000);
-    breedThreshold_spin->setValue(breedThreshold);
-    org_settings_grid->addWidget(breedThreshold_label,6,1);
-    org_settings_grid->addWidget(breedThreshold_spin,6,2);
-    connect(breedThreshold_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {breedThreshold=i;});
-
-    QLabel *breedCost_label = new QLabel("Breed cost:");
-    QSpinBox *breedCost_spin = new QSpinBox;
-    breedCost_spin->setMinimum(1);
-    breedCost_spin->setMaximum(10000);
-    breedCost_spin->setValue(breedCost);
-    org_settings_grid->addWidget(breedCost_label,7,1);
-    org_settings_grid->addWidget(breedCost_spin,7,2);
-    connect(breedCost_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {breedCost=i;});
-
-    QLabel *maxDiff_label = new QLabel("Max difference to breed:");
-    QSpinBox *maxDiff_spin = new QSpinBox;
-    maxDiff_spin->setMinimum(1);
-    maxDiff_spin->setMaximum(31);
-    maxDiff_spin->setValue(maxDiff);
-    org_settings_grid->addWidget(maxDiff_label,8,1);
-    org_settings_grid->addWidget(maxDiff_spin,8,2);
-    connect(maxDiff_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {maxDiff=i;});
-
-    QCheckBox *breeddiff_checkbox = new QCheckBox("Use max diff to breed");
-    org_settings_grid->addWidget(breeddiff_checkbox,9,1,1,1);
-    breeddiff_checkbox->setChecked(breeddiff);
-    connect(breeddiff_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { breeddiff=i;});
-
-    QCheckBox *breedspecies_checkbox = new QCheckBox("Breed only within species");
-    org_settings_grid->addWidget(breedspecies_checkbox,10,1,1,1);
-    breedspecies_checkbox->setChecked(breedspecies);
-    connect(breedspecies_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { breedspecies=i;});
-
-    QLabel *breed_mode_label= new QLabel("Breed mode:");
-    org_settings_grid->addWidget(breed_mode_label,11,1,1,2);
-    QRadioButton *sexual_radio = new QRadioButton("Sexual");
-    QRadioButton *asexual_radio = new QRadioButton("Asexual");
-    QRadioButton *variableBreed_radio = new QRadioButton("Variable");
-    QButtonGroup *breeding_button_group = new QButtonGroup;
-    breeding_button_group->addButton(sexual_radio,0);
-    breeding_button_group->addButton(asexual_radio,1);
-    breeding_button_group->addButton(variableBreed_radio,2);
-    sexual_radio->setChecked(sexual);
-    asexual_radio->setChecked(asexual);
-    variableBreed_radio->setChecked(variableBreed);
-    org_settings_grid->addWidget(sexual_radio,12,1,1,2);
-    org_settings_grid->addWidget(asexual_radio,13,1,1,2);
-    org_settings_grid->addWidget(variableBreed_radio,14,1,1,2);
-    connect(breeding_button_group, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i)
-        {
-        if(i==0){sexual=true;asexual=false;variableBreed=false;}
-        if(i==1){sexual=false;asexual=true;variableBreed=false;}
-        if(i==2){sexual=false;asexual=false;variableBreed=true;}
-        });
-
-    QLabel *settle_settings_label= new QLabel("Settle settings");
-    settle_settings_label->setStyleSheet("font-weight: bold");
-    org_settings_grid->addWidget(settle_settings_label,15,1,1,2);
-
-    QLabel *dispersal_label = new QLabel("Dispersal:");
-    QSpinBox *dispersal_spin = new QSpinBox;
-    dispersal_spin->setMinimum(1);
-    dispersal_spin->setMaximum(200);
-    dispersal_spin->setValue(dispersal);
-    org_settings_grid->addWidget(dispersal_label,16,1);
-    org_settings_grid->addWidget(dispersal_spin,16,2);
-    connect(dispersal_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {dispersal=i;});
-
-    QCheckBox *nonspatial_checkbox = new QCheckBox("Nonspatial settling");
-    org_settings_grid->addWidget(nonspatial_checkbox,17,1,1,2);
-    nonspatial_checkbox->setChecked(nonspatial);
-    connect(nonspatial_checkbox,&QCheckBox::stateChanged,[=](const bool &i) {nonspatial=i;});
-
-    QLabel *pathogen_settings_label= new QLabel("Pathogen settings");
-    pathogen_settings_label->setStyleSheet("font-weight: bold");
-    org_settings_grid->addWidget(pathogen_settings_label,18,1,1,2);
-
-    QCheckBox *pathogens_checkbox = new QCheckBox("Pathogens layer");
-    org_settings_grid->addWidget(pathogens_checkbox,19,1,1,2);
-    pathogens_checkbox->setChecked(path_on);
-    connect(pathogens_checkbox,&QCheckBox::stateChanged,[=](const bool &i) {path_on=i;});
-
-    QLabel *pathogen_mutate_label = new QLabel("Pathogen mutation:");
-    QSpinBox *pathogen_mutate_spin = new QSpinBox;
-    pathogen_mutate_spin->setMinimum(1);
-    pathogen_mutate_spin->setMaximum(255);
-    pathogen_mutate_spin->setValue(pathogen_mutate);
-    org_settings_grid->addWidget(pathogen_mutate_label,20,1);
-    org_settings_grid->addWidget(pathogen_mutate_spin,20,2);
-    connect(pathogen_mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {pathogen_mutate=i;});
-
-    QLabel *pathogen_frequency_label = new QLabel("Pathogen frequency:");
-    QSpinBox *pathogen_frequency_spin = new QSpinBox;
-    pathogen_frequency_spin->setMinimum(1);
-    pathogen_frequency_spin->setMaximum(1000);
-    pathogen_frequency_spin->setValue(pathogen_frequency);
-    org_settings_grid->addWidget(pathogen_frequency_label,21,1);
-    org_settings_grid->addWidget(pathogen_frequency_spin,21,2);
-    connect(pathogen_frequency_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {pathogen_frequency=i;});
-
-    QWidget *org_settings_layout_widget = new QWidget;
-    org_settings_layout_widget->setLayout(org_settings_grid);
-    org_settings_dock->setWidget(org_settings_layout_widget);
-
-    //RJG - Third settings docker
-    output_settings_dock = new QDockWidget("Output", this);
-    output_settings_dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-    output_settings_dock->setFeatures(QDockWidget::DockWidgetMovable);
-    output_settings_dock->setFeatures(QDockWidget::DockWidgetFloatable);
-    addDockWidget(Qt::RightDockWidgetArea, output_settings_dock);
+QDockWidget *MainWindow::createOutputSettingsDock()
+{
+    outputSettingsDock = new QDockWidget("Output", this);
+    outputSettingsDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    outputSettingsDock->setFeatures(QDockWidget::DockWidgetMovable);
+    outputSettingsDock->setFeatures(QDockWidget::DockWidgetFloatable);
+    addDockWidget(Qt::RightDockWidgetArea, outputSettingsDock);
 
     QGridLayout *output_settings_grid = new QGridLayout;
     output_settings_grid->setAlignment(Qt::AlignTop);
@@ -497,7 +571,7 @@ MainWindow::MainWindow(QWidget *parent) :
     RefreshRate=50;
     QLabel *refreshRateLabel = new QLabel("Refresh/polling rate:");
     refreshRateLabel->setObjectName("refreshRateLabel");
-    QSpinBox *refreshRateSpin = new QSpinBox;
+    refreshRateSpin = new QSpinBox;
     refreshRateSpin->setMinimum(1);
     refreshRateSpin->setMaximum(10000);
     refreshRateSpin->setValue(RefreshRate);
@@ -582,7 +656,7 @@ MainWindow::MainWindow(QWidget *parent) :
     textLogInfo3Label->setWordWrap(true);
     fileLoggingGrid->addWidget(textLogInfo3Label,8,1,1,2);
 
-    QCheckBox *exclude_without_issue_checkbox = new QCheckBox("Exclude species without issue");
+    exclude_without_issue_checkbox = new QCheckBox("Exclude species without issue");
     exclude_without_issue_checkbox->setChecked(allowexcludewithissue);
     fileLoggingGrid->addWidget(exclude_without_issue_checkbox,9,1,1,1);
     connect(exclude_without_issue_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { allowexcludewithissue=i; });
@@ -622,153 +696,161 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QWidget *output_settings_layout_widget = new QWidget;
     output_settings_layout_widget->setLayout(output_settings_grid);
-    output_settings_dock->setWidget(output_settings_layout_widget);
+    outputSettingsDock->setWidget(output_settings_layout_widget);
 
-    //RJG - Make docks tabbed
-    tabifyDockWidget(org_settings_dock,settings_dock);
-    tabifyDockWidget(settings_dock,output_settings_dock);
-    org_settings_dock->hide();
-    settings_dock->hide();
-    output_settings_dock->hide();
-
-    //RJG - Set up counts shortcut
-    new QShortcut(QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_P), this, SLOT(on_actionCount_Peaks_triggered()));
-    QObject::connect(ui->actionCount_peaks, SIGNAL(triggered()), this, SLOT(on_actionCount_Peaks_triggered()));
-
-    //ARTS - Add Genome Comparison UI
-    ui->genomeComparisonDock->hide();
-    genoneComparison = new GenomeComparison;
-    QVBoxLayout *genomeLayout = new QVBoxLayout;
-    genomeLayout->addWidget(genoneComparison);
-    ui->genomeComparisonContent->setLayout(genomeLayout);
-
-    //MDS - as above for fossil record dock and report dock
-    ui->fossRecDock->hide();
-    FRW = new FossRecWidget();
-    QVBoxLayout *frwLayout = new QVBoxLayout;
-    frwLayout->addWidget(FRW);
-    ui->fossRecDockContents->setLayout(frwLayout);
-    ui->reportViewerDock->hide();
-
-    viewgroup = new QActionGroup(this);
-    // These actions were created via qt designer
-    viewgroup->addAction(ui->actionPopulation_Count);
-    viewgroup->addAction(ui->actionMean_fitness);
-    viewgroup->addAction(ui->actionGenome_as_colour);
-    viewgroup->addAction(ui->actionNonCoding_genome_as_colour);
-    viewgroup->addAction(ui->actionGene_Frequencies_012);
-    viewgroup->addAction(ui->actionSpecies);
-    viewgroup->addAction(ui->actionBreed_Fails_2);
-    viewgroup->addAction(ui->actionSettles);
-    viewgroup->addAction(ui->actionSettle_Fails);
-    QObject::connect(viewgroup, SIGNAL(triggered(QAction *)), this, SLOT(view_mode_changed(QAction *)));
-
-    viewgroup2 = new QActionGroup(this);
-    // These actions were created via qt designer
-    viewgroup2->addAction(ui->actionNone);
-    viewgroup2->addAction(ui->actionSorted_Summary);
-    viewgroup2->addAction(ui->actionGroups);
-    viewgroup2->addAction(ui->actionGroups2);
-    viewgroup2->addAction(ui->actionSimple_List);
-
-    envgroup = new QActionGroup(this);
-    envgroup->addAction(ui->actionStatic);
-    envgroup->addAction(ui->actionBounce);
-    envgroup->addAction(ui->actionOnce);
-    envgroup->addAction(ui->actionLoop);
-    ui->actionLoop->setChecked(true);
-
-    QObject::connect(viewgroup2, SIGNAL(triggered(QAction *)), this, SLOT(report_mode_changed(QAction *)));
-
-    //create scenes, add to the GVs
-    envscene = new EnvironmentScene;
-    ui->GV_Environment->setScene(envscene);
-    envscene->mw=this;
-
-    popscene = new PopulationScene;
-    popscene->mw=this;
-    ui->GV_Population->setScene(popscene);
-
-    //add images to the scenes
-    env_item= new QGraphicsPixmapItem();
-    envscene->addItem(env_item);
-    env_item->setZValue(0);
-
-    pop_item = new QGraphicsPixmapItem();
-    popscene->addItem(pop_item);
-
-    pop_image=new QImage(gridX, gridY, QImage::Format_Indexed8);
-    QVector <QRgb> clut(256);
-    for (int ic=0; ic<256; ic++) clut[ic]=qRgb(ic,ic,ic);
-    pop_image->setColorTable(clut);
-    pop_image->fill(0);
-
-    env_image=new QImage(gridX, gridY, QImage::Format_RGB32);
-    env_image->fill(0);
-
-    pop_image_colour=new QImage(gridX, gridY, QImage::Format_RGB32);
-    env_image->fill(0);
-
-    env_item->setPixmap(QPixmap::fromImage(*env_image));
-    pop_item->setPixmap(QPixmap::fromImage(*pop_image));
-
-    TheSimManager = new SimManager;
-
-    pauseflag = false;
-
-    //RJG - load default environment image to allow program to run out of box (quicker for testing)
-    EnvFiles.append(":/EvoSim_default_env.png");
-    CurrentEnvFile=0;
-    TheSimManager->loadEnvironmentFromFile(1);
-
-    FinishRun();//sets up enabling
-    TheSimManager->SetupRun();
-    NextRefresh=0;
-    Report();
-
-    //RJG - Set batch variables
-    batch_running=false;
-    runs=-1;
-    batch_iterations=-1;
-    batch_target_runs=-1;
-
-    showMaximized();
-
-    //RJG - seed pseudorandom numbers
-    qsrand(QTime::currentTime().msec());
-    //RJG - Now load randoms into program - portable rand is just plain pseudorandom number - initially used in makelookups (called from simmanager contructor) to write to randoms array
-    int seedoffset = TheSimManager->portable_rand();
-    QFile rfile(":/randoms.dat");
-    if (!rfile.exists()) QMessageBox::warning(this,"Oops","Error loading randoms. Please do so manually.");
-    rfile.open(QIODevice::ReadOnly);
-
-    rfile.seek(seedoffset);
-
-    //RJG - overwrite pseudorandoms with genuine randoms
-    int i=rfile.read((char *)randoms,65536);
-    if (i!=65536) QMessageBox::warning(this,"Oops","Failed to read 65536 bytes from file - random numbers may be compromised - try again or restart program");
-
-    //RJG - fill cumulative_normal_distribution with numbers for variable breeding
-    //These are a cumulative standard normal distribution from -3 to 3, created using the math.h complementary error function
-    //Then scaled to zero to 32 bit rand max, to allow for probabilities within each iteration through a random number
-    float x=-3., inc=(6./32.);
-    for(int cnt=0;cnt<33;cnt++)
-            {
-            double NSDF=(0.5 * erfc(-(x) * M_SQRT1_2));
-            cumulative_normal_distribution[cnt]=4294967296*NSDF;
-            x+=inc;
-            }
-
-    //RJG - fill pathogen probability distribution as required so pathogens can kill critters
-    //Start with linear, may want to change down the line.
-      for(int cnt=0;cnt<65;cnt++)
-        pathogen_prob_distribution[cnt]=(4294967296/2)+(cnt*(4294967295/128));
+    return outputSettingsDock;
 }
 
-MainWindow::~MainWindow()
-{
-    delete ui;
-    delete TheSimManager;
+QDockWidget *MainWindow::createOrganismSettingsDock() {
+    organismSettingsDock = new QDockWidget("Organism", this);
+    organismSettingsDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    organismSettingsDock->setFeatures(QDockWidget::DockWidgetMovable);
+    organismSettingsDock->setFeatures(QDockWidget::DockWidgetFloatable);
+    addDockWidget(Qt::RightDockWidgetArea, organismSettingsDock);
+
+    QGridLayout *org_settings_grid = new QGridLayout;
+    org_settings_grid->setAlignment(Qt::AlignTop);
+
+    QLabel *org_settings_label= new QLabel("Organism settings");
+    org_settings_label->setStyleSheet("font-weight: bold");
+    org_settings_grid->addWidget(org_settings_label,1,1,1,2);
+
+    QLabel *mutate_label = new QLabel("Chance of mutation:");
+    mutate_spin = new QSpinBox;
+    mutate_spin->setMinimum(0);
+    mutate_spin->setMaximum(255);
+    mutate_spin->setValue(mutate);
+    org_settings_grid->addWidget(mutate_label,2,1);
+    org_settings_grid->addWidget(mutate_spin,2,2);
+    connect(mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {mutate=i;});
+
+    variable_mutation_checkbox = new QCheckBox("Variable mutation");
+    org_settings_grid->addWidget(variable_mutation_checkbox,3,1,1,1);
+    variable_mutation_checkbox->setChecked(variableMutate);
+    connect(variable_mutation_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { variableMutate=i; mutate_spin->setEnabled(!i); });
+
+    QLabel *startAge_label = new QLabel("Start age:");
+    startAge_spin = new QSpinBox;
+    startAge_spin->setMinimum(1);
+    startAge_spin->setMaximum(1000);
+    startAge_spin->setValue(startAge);
+    org_settings_grid->addWidget(startAge_label,4,1);
+    org_settings_grid->addWidget(startAge_spin,4,2);
+    connect(startAge_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {startAge=i;});
+
+    QLabel *breed_settings_label= new QLabel("Breed settings");
+    breed_settings_label->setStyleSheet("font-weight: bold");
+    org_settings_grid->addWidget(breed_settings_label,5,1,1,2);
+
+    QLabel *breedThreshold_label = new QLabel("Breed threshold:");
+    breedThreshold_spin = new QSpinBox;
+    breedThreshold_spin->setMinimum(1);
+    breedThreshold_spin->setMaximum(5000);
+    breedThreshold_spin->setValue(breedThreshold);
+    org_settings_grid->addWidget(breedThreshold_label,6,1);
+    org_settings_grid->addWidget(breedThreshold_spin,6,2);
+    connect(breedThreshold_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {breedThreshold=i;});
+
+    QLabel *breedCost_label = new QLabel("Breed cost:");
+    breedCost_spin = new QSpinBox;
+    breedCost_spin->setMinimum(1);
+    breedCost_spin->setMaximum(10000);
+    breedCost_spin->setValue(breedCost);
+    org_settings_grid->addWidget(breedCost_label,7,1);
+    org_settings_grid->addWidget(breedCost_spin,7,2);
+    connect(breedCost_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {breedCost=i;});
+
+    QLabel *maxDiff_label = new QLabel("Max difference to breed:");
+    maxDiff_spin = new QSpinBox;
+    maxDiff_spin->setMinimum(1);
+    maxDiff_spin->setMaximum(31);
+    maxDiff_spin->setValue(maxDiff);
+    org_settings_grid->addWidget(maxDiff_label,8,1);
+    org_settings_grid->addWidget(maxDiff_spin,8,2);
+    connect(maxDiff_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {maxDiff=i;});
+
+    breeddiff_checkbox = new QCheckBox("Use max diff to breed");
+    org_settings_grid->addWidget(breeddiff_checkbox,9,1,1,1);
+    breeddiff_checkbox->setChecked(breeddiff);
+    connect(breeddiff_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { breeddiff=i;});
+
+    breedspecies_checkbox = new QCheckBox("Breed only within species");
+    org_settings_grid->addWidget(breedspecies_checkbox,10,1,1,1);
+    breedspecies_checkbox->setChecked(breedspecies);
+    connect(breedspecies_checkbox,&QCheckBox::stateChanged,[=](const bool &i) { breedspecies=i;});
+
+    QLabel *breed_mode_label= new QLabel("Breed mode:");
+    org_settings_grid->addWidget(breed_mode_label,11,1,1,2);
+    sexual_radio = new QRadioButton("Sexual");
+    asexual_radio = new QRadioButton("Asexual");
+    variableBreed_radio = new QRadioButton("Variable");
+    QButtonGroup *breeding_button_group = new QButtonGroup;
+    breeding_button_group->addButton(sexual_radio,0);
+    breeding_button_group->addButton(asexual_radio,1);
+    breeding_button_group->addButton(variableBreed_radio,2);
+    sexual_radio->setChecked(sexual);
+    asexual_radio->setChecked(asexual);
+    variableBreed_radio->setChecked(variableBreed);
+    org_settings_grid->addWidget(sexual_radio,12,1,1,2);
+    org_settings_grid->addWidget(asexual_radio,13,1,1,2);
+    org_settings_grid->addWidget(variableBreed_radio,14,1,1,2);
+    connect(breeding_button_group, (void(QButtonGroup::*)(int))&QButtonGroup::buttonClicked,[=](const int &i)
+        {
+        if(i==0){sexual=true;asexual=false;variableBreed=false;}
+        if(i==1){sexual=false;asexual=true;variableBreed=false;}
+        if(i==2){sexual=false;asexual=false;variableBreed=true;}
+        });
+
+    QLabel *settle_settings_label= new QLabel("Settle settings");
+    settle_settings_label->setStyleSheet("font-weight: bold");
+    org_settings_grid->addWidget(settle_settings_label,15,1,1,2);
+
+    QLabel *dispersal_label = new QLabel("Dispersal:");
+    dispersal_spin = new QSpinBox;
+    dispersal_spin->setMinimum(1);
+    dispersal_spin->setMaximum(200);
+    dispersal_spin->setValue(dispersal);
+    org_settings_grid->addWidget(dispersal_label,16,1);
+    org_settings_grid->addWidget(dispersal_spin,16,2);
+    connect(dispersal_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {dispersal=i;});
+
+    nonspatial_checkbox = new QCheckBox("Nonspatial settling");
+    org_settings_grid->addWidget(nonspatial_checkbox,17,1,1,2);
+    nonspatial_checkbox->setChecked(nonspatial);
+    connect(nonspatial_checkbox,&QCheckBox::stateChanged,[=](const bool &i) {nonspatial=i;});
+
+    QLabel *pathogen_settings_label= new QLabel("Pathogen settings");
+    pathogen_settings_label->setStyleSheet("font-weight: bold");
+    org_settings_grid->addWidget(pathogen_settings_label,18,1,1,2);
+
+    pathogens_checkbox = new QCheckBox("Pathogens layer");
+    org_settings_grid->addWidget(pathogens_checkbox,19,1,1,2);
+    pathogens_checkbox->setChecked(path_on);
+    connect(pathogens_checkbox,&QCheckBox::stateChanged,[=](const bool &i) {path_on=i;});
+
+    QLabel *pathogen_mutate_label = new QLabel("Pathogen mutation:");
+    pathogen_mutate_spin = new QSpinBox;
+    pathogen_mutate_spin->setMinimum(1);
+    pathogen_mutate_spin->setMaximum(255);
+    pathogen_mutate_spin->setValue(pathogen_mutate);
+    org_settings_grid->addWidget(pathogen_mutate_label,20,1);
+    org_settings_grid->addWidget(pathogen_mutate_spin,20,2);
+    connect(pathogen_mutate_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {pathogen_mutate=i;});
+
+    QLabel *pathogen_frequency_label = new QLabel("Pathogen frequency:");
+    pathogen_frequency_spin = new QSpinBox;
+    pathogen_frequency_spin->setMinimum(1);
+    pathogen_frequency_spin->setMaximum(1000);
+    pathogen_frequency_spin->setValue(pathogen_frequency);
+    org_settings_grid->addWidget(pathogen_frequency_label,21,1);
+    org_settings_grid->addWidget(pathogen_frequency_spin,21,2);
+    connect(pathogen_frequency_spin,(void(QSpinBox::*)(int))&QSpinBox::valueChanged,[=](const int &i) {pathogen_frequency=i;});
+
+    QWidget *org_settings_layout_widget = new QWidget;
+    org_settings_layout_widget->setLayout(org_settings_grid);
+    organismSettingsDock->setWidget(org_settings_layout_widget);
+
+    return organismSettingsDock;
 }
 
 // ---- RJG: Change the save path for various stuff.
@@ -810,7 +892,7 @@ void MainWindow::on_actionReset_triggered()
 
     //ARTS - Update views based on the new reset simulation
     RefreshReport();
-    UpdateTitles();
+    //UpdateTitles();
     RefreshPopulations();
 }
 
@@ -819,8 +901,7 @@ void MainWindow::resetInformationBar()
     //ARTS - reset the bottom information bar
     ui->LabelBatch->setText(tr("1/1"));
     ui->LabelIteration->setText(tr("0"));
-    ui->LabelYears->setText(tr("0"));
-    ui->LabelMyPerHour->setText(tr("0.00"));
+    ui->LabelIterationsPerHour->setText(tr("0.00"));
     ui->LabelCritters->setText(tr("0"));
     ui->LabelSpeed->setText(tr("0.00"));
     ui->LabelFitness->setText(tr("0.00%"));
@@ -836,9 +917,6 @@ void MainWindow::on_actionReseed_triggered()
 {
     reseed reseed_dialogue;
     reseed_dialogue.exec();
-
-    ui->actionReseed->setChecked(reseedKnown);
-
     on_actionReset_triggered();
 }
 
@@ -858,6 +936,7 @@ void MainWindow::changeEvent(QEvent *e)
 //ARTS - "Run" action
 void MainWindow::on_actionStart_Sim_triggered()
 {
+
     if (CurrentEnvFile==-1)
     {
         QMessageBox::critical(0,"","Cannot start simulation without environment");
@@ -880,12 +959,9 @@ void MainWindow::on_actionStart_Sim_triggered()
         Report();
         qApp->processEvents();
         if (ui->actionGo_Slow->isChecked()) Sleeper::msleep(30);
-        int environment_mode=0;
-        if (ui->actionOnce->isChecked()) environment_mode=1;
-        if (ui->actionBounce->isChecked()) environment_mode=3;
-        if (ui->actionLoop->isChecked()) environment_mode=2;
+
         //ARTS - set Stop flag to returns true if reached end... but why? It will fire the FinishRun() function at the end.
-        if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) stopflag=true;
+        if (TheSimManager->iterate(environment_mode,enviroment_interpolate)) stopflag=true;
         FRW->MakeRecords();
     }
 
@@ -922,11 +998,8 @@ void MainWindow::on_actionRun_for_triggered()
 
         Report();
         qApp->processEvents();
-        int environment_mode=0;
-        if (ui->actionOnce->isChecked()) environment_mode=1;
-        if (ui->actionBounce->isChecked()) environment_mode=3;
-        if (ui->actionLoop->isChecked()) environment_mode=2;
-        if (TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked())) stopflag=true;
+
+        if (TheSimManager->iterate(environment_mode,enviroment_interpolate)) stopflag=true;
         FRW->MakeRecords();
         i--;
     }
@@ -1016,8 +1089,6 @@ void MainWindow::on_actionBatch_triggered()
         return;
     }
 
-
-
     //ARTS - run the batch
     do {
 
@@ -1025,10 +1096,6 @@ void MainWindow::on_actionBatch_triggered()
         if(repeat_environment)
         {
             CurrentEnvFile=environment_start;
-            int environment_mode=0;
-            if (ui->actionOnce->isChecked()) environment_mode=1;
-            if (ui->actionBounce->isChecked()) environment_mode=3;
-            if (ui->actionLoop->isChecked()) environment_mode=2;
             TheSimManager->loadEnvironmentFromFile(environment_mode);
         }
 
@@ -1054,11 +1121,8 @@ void MainWindow::on_actionBatch_triggered()
 
             Report();
             qApp->processEvents();
-            int environment_mode=0;
-            if (ui->actionOnce->isChecked()) environment_mode=1;
-            if (ui->actionBounce->isChecked()) environment_mode=3;
-            if (ui->actionLoop->isChecked()) environment_mode=2;
-            TheSimManager->iterate(environment_mode,ui->actionInterpolate->isChecked());
+
+            TheSimManager->iterate(environment_mode,enviroment_interpolate);
             FRW->MakeRecords();
             i--;
         }
@@ -1229,11 +1293,8 @@ void MainWindow::Report()
     o<<generation; //need to use to avoid int64 issues
     ui->LabelIteration->setText(out);
 
-    out.sprintf("%d",out.toInt()/yearsPerIteration);
-    ui->LabelYears->setText(out);
-
-    out.sprintf("%.3f",(3600000/(atime*yearsPerIteration))/1000000);
-    ui->LabelMyPerHour->setText(out);
+    out.sprintf("%.3f",(3600000/atime)/1000000);
+    ui->LabelIterationsPerHour->setText(out);
 
     //now back to sprintf for convenience
     if (CurrentEnvFile>=EnvFiles.count())
@@ -1288,7 +1349,6 @@ void MainWindow::Report()
 
 void MainWindow::RefreshReport()
 {
-    UpdateTitles();
 
     QTime refreshtimer;
     refreshtimer.restart();
@@ -1366,43 +1426,6 @@ void MainWindow::RefreshReport()
 
 }
 
-void MainWindow::UpdateTitles()
-{
-    if (ui->actionPopulation_Count->isChecked())
-        ui->LabelVis->setText("Population Count");
-
-    if (ui->actionMean_fitness->isChecked())
-        ui->LabelVis->setText("Mean Fitness");
-
-
-    if (ui->actionGenome_as_colour->isChecked())
-        ui->LabelVis->setText("Coding Genome bitcount as colour (modal critter)");
-
-    if (ui->actionNonCoding_genome_as_colour->isChecked())
-        ui->LabelVis->setText("Non-Coding Genome bitcount as colour (modal critter)");
-
-    if (ui->actionSpecies->isChecked())
-        ui->LabelVis->setText("Species");
-
-    if (ui->actionGene_Frequencies_012->isChecked())
-        ui->LabelVis->setText("Frequences genes 0,1,2 (all critters in square)");
-
-    if (ui->actionBreed_Attempts->isChecked())
-        ui->LabelVis->setText("Breed Attempts");
-
-    if (ui->actionBreed_Fails->isChecked())
-        ui->LabelVis->setText("Breed Fails");
-
-    if (ui->actionSettles->isChecked())
-        ui->LabelVis->setText("Successful Settles");
-
-    if (ui->actionSettle_Fails->isChecked())
-        ui->LabelVis->setText("Breed Fails (red) and Settle Fails (green)");
-
-    if (ui->actionBreed_Fails_2->isChecked())
-        ui->LabelVis->setText("Breed Fails 2 (unused?)");
-}
-
 int MainWindow::ScaleFails(int fails, float gens)
 {
     //scale colour of fail count, correcting for generations, and scaling high values to something saner
@@ -1415,22 +1438,58 @@ int MainWindow::ScaleFails(int fails, float gens)
     return (int)ffails;
 }
 
+
+void MainWindow::on_populationWindowComboBox_currentIndexChanged(int index)
+{
+    // 0 = Population count
+    // 1 = Mean fitnessFails (R-Breed, G=Settle)
+    // 2 = Coding genome as colour
+    // 3 = NonCoding genome as colour
+    // 4 = Gene Frequencies
+    // 5 = Breed Attempts
+    // 6 = Breed Fails
+    // 7 = Settles
+    // 8 = Settle Fails
+    // 9 = Breed Fails 2
+    // 10 = Species
+    int currentSelectedMode = ui->populationWindowComboBox->itemData(index).toInt();
+    Q_UNUSED(currentSelectedMode);
+
+    //view_mode_changed();
+    RefreshPopulations();
+}
+
 void MainWindow::RefreshPopulations()
 //Refreshes of left window - also run species ident
 {
-
     //RJG - make path if required - this way as if user adds file name to path, this will create a subfolder with the same file name as logs
     QString save_path(path->text());
     if(!save_path.endsWith(QDir::separator()))save_path.append(QDir::separator());
     if(batch_running)
-        {
+    {
         save_path.append(QString("Images_run_%1").arg(runs, 4, 10, QChar('0')));
         save_path.append(QDir::separator());
-        }
+    }
     QDir save_dir(save_path);
 
-    //check to see what the mode is
-    if (ui->actionPopulation_Count->isChecked()||save_population_count->isChecked())
+    // 0 = Population count
+    // 1 = Mean fitness
+    // 2 = Coding genome as colour
+    // 3 = NonCoding genome as colour
+    // 4 = Gene Frequencies
+    // 5 = Breed Attempts
+    // 6 = Breed Fails
+    // 7 = Settles
+    // 8 = Settle Fails === Fails (R-Breed, G=Settle)
+    // 9 = Breed Fails 2
+    // 10 = Species
+
+    //ARTS - Check to see what the mode is from the Population Window QComboBox; return the data as int.
+    int currentSelectedMode = ui->populationWindowComboBox->itemData(ui->populationWindowComboBox->currentIndex()).toInt();
+
+    // (0) Population Count
+    //if (ui->actionPopulation_Count->isChecked()||save_population_count->isChecked())
+    if (currentSelectedMode==0||save_population_count->isChecked())
     {
         //Popcount
         int bigcount=0;
@@ -1447,13 +1506,15 @@ void MainWindow::RefreshPopulations()
             if (count>255) count=255;
             pop_image->setPixel(n,m,count);
         }
-        if (ui->actionPopulation_Count->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        //if (ui->actionPopulation_Count->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        if (currentSelectedMode==0)pop_item->setPixmap(QPixmap::fromImage(*pop_image));
         if (save_population_count->isChecked())
-                 if(save_dir.mkpath("population/"))
-                             pop_image_colour->save(QString(save_dir.path()+"/population/EvoSim_population_it_%1.png").arg(generation, 7, 10, QChar('0')));
+            if(save_dir.mkpath("population/"))
+                pop_image_colour->save(QString(save_dir.path()+"/population/EvoSim_population_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
-    if (ui->actionMean_fitness->isChecked()||save_mean_fitness->isChecked())
+    // (1) Fitness
+    if (currentSelectedMode==1||save_mean_fitness->isChecked())
     {
         //Popcount
         int multiplier=255/settleTolerance;
@@ -1471,13 +1532,14 @@ void MainWindow::RefreshPopulations()
             pop_image->setPixel(n,m,(totalfit[n][m] * multiplier) / count);
 
         }
-        if (ui->actionMean_fitness->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        if (currentSelectedMode==1)pop_item->setPixmap(QPixmap::fromImage(*pop_image));
         if (save_mean_fitness->isChecked())
-                 if(save_dir.mkpath("fitness/"))
-                             pop_image_colour->save(QString(save_dir.path()+"/fitness/EvoSim_mean_fitness_it_%1.png").arg(generation, 7, 10, QChar('0')));
+            if(save_dir.mkpath("fitness/"))
+                pop_image_colour->save(QString(save_dir.path()+"/fitness/EvoSim_mean_fitness_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
-    if (ui->actionGenome_as_colour->isChecked()||save_coding_genome_as_colour->isChecked())
+    // (2) Genome as colour
+    if (currentSelectedMode==2||save_coding_genome_as_colour->isChecked())
     {
         //find modal genome in each square, convert to colour
         for (int n=0; n<gridX; n++)
@@ -1540,42 +1602,14 @@ void MainWindow::RefreshPopulations()
 
        }
 
-       if (ui->actionGenome_as_colour->isChecked()) pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
-       if (save_coding_genome_as_colour->isChecked())
-                if(save_dir.mkpath("coding/"))
-                            pop_image_colour->save(QString(save_dir.path()+"/coding/EvoSim_coding_genome_it_%1.png").arg(generation, 7, 10, QChar('0')));
+        if (currentSelectedMode==2) pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if (save_coding_genome_as_colour->isChecked())
+            if(save_dir.mkpath("coding/"))
+            pop_image_colour->save(QString(save_dir.path()+"/coding/EvoSim_coding_genome_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
-    if (ui->actionSpecies->isChecked()||save_species->isChecked()) //do visualisation if necessary
-    {
-        for (int n=0; n<gridX; n++)
-        for (int m=0; m<gridY; m++)
-        {
-
-            if (totalfit[n][m]==0) pop_image_colour->setPixel(n,m,0); //black if square is empty
-            else
-            {
-                quint64 thisspecies=0;
-                for (int c=0; c<slotsPerSq; c++)
-                {
-                    if (critters[n][m][c].age>0)
-                    {
-                        thisspecies=critters[n][m][c].speciesid;
-                        break;
-                    }
-                }
-
-                pop_image_colour->setPixel(n,m,species_colours[thisspecies % 65536]);
-            }
-        }
-         if (ui->actionSpecies->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
-         if (save_species->isChecked())
-                  if(save_dir.mkpath("species/"))
-                              pop_image_colour->save(QString(save_dir.path()+"/species/EvoSim_species_it_%1.png").arg(generation, 7, 10, QChar('0')));
-
-    }
-
-    if (ui->actionNonCoding_genome_as_colour->isChecked()||save_non_coding_genome_as_colour->isChecked())
+    // (3) Non-coding Genome
+    if (currentSelectedMode==3||save_non_coding_genome_as_colour->isChecked())
     {
         //find modal genome in each square, convert non-coding to colour
         for (int n=0; n<gridX; n++)
@@ -1637,14 +1671,15 @@ void MainWindow::RefreshPopulations()
                 pop_image_colour->setPixel(n,m,qRgb(r, g, b));
             }
        }
-        if(ui->actionNonCoding_genome_as_colour->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
-        if(save_non_coding_genome_as_colour->isChecked())
-                 if(save_dir.mkpath("non_coding/"))
-                             pop_image_colour->save(QString(save_dir.path()+"/non_coding/EvoSim_non_coding_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
+        if(currentSelectedMode==3)pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if(save_non_coding_genome_as_colour->isChecked())
+            if(save_dir.mkpath("non_coding/"))
+                 pop_image_colour->save(QString(save_dir.path()+"/non_coding/EvoSim_non_coding_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
-    if (ui->actionGene_Frequencies_012->isChecked()||save_gene_frequencies->isChecked())
+    // (4) Gene Frequencies
+    if (currentSelectedMode==4||save_gene_frequencies->isChecked())
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -1673,15 +1708,16 @@ void MainWindow::RefreshPopulations()
                 pop_image_colour->setPixel(n,m,qRgb(r, g, b));
             }
           }
-          if (ui->actionGene_Frequencies_012->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
-          if(save_gene_frequencies->isChecked())
-                 if(save_dir.mkpath("gene_freq/"))
-                             pop_image_colour->save(QString(save_dir.path()+"/gene_freq/EvoSim_gene_freq_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
+        if (currentSelectedMode==4)pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if(save_gene_frequencies->isChecked())
+            if(save_dir.mkpath("gene_freq/"))
+                pop_image_colour->save(QString(save_dir.path()+"/gene_freq/EvoSim_gene_freq_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
+    // (5) Breed Attempts
     //RJG - No save option as no longer in the menu as an option.
-    if (ui->actionBreed_Attempts->isChecked())
+    if (currentSelectedMode==5)
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -1694,8 +1730,9 @@ void MainWindow::RefreshPopulations()
         pop_item->setPixmap(QPixmap::fromImage(*pop_image));
     }
 
+    // (6) Breed Fails
     //RJG - No save option as no longer in the menu as an option.
-    if (ui->actionBreed_Fails->isChecked())
+    if (currentSelectedMode==6)
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -1711,7 +1748,8 @@ void MainWindow::RefreshPopulations()
         pop_item->setPixmap(QPixmap::fromImage(*pop_image));
     }
 
-    if (ui->actionSettles->isChecked()||save_settles->isChecked())
+    // (7) Settles
+    if (currentSelectedMode==7||save_settles->isChecked())
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -1722,15 +1760,15 @@ void MainWindow::RefreshPopulations()
             pop_image->setPixel(n,m,value);
         }
 
-       if(ui->actionSettles->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image));
-       if(save_settles->isChecked())
-               if(save_dir.mkpath("settles/"))
-                           pop_image_colour->save(QString(save_dir.path()+"/settles/EvoSim_settles_it_%1.png").arg(generation, 7, 10, QChar('0')));
-
+        if(currentSelectedMode==7)pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+        if(save_settles->isChecked())
+            if(save_dir.mkpath("settles/"))
+                pop_image_colour->save(QString(save_dir.path()+"/settles/EvoSim_settles_it_%1.png").arg(generation, 7, 10, QChar('0')));
     }
 
-    if (ui->actionSettle_Fails->isChecked()||save_fails_settles->isChecked())
-    //this now combines breed fails (red) and settle fails (green)
+    // (8) Settle Fails === Fails
+    //RJG - this now combines breed fails (red) and settle fails (green)
+    if (currentSelectedMode==8||save_fails_settles->isChecked())
     {
         //work out max and ratios
         /*int maxbf=1;
@@ -1760,14 +1798,16 @@ void MainWindow::RefreshPopulations()
             int g=ScaleFails(settlefails[n][m],gens);
             pop_image_colour->setPixel(n,m,qRgb(r, g, 0));
         }
-        if(ui->actionSettle_Fails->isChecked())pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+
+        if(currentSelectedMode==8)pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
         if(save_fails_settles->isChecked())
-                if(save_dir.mkpath("settles_fails/"))
-                            pop_image_colour->save(QString(save_dir.path()+"/settles_fails/EvoSim_settles_fails_it_%1.png").arg(generation, 7, 10, QChar('0')));
+            if(save_dir.mkpath("settles_fails/"))
+                pop_image_colour->save(QString(save_dir.path()+"/settles_fails/EvoSim_settles_fails_it_%1.png").arg(generation, 7, 10, QChar('0')));
 
     }
 
-    if (ui->actionBreed_Fails_2->isChecked())
+    // (9) Breed Fails 2
+    if (currentSelectedMode==9)
     {
         //Popcount
         for (int n=0; n<gridX; n++)
@@ -1782,6 +1822,37 @@ void MainWindow::RefreshPopulations()
             }
         }
         pop_item->setPixmap(QPixmap::fromImage(*pop_image));
+    }
+
+    // (10) Species
+    if (currentSelectedMode==10||save_species->isChecked()) //do visualisation if necessary
+    {
+        for (int n=0; n<gridX; n++)
+        for (int m=0; m<gridY; m++)
+        {
+
+            if (totalfit[n][m]==0) pop_image_colour->setPixel(n,m,0); //black if square is empty
+            else
+            {
+                quint64 thisspecies=0;
+                for (int c=0; c<slotsPerSq; c++)
+                {
+                    if (critters[n][m][c].age>0)
+                    {
+                        thisspecies=critters[n][m][c].speciesid;
+                        break;
+                    }
+                }
+
+                pop_image_colour->setPixel(n,m,species_colours[thisspecies % 65536]);
+            }
+        }
+
+        if (currentSelectedMode==10)pop_item->setPixmap(QPixmap::fromImage(*pop_image_colour));
+        if (save_species->isChecked())
+            if(save_dir.mkpath("species/"))
+                pop_image_colour->save(QString(save_dir.path()+"/species/EvoSim_species_it_%1.png").arg(generation, 7, 10, QChar('0')));
+
     }
 
     lastReport=generation;
@@ -1806,7 +1877,8 @@ void MainWindow::RefreshEnvironment()
     env_item->setPixmap(QPixmap::fromImage(*env_image));
     if(save_environment->isChecked())
         if(save_dir.mkpath("environment/"))
-                    env_image->save(QString(save_dir.path()+"/environment/EvoSim_environment_it_%1.png").arg(generation, 7, 10, QChar('0')));
+            env_image->save(QString(save_dir.path()+"/environment/EvoSim_environment_it_%1.png").arg(generation, 7, 10, QChar('0')));
+
     //Draw on fossil records
     envscene->DrawLocations(FRW->FossilRecords,ui->actionShow_positions->isChecked());
 }
@@ -1823,14 +1895,6 @@ void MainWindow::Resize()
     ui->GV_Population->fitInView(pop_item,Qt::KeepAspectRatio);
     ui->GV_Environment->fitInView(env_item,Qt::KeepAspectRatio);
 }
-
-//ARTS - action triggered to update the population window on view mode change
-void MainWindow::view_mode_changed(QAction * /* unused */)
-{
-    UpdateTitles();
-    RefreshPopulations();
-}
-
 
 void MainWindow::gui_checkbox_state_changed(bool dont_update)
 {
@@ -1858,7 +1922,7 @@ void MainWindow::dump_run_data()
 
     QString FinalLoggingFile(path->text());
     if(!FinalLoggingFile.endsWith(QDir::separator()))FinalLoggingFile.append(QDir::separator());
-    FinalLoggingFile.append("REVOSIM_end_run_log");
+    FinalLoggingFile.append("REvoSim_end_run_log");
     if(batch_running)FinalLoggingFile.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
     FinalLoggingFile.append(".txt");
     QFile outputfile(FinalLoggingFile);
@@ -1874,6 +1938,25 @@ void MainWindow::dump_run_data()
     out<<"\n\nSpecies data:\n\n";
     out<<HandleAnalysisTool(ANALYSIS_TOOL_CODE_DUMP_DATA);
     outputfile.close();
+}
+
+void MainWindow::environment_mode_changed(int change_environment_mode, bool update_gui)
+{
+    int new_environment_mode=ENV_MODE_STATIC;
+    if (change_environment_mode==ENV_MODE_ONCE) new_environment_mode=ENV_MODE_ONCE;
+    if (change_environment_mode==ENV_MODE_LOOP) new_environment_mode=ENV_MODE_LOOP;
+    if (change_environment_mode==ENV_MODE_BOUNCE) new_environment_mode=ENV_MODE_BOUNCE;
+
+    if(update_gui)
+        {
+        if (change_environment_mode==ENV_MODE_STATIC)environmentModeStaticButton->setChecked(true);
+        if (change_environment_mode==ENV_MODE_ONCE)environmentModeOnceButton->setChecked(true);
+        if (change_environment_mode==ENV_MODE_LOOP)environmentModeLoopButton->setChecked(true);
+        if (change_environment_mode==ENV_MODE_BOUNCE)environmentModeBounceButton->setChecked(true);
+
+        }
+
+    environment_mode=new_environment_mode;
 }
 
 void MainWindow::species_mode_changed(int change_species_mode)
@@ -1985,45 +2068,45 @@ void MainWindow::redoImages(int oldrows, int oldcols)
 
 void MainWindow::on_actionSettings_triggered()
 {
-    if(settings_dock->isVisible())
-        {
-        settings_dock->hide();
+    if(simulationSettingsDock->isVisible())
+    {
+        simulationSettingsDock->hide();
         settingsButton->setChecked(false);
-        }
-    else
-        {
-        settings_dock->show();
+    } else
+    {
+        simulationSettingsDock->show();
+        simulationSettingsDock->raise();
         settingsButton->setChecked(true);
-        }
+    }
 }
 
 
 void MainWindow::orgSettings_triggered()
 {
-    if(org_settings_dock->isVisible())
-        {
-        org_settings_dock->hide();
-        orgSettingsButton->setChecked(false);
-        }
-    else
-        {
-        org_settings_dock->show();
+    if(organismSettingsDock->isVisible())
+    {
+        organismSettingsDock->hide();
+        orgSettingsButton->setChecked(false);        
+    } else
+    {
+        organismSettingsDock->show();
+        organismSettingsDock->raise();
         orgSettingsButton->setChecked(true);
-        }
+    }
 }
 
 void MainWindow::logSettings_triggered()
 {
-    if(output_settings_dock->isVisible())
-        {
-        output_settings_dock->hide();
+    if(outputSettingsDock->isVisible())
+    {
+        outputSettingsDock->hide();
         logSettingsButton->setChecked(false);
-        }
-    else
-        {
-        output_settings_dock->show();
+    } else
+    {
+        outputSettingsDock->show();
+        outputSettingsDock->raise();
         logSettingsButton->setChecked(true);
-        }
+    }
 }
 
 
@@ -2042,22 +2125,22 @@ void MainWindow::on_actionCount_Peaks_triggered()
 
     QString count_peaks_file(path->text());
     if(!count_peaks_file.endsWith(QDir::separator()))count_peaks_file.append(QDir::separator());
-    count_peaks_file.append("REVOSIM_count_peaks.txt");
+    count_peaks_file.append("REvoSim_count_peaks.txt");
     QFile outputfile(count_peaks_file);
     outputfile.open(QIODevice::WriteOnly|QIODevice::Text);
     QTextStream out(&outputfile);
 
-    out<<"REVOSIM Peak Counting ";
+    out<<"REvoSim Peak Counting ";
     QDateTime t(QDateTime::currentDateTime());
     out<<t.toString(Qt::ISODate)<< "\n\n===================\n\n";
-    out<<"\nBelow is a histogram showing the different fitnesses for all potential 32-bit organisms in REVOSIM under the user-defined RGB levels.\n";
+    out<<"\nBelow is a histogram showing the different fitnesses for all potential 32-bit organisms in REvoSim under the user-defined RGB levels.\n";
     out<<"\n\n===================\n\n";
     out<<peaks;
 
     outputfile.close();
 }
 
-bool  MainWindow::on_actionEnvironment_Files_triggered()
+bool MainWindow::on_actionEnvironment_Files_triggered()
 {
     //Select files
     QStringList files = QFileDialog::getOpenFileNames(
@@ -2070,23 +2153,19 @@ bool  MainWindow::on_actionEnvironment_Files_triggered()
 
     bool notsquare=false, different_size=false;
     for(int i=0;i<files.length();i++)
-        {
+    {
         QImage LoadImage(files[i]);
         int x=LoadImage.width();
         int y=LoadImage.height();
         if(x!=y)notsquare=true;
         if(x!=100||y!=100)different_size=true;
-        }
-        if(notsquare||different_size)QMessageBox::warning(this,"FYI","For speed EvoSim currently has static arrays for the environment, which limits out of the box functionality to 100 x 100 square environments. "
-        "It looks like some of your Environment images don't meet this requirement. Anything smaller than 100 x 100 will be stretched (irrespective of aspect ratio) to 100x100. Anything bigger, and we'll use the top left corner. Should you wish to use a different size environment, please email RJG or MDS.");
+    }
+    if(notsquare||different_size)QMessageBox::warning(this,"FYI","For speed REvoSim currently has static arrays for the environment, which limits out of the box functionality to 100 x 100 square environments. "
+    "It looks like some of your Environment images don't meet this requirement. Anything smaller than 100 x 100 will be stretched (irrespective of aspect ratio) to 100x100. Anything bigger, and we'll use the top left corner. Should you wish to use a different size environment, please email RJG or MDS.");
 
     EnvFiles = files;
     CurrentEnvFile=0;
-    int enviroment_mode=0;
-    if (ui->actionOnce->isChecked()) enviroment_mode=1;
-    if (ui->actionBounce->isChecked()) enviroment_mode=3;
-    if (ui->actionLoop->isChecked()) enviroment_mode=2;
-    TheSimManager->loadEnvironmentFromFile(enviroment_mode);
+    TheSimManager->loadEnvironmentFromFile(environment_mode);
     RefreshEnvironment();
 
     //RJG - Reset for this new environment
@@ -2105,12 +2184,10 @@ void MainWindow::on_actionChoose_Log_Directory_triggered()
 {
     QString dirname = QFileDialog::getExistingDirectory(this,"Select directory to log fossil record to");
 
-
     if (dirname.length()==0) return;
     FRW->LogDirectory=dirname;
     FRW->LogDirectoryChosen=true;
     FRW->HideWarnLabel();
-
 }
 
 //RJG - Fitness logging to file not sorted on save as yet.
@@ -2129,7 +2206,6 @@ void MainWindow::on_actionSave_triggered()
     outfile.open(QIODevice::WriteOnly|QIODevice::Text);
 
     QDataStream out(&outfile);
-
 
     out<<QString("EVOSIM file");
     out<<(int)FILEVERSION;
@@ -2153,25 +2229,11 @@ void MainWindow::on_actionSave_triggered()
     out<<RefreshRate;
     out<<generation;
 
-    //action group settings
-    int emode=0;
-    if (ui->actionOnce->isChecked()) emode=1;
-    if (ui->actionBounce->isChecked()) emode=3;
-    if (ui->actionLoop->isChecked()) emode=2;
-    out<<emode;
+    //Environment mode
+    out<<environment_mode;
 
     int vmode=0;
-    if (ui->actionPopulation_Count->isChecked()) vmode=0;
-    if (ui->actionMean_fitness->isChecked()) vmode=1;
-    if (ui->actionGenome_as_colour->isChecked()) vmode=2;
-    if (ui->actionNonCoding_genome_as_colour->isChecked()) vmode=3;
-    if (ui->actionGene_Frequencies_012->isChecked()) vmode=4;
-    if (ui->actionBreed_Attempts->isChecked()) vmode=5;
-    if (ui->actionBreed_Fails->isChecked()) vmode=6;
-    if (ui->actionSettles->isChecked()) vmode=7;
-    if (ui->actionSettle_Fails->isChecked()) vmode=8;
-    if (ui->actionBreed_Fails_2->isChecked()) vmode=9;
-    if (ui->actionSpecies->isChecked()) vmode=10;
+    vmode = ui->populationWindowComboBox->itemData(ui->populationWindowComboBox->currentIndex()).toInt();
 
     out<<vmode;
 
@@ -2236,9 +2298,6 @@ void MainWindow::on_actionSave_triggered()
     FRW->WriteFiles(); //make sure all is flushed
     out<<FRW->SaveState();
 
-    //New Year Per Iteration variable
-    out<<yearsPerIteration;
-
     //Some more stuff that was missing from first version
     out<<ui->actionShow_positions->isChecked();
 
@@ -2259,7 +2318,7 @@ void MainWindow::on_actionSave_triggered()
     out<<ui->actionGenomeComparison->isChecked();
 
     //interpolate environment stuff
-    out<<ui->actionInterpolate->isChecked();
+    out<<enviroment_interpolate;
     for (int i=0; i<gridX; i++)
     for (int j=0; j<gridY; j++)
     {
@@ -2336,7 +2395,6 @@ void MainWindow::on_actionLoad_triggered()
 
     if (stopflag==false) stopflag=true;
 
-
     //Otherwise - serialise all my crap
     QFile infile(filename);
     infile.open(QIODevice::ReadOnly);
@@ -2346,7 +2404,7 @@ void MainWindow::on_actionLoad_triggered()
     QString temp;
     in>>temp;
     if (temp!="EVOSIM file")
-    {QMessageBox::warning(this,"","Not an EVOSIM file"); return;}
+    {QMessageBox::warning(this,"","Not an REvoSim file"); return;}
 
     int version;
     in>>version;
@@ -2373,26 +2431,34 @@ void MainWindow::on_actionLoad_triggered()
     in>>RefreshRate;
     in>>generation;
 
-    int emode;
-    in>>emode;
-    if (emode==0) ui->actionStatic->setChecked(true);
-    if (emode==1) ui->actionOnce->setChecked(true);
-    if (emode==3) ui->actionBounce->setChecked(true);
-    if (emode==2) ui->actionLoop->setChecked(true);
+    // 0 = Static
+    // 1 = Once
+    // 2 = Looped (default)
+    // 3 = Bounce
+    environment_mode=ENV_MODE_LOOP;
+    in>>environment_mode;
+    if (environment_mode==0) environmentModeStaticButton->setChecked(true);
+    if (environment_mode==1) environmentModeOnceButton->setChecked(true);
+    if (environment_mode==2) environmentModeLoopButton->setChecked(true);
+    if (environment_mode==3) environmentModeBounceButton->setChecked(true);
 
+    // 0 = Population count
+    // 1 = Mean fitnessFails (R-Breed, G=Settle)
+    // 2 = Coding genome as colour
+    // 3 = NonCoding genome as colour
+    // 4 = Gene Frequencies
+    // 5 = Breed Attempts
+    // 6 = Breed Fails
+    // 7 = Settles
+    // 8 = Settle Fails
+    // 9 = Breed Fails 2
+    // 10 = Species
     int vmode;
     in>>vmode;
-    if (vmode==0) ui->actionPopulation_Count->setChecked(true);
-    if (vmode==1) ui->actionMean_fitness->setChecked(true);
-    if (vmode==2) ui->actionGenome_as_colour->setChecked(true);
-    if (vmode==3) ui->actionNonCoding_genome_as_colour->setChecked(true);
-    if (vmode==4) ui->actionGene_Frequencies_012->setChecked(true);
-    if (vmode==5) ui->actionBreed_Attempts->setChecked(true);
-    if (vmode==6) ui->actionBreed_Fails->setChecked(true);
-    if (vmode==7) ui->actionSettles->setChecked(true);
-    if (vmode==8) ui->actionSettle_Fails->setChecked(true);
-    if (vmode==9) ui->actionBreed_Fails_2->setChecked(true);
-    if (vmode==10) ui->actionSpecies->setChecked(true);
+    int index = ui->populationWindowComboBox->findData(vmode);
+    if ( index != -1 ) { // -1 for not found
+       ui->populationWindowComboBox->setCurrentIndex(index);
+    }
 
     int rmode;
     in>>rmode;
@@ -2463,9 +2529,6 @@ void MainWindow::on_actionLoad_triggered()
     in>>Temp;
     FRW->RestoreState(Temp);
 
-    //New Year Per Iteration variable
-    in>>yearsPerIteration;
-
     //Some more stuff that was missing from first version
     bool btemp;
     in>>btemp;
@@ -2489,8 +2552,8 @@ void MainWindow::on_actionLoad_triggered()
     in>>btemp; ui->actionGenomeComparison->setChecked(btemp);
 
     //interpolate environment stuff
-    in>>btemp;
-    ui->actionInterpolate->setChecked(btemp);
+    enviroment_interpolate = true;
+    in>>enviroment_interpolate;
 
     for (int i=0; i<gridX; i++)
     for (int j=0; j<gridY; j++)
@@ -2649,14 +2712,12 @@ void MainWindow::on_actionSet_Inactive_triggered()
 
 void MainWindow::on_actionSet_Sparsity_triggered()
 {
-
     bool ok;
 
     int value=QInputDialog::getInt(this,"","Sparsity",10,1,100000,1,&ok);
     if (!ok) return;
 
     FRW->SelectedSparse(value);
-
 }
 
 void MainWindow::on_actionShow_positions_triggered()
@@ -2729,7 +2790,6 @@ void MainWindow::CalcSpecies()
             lastSpeciesCalc=generation;
         }
         */
-
     }
 }
 
@@ -2742,7 +2802,7 @@ void MainWindow::WriteLog()
     {
         SpeciesLoggingFile=path->text();
         if(!SpeciesLoggingFile.endsWith(QDir::separator()))SpeciesLoggingFile.append(QDir::separator());
-        SpeciesLoggingFile.append("REVOSIM_log");
+        SpeciesLoggingFile.append("REvoSim_log");
         if(batch_running)SpeciesLoggingFile.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
         SpeciesLoggingFile.append(".txt");
         QFile outputfile(SpeciesLoggingFile);
@@ -2806,7 +2866,7 @@ void MainWindow::WriteLog()
     //Need to add this to GUI
     if (ui->actionRecombination_logging->isChecked())
     {
-        QString rFile(path->text()+"EvoSim_recombination");
+        QString rFile(path->text()+"REvoSim_recombination");
         if(batch_running)
             rFile.append(QString("_run_%1").arg(runs, 4, 10, QChar('0')));
         rFile.append(".txt");
@@ -3093,12 +3153,12 @@ QString MainWindow::print_settings()
     settings_out<<"; Slots per square: "<<slotsPerSq;
     settings_out<<"; Fitness target: "<<target;
     settings_out<<"; Environmental change rate: "<<envchangerate;
-    settings_out<<"; Years per iteration: "<<yearsPerIteration;
     settings_out<<"; Minimum species size:"<<minspeciessize;
-
+    settings_out<<"; Environment mode:"<<environment_mode;
 
     settings_out<<". Bools - recalculate fitness: "<<recalcFitness;
     settings_out<<"; Toroidal environment: "<<toroidal;
+    settings_out<<"; Interpolate environment: "<<enviroment_interpolate;
     settings_out<<"; Nonspatial setling: "<<nonspatial;
     settings_out<<"; Enforce max diff to breed:"<<breeddiff;
     settings_out<<"; Only breed within species:"<<breedspecies;
@@ -3113,17 +3173,17 @@ QString MainWindow::print_settings()
     return settings;
 }
 
-//These still need testing and conecting to signal
+//RJG - Save and load settings (but not critter info, masks etc.)
 void MainWindow::load_settings()
 {
-    QString settings_filename=QFileDialog::getOpenFileName(this, tr("Open File"));
+    QString settings_filename=QFileDialog::getOpenFileName(this, tr("Open File"),path->text(),"XML files (*.xml)");
+    if (settings_filename.length()<3) return;
     QFile settings_file(settings_filename);
     if(!settings_file.open(QIODevice::ReadOnly))
             {
-            QMessageBox::warning(0,"Erk","There seems to have been an error opening the file.");
+            setStatusBarText("Error opening file.");
             return;
             }
-
 
            QXmlStreamReader settings_file_in(&settings_file);
 
@@ -3139,62 +3199,108 @@ void MainWindow::load_settings()
                     {
                        //Ints
                        if(settings_file_in.name() == "revosim")continue;
-                       if(settings_file_in.name() == "gridX")gridX=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "gridY")gridY=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "settleTolerance")settleTolerance=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "slotsPerSq")slotsPerSq=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "startAge")startAge=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "dispersal")dispersal=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "food")food=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "breedCost")breedCost=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "mutate")mutate=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "pathogen_mutate")pathogen_mutate=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "pathogen_frequency")pathogen_frequency=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "maxDiff")maxDiff=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "breedThreshold")breedThreshold=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "target")target=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "envchangerate")envchangerate=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "yearsPerIteration")yearsPerIteration=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "gridX"){gridX=settings_file_in.readElementText().toInt();
+                            gridX_spin->setValue(gridX);}
+                       if(settings_file_in.name() == "gridY"){gridY=settings_file_in.readElementText().toInt();
+                            gridY_spin->setValue(gridY);}
+                       if(settings_file_in.name() == "settleTolerance"){settleTolerance=settings_file_in.readElementText().toInt();
+                            settleTolerance_spin->setValue(settleTolerance);}
+                       if(settings_file_in.name() == "slotsPerSq"){slotsPerSq=settings_file_in.readElementText().toInt();
+                            slots_spin->setValue(slotsPerSq);}
+                       if(settings_file_in.name() == "startAge"){startAge=settings_file_in.readElementText().toInt();
+                            startAge_spin->setValue(startAge);}
+                       if(settings_file_in.name() == "dispersal"){dispersal=settings_file_in.readElementText().toInt();
+                            dispersal_spin->setValue(dispersal);}
+                       if(settings_file_in.name() == "food"){food=settings_file_in.readElementText().toInt();
+                            energy_spin->setValue(food);}
+                       if(settings_file_in.name() == "breedCost"){breedCost=settings_file_in.readElementText().toInt();
+                            breedCost_spin->setValue(breedCost);}
+                       if(settings_file_in.name() == "mutate"){mutate=settings_file_in.readElementText().toInt();
+                            mutate_spin->setValue(mutate);}
+                       if(settings_file_in.name() == "pathogen_mutate"){pathogen_mutate=settings_file_in.readElementText().toInt();
+                            pathogen_mutate_spin->setValue(pathogen_mutate);}
+                       if(settings_file_in.name() == "pathogen_frequency"){pathogen_frequency=settings_file_in.readElementText().toInt();
+                            pathogen_frequency_spin->setValue(pathogen_frequency);}
+                       if(settings_file_in.name() == "maxDiff"){maxDiff=settings_file_in.readElementText().toInt();
+                            maxDiff_spin->setValue(maxDiff);}
+                       if(settings_file_in.name() == "breedThreshold"){breedThreshold=settings_file_in.readElementText().toInt();
+                            breedThreshold_spin->setValue(breedThreshold);}
+                       if(settings_file_in.name() == "target"){target=settings_file_in.readElementText().toInt();
+                            target_spin->setValue(target);}
+                       if(settings_file_in.name() == "envchangerate"){envchangerate=settings_file_in.readElementText().toInt();
+                            environment_rate_spin->setValue(envchangerate);}
+                       if(settings_file_in.name() == "RefreshRate"){RefreshRate=settings_file_in.readElementText().toInt();
+                            refreshRateSpin->setValue(RefreshRate);}
+                       if(settings_file_in.name() == "environment_mode")environment_mode_changed(settings_file_in.readElementText().toInt(),true);
+                       //No Gui options for the remaining settings as yet.
                        if(settings_file_in.name() == "speciesSamples")speciesSamples=settings_file_in.readElementText().toInt();
                        if(settings_file_in.name() == "speciesSensitivity")speciesSensitivity=settings_file_in.readElementText().toInt();
                        if(settings_file_in.name() == "timeSliceConnect")timeSliceConnect=settings_file_in.readElementText().toInt();
                        if(settings_file_in.name() == "minspeciessize")minspeciessize=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "pathogen_mutate")pathogen_mutate=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "pathogen_frequency")pathogen_frequency=settings_file_in.readElementText().toInt();
 
                        //Bools
-                       if(settings_file_in.name() == "recalcFitness")recalcFitness=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "toroidal")toroidal=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "nonspatial")nonspatial=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "breeddiff")breeddiff=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "breedspecies")breedspecies=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "path_on")path_on=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "variableMutate")variableMutate=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "allowexcludewithissue")allowexcludewithissue=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "sexual")sexual=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "asexual")asexual=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "variableBreed")variableBreed=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "logging")logging=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "gui")gui=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "path_on")path_on=settings_file_in.readElementText().toInt();
+                       if(settings_file_in.name() == "recalcFitness"){recalcFitness=settings_file_in.readElementText().toInt();
+                            recalcFitness_checkbox->setChecked(recalcFitness);}
+                       if(settings_file_in.name() == "toroidal"){toroidal=settings_file_in.readElementText().toInt();
+                            toroidal_checkbox->setChecked(toroidal);}
+                       if(settings_file_in.name() == "nonspatial"){nonspatial=settings_file_in.readElementText().toInt();
+                            nonspatial_checkbox->setChecked(nonspatial);}
+                       if(settings_file_in.name() == "breeddiff"){breeddiff=settings_file_in.readElementText().toInt();
+                            breeddiff_checkbox->setChecked(breeddiff);}
+                       if(settings_file_in.name() == "breedspecies"){breedspecies=settings_file_in.readElementText().toInt();
+                            breedspecies_checkbox->setChecked(breedspecies);}
+                       if(settings_file_in.name() == "path_on"){path_on=settings_file_in.readElementText().toInt();
+                            pathogens_checkbox->setChecked(path_on);}
+                       if(settings_file_in.name() == "variableMutate"){variableMutate=settings_file_in.readElementText().toInt();
+                            variable_mutation_checkbox->setChecked(variableMutate);}
+                       if(settings_file_in.name() == "allowexcludewithissue"){allowexcludewithissue=settings_file_in.readElementText().toInt();
+                            exclude_without_issue_checkbox->setChecked(allowexcludewithissue);}
+                       if(settings_file_in.name() == "sexual"){sexual=settings_file_in.readElementText().toInt();
+                            sexual_radio->setChecked(sexual);}
+                       if(settings_file_in.name() == "asexual"){asexual=settings_file_in.readElementText().toInt();
+                            asexual_radio->setChecked(asexual);}
+                       if(settings_file_in.name() == "variableBreed"){variableBreed=settings_file_in.readElementText().toInt();
+                            variableBreed_radio->setChecked(variableBreed);}
+                       if(settings_file_in.name() == "logging"){logging=settings_file_in.readElementText().toInt();
+                            logging_checkbox->setChecked(logging);}
+                       if(settings_file_in.name() == "gui"){gui=settings_file_in.readElementText().toInt();
+                            gui_checkbox->setChecked(gui);}
+                       if(settings_file_in.name() == "enviroment_interpolate"){enviroment_interpolate=settings_file_in.readElementText().toInt();
+                            interpolateCheckbox->setChecked(enviroment_interpolate);}
+                       //No gui options for below
                        if(settings_file_in.name() == "fitnessLoggingToFile")fitnessLoggingToFile=settings_file_in.readElementText().toInt();
-                     }
+                       //Only GUI options
+                       if(settings_file_in.name() == "autodump")autodump_checkbox->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_population_count")save_population_count->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_mean_fitness")save_mean_fitness->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_coding_genome_as_colour")save_coding_genome_as_colour->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_species")save_species->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_non_coding_genome_as_colour")save_non_coding_genome_as_colour->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_gene_frequencies")save_gene_frequencies->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_settles")save_settles->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_fails_settles")save_fails_settles->setChecked(settings_file_in.readElementText().toInt());
+                       if(settings_file_in.name() == "save_environment")save_environment->setChecked(settings_file_in.readElementText().toInt());
+
+                       //Strings
+                       if(settings_file_in.name() == "path")path->setText(settings_file_in.readElementText());
+
+                       }
                }
            // Error
-           if(settings_file_in.hasError()) QMessageBox::warning(0,"Oops","There seems to have been an error reading in the XML file. Not all settings will have been loaded.");
-           else ui->statusBar->showMessage("Loaded settings file");
+           if(settings_file_in.hasError()) setStatusBarText("There seems to have been an error reading in the XML file. Not all settings will have been loaded.");
+           else setStatusBarText("Loaded settings file");
 
            settings_file.close();
 }
 
 void MainWindow::save_settings()
 {
-    QString settings_filename=QFileDialog::getSaveFileName(this, tr("Save file as..."));
-
+    QString settings_filename=QFileDialog::getSaveFileName(this, tr("Save file as..."),QString(path->text()+"REvoSim_settings.xml"));
+    if(!settings_filename.endsWith(".xml"))settings_filename.append(".xml");
     QFile settings_file(settings_filename);
     if(!settings_file.open(QIODevice::WriteOnly|QIODevice::Text))
         {
-            QMessageBox::warning(0, "Error!", "Error opening settings file to write to.");
+            setStatusBarText("Error opening settings file to write to.");
             return;
         }
 
@@ -3267,8 +3373,12 @@ void MainWindow::save_settings()
         settings_file_out.writeCharacters(QString("%1").arg(envchangerate));
         settings_file_out.writeEndElement();
 
-        settings_file_out.writeStartElement("yearsPerIteration");
-        settings_file_out.writeCharacters(QString("%1").arg(yearsPerIteration));
+        settings_file_out.writeStartElement("environment_mode");
+        settings_file_out.writeCharacters(QString("%1").arg(environment_mode));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("RefreshRate");
+        settings_file_out.writeCharacters(QString("%1").arg(RefreshRate));
         settings_file_out.writeEndElement();
 
         settings_file_out.writeStartElement("speciesSamples");
@@ -3285,14 +3395,6 @@ void MainWindow::save_settings()
 
         settings_file_out.writeStartElement("minspeciessize");
         settings_file_out.writeCharacters(QString("%1").arg(minspeciessize));
-        settings_file_out.writeEndElement();
-
-        settings_file_out.writeStartElement("pathogen_mutate");
-        settings_file_out.writeCharacters(QString("%1").arg(pathogen_mutate));
-        settings_file_out.writeEndElement();
-
-        settings_file_out.writeStartElement("pathogen_frequency");
-        settings_file_out.writeCharacters(QString("%1").arg(pathogen_frequency));
         settings_file_out.writeEndElement();
 
         //Bools
@@ -3348,12 +3450,57 @@ void MainWindow::save_settings()
         settings_file_out.writeCharacters(QString("%1").arg(gui));
         settings_file_out.writeEndElement();
 
-        settings_file_out.writeStartElement("path_on");
-        settings_file_out.writeCharacters(QString("%1").arg(gui));
+        settings_file_out.writeStartElement("enviroment_interpolate");
+        settings_file_out.writeCharacters(QString("%1").arg(enviroment_interpolate));
         settings_file_out.writeEndElement();
 
         settings_file_out.writeStartElement("fitnessLoggingToFile");
         settings_file_out.writeCharacters(QString("%1").arg(fitnessLoggingToFile));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("autodump");
+        settings_file_out.writeCharacters(QString("%1").arg(autodump_checkbox->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_population_count");
+        settings_file_out.writeCharacters(QString("%1").arg(save_population_count->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_mean_fitness");
+        settings_file_out.writeCharacters(QString("%1").arg(save_mean_fitness->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_coding_genome_as_colour");
+        settings_file_out.writeCharacters(QString("%1").arg(save_coding_genome_as_colour->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_species");
+        settings_file_out.writeCharacters(QString("%1").arg(save_species->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_non_coding_genome_as_colour");
+        settings_file_out.writeCharacters(QString("%1").arg(save_non_coding_genome_as_colour->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_gene_frequencies");
+        settings_file_out.writeCharacters(QString("%1").arg(save_gene_frequencies->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_settles");
+        settings_file_out.writeCharacters(QString("%1").arg(save_settles->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_fails_settles");
+        settings_file_out.writeCharacters(QString("%1").arg(save_fails_settles->isChecked()));
+        settings_file_out.writeEndElement();
+
+        settings_file_out.writeStartElement("save_environment");
+        settings_file_out.writeCharacters(QString("%1").arg(save_environment->isChecked()));
+        settings_file_out.writeEndElement();
+
+        //Strings
+        settings_file_out.writeStartElement("path");
+        settings_file_out.writeCharacters(path->text());
         settings_file_out.writeEndElement();
 
         settings_file_out.writeEndElement();
@@ -3362,7 +3509,23 @@ void MainWindow::save_settings()
 
         settings_file.close();
 
-        ui->statusBar->showMessage("File saved");
+       setStatusBarText("File saved");
+}
 
+//ARTS - Exit the application
+void MainWindow::on_actionExit_triggered()
+{
+    QApplication::quit();
+}
 
+//ARTS - Trigger to open url to gihub repository
+void MainWindow::on_actionCode_on_GitHub_triggered()
+{
+    QDesktopServices::openUrl(QUrl(QString(GITHUB_URL) + QString(GITREPOSITORY)));
+}
+
+//ARTS - Trigger to open url to online documentation
+void MainWindow::on_actionOnline_User_Manual_triggered()
+{
+    QDesktopServices::openUrl(QUrl(QString(READTHEDOCS_URL)));
 }

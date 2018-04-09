@@ -20,7 +20,8 @@ SOURCES += main.cpp \
     reseed.cpp \
     logspecies.cpp \
     logspeciesdataitem.cpp \
-    about.cpp
+    about.cpp \
+    darkstyletheme.cpp
 HEADERS += mainwindow.h \
     simmanager.h \
     critter.h \
@@ -37,7 +38,8 @@ HEADERS += mainwindow.h \
     reseed.h \
     logspecies.h \
     logspeciesdataitem.h \
-    about.h
+    about.h \
+    darkstyletheme.h
 FORMS += mainwindow.ui \
     fossrecwidget.ui \
     genomecomparison.ui \

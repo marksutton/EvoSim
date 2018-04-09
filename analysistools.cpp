@@ -2,10 +2,10 @@
  * @file
  * Analysis Tools
  *
- * All REVOSIM code is released under the GNU General Public License.
+ * All REvoSim code is released under the GNU General Public License.
  * See LICENSE.md files in the programme directory.
  *
- * All REVOSIM code is Copyright 2018 by Mark Sutton, Russell Garwood,
+ * All REvoSim code is Copyright 2018 by Mark Sutton, Russell Garwood,
  * and Alan R.T. Spencer.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -514,6 +514,9 @@ QString AnalysisTools::Stasis(QString filename, int slot_count, float percentile
           if (spe.end!=spe.start) pval=(100*((spe.end-spe.start)-spe.occurrences))/(spe.end-spe.start);
           else pval=100;
 //          out << "Species: "<<ID << ": " << spe.start << "-"<<spe.end<<" Parent "<<spe.parent<<"  maxsize "<<spe.maxsize<<"  Av size "<<(spe.totalsize/spe.occurrences)<< "  %missing "<<100-pval<< endl;
+
+            //ARTS - compiler warning supression
+            Q_UNUSED(pval);
       }
 
       //Now cull  extinct species without issue
@@ -562,7 +565,10 @@ QString AnalysisTools::Stasis(QString filename, int slot_count, float percentile
          int pval;
          if (spe.end!=spe.start) pval=(100*((spe.end-spe.start)-spe.occurrences))/(spe.end-spe.start);
          else pval=100;
-//         out << "Species: "<<ID << ": " << spe.start << "-"<<spe.end<<" Parent "<<spe.parent<<"  maxsize "<<spe.maxsize<<"  Av size "<<(spe.totalsize/spe.occurrences)<< "  %missing "<<100-pval<<endl;
+//          out << "Species: "<<ID << ": " << spe.start << "-"<<spe.end<<" Parent "<<spe.parent<<"  maxsize "<<spe.maxsize<<"  Av size "<<(spe.totalsize/spe.occurrences)<< "  %missing "<<100-pval<<endl;
+
+            //ARTS - compiler warning supression
+            Q_UNUSED(pval);
      }
 
      //Tree version reordered here, I just create magiclist as a copy of culled list
@@ -1396,4 +1402,23 @@ QString AnalysisTools::DumpData(LogSpecies *root, quint64 min_speciessize, bool 
         return "ERROR - NO PHYLOGENY DATA";
 
     //recurse over species,
+
+    //ARTS - compiler warning supression
+    Q_UNUSED(ID);
+    Q_UNUSED(parent);
+    Q_UNUSED(time_of_first_appearance);
+    Q_UNUSED(time_of_last_appearance);
+    Q_UNUSED(maxsize);
+    Q_UNUSED(generation);
+    Q_UNUSED(sample_genome);
+    Q_UNUSED(size);
+    Q_UNUSED(genomic_diversity);
+    Q_UNUSED(cells_occupied);
+    Q_UNUSED(geographical_range);
+    Q_UNUSED(centroid_range_x);
+    Q_UNUSED(centroid_range_y);
+    Q_UNUSED(mean_fitness);
+    Q_UNUSED(min_env);
+    Q_UNUSED(max_env);
+    Q_UNUSED(mean_env);
 }

@@ -2,10 +2,10 @@
  * @file
  * Genome Comparison Dock.
  *
- * All REVOSIM code is released under the GNU General Public License.
+ * All REvoSim code is released under the GNU General Public License.
  * See LICENSE.md files in the programme directory.
  *
- * All REVOSIM code is Copyright 2018 by Mark Sutton, Russell Garwood,
+ * All REvoSim code is Copyright 2018 by Mark Sutton, Russell Garwood,
  * and Alan R.T. Spencer.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -21,60 +21,70 @@
 #include <QDebug>
 #include <QMessageBox>
 
-/*---------------------------------------------------------------------------//
-    Constructor
-//---------------------------------------------------------------------------*/
-
+//Constructor
 GenomeComparison::GenomeComparison(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::GenomeComparison)
 {
     ui->setupUi(this);
 
-    //---- Set Auto Compare
+    //Set Auto Compare
     autoComparison = true;
 
-    //---- Set Column Colours
-    first32 = QColor(51, 153, 51);
-    last32 = QColor(51, 51, 153);
-    spacerCol = QColor(242,242,242);
-    highlight = QColor(215,206,152);
+    //Set Column Colours
+    first32 = QColor(0, 100,0); // Green
+    last32 = QColor(200, 0, 0); // Red
+    spacerCol = QColor(255,255,255); //White
+    highlight = QColor(127,127,127); //Gray
 
-    //---- Render Genome Tables
+    columnWidth = 30;
+
+    //Render Genome Tables
     QFont fnt;
     fnt.setPointSize(8);
     fnt.setFamily("Arial");
 
     ui->genomeTableWidget->setFont(fnt);
     ui->genomeTableWidget->setColumnWidth(1,100);
-    ui->genomeTableWidget->setColumnWidth(34,2);
-    renderGenomesTable();
 
     ui->compareTableWidget->setFont(fnt);
     ui->compareTableWidget->setColumnWidth(1,100);
+
+    int i = 2;
+    while(i < 34)
+    {
+        ui->genomeTableWidget->setColumnWidth(i,columnWidth);
+        ui->compareTableWidget->setColumnWidth(i,columnWidth);
+        i++;
+    }
+
+    ui->genomeTableWidget->setColumnWidth(34,2); // Spacer
     ui->compareTableWidget->setColumnWidth(34,2);
 
-    //---- Signal to capture name change
+    i = 35;
+    while(i < 67)
+    {
+        ui->genomeTableWidget->setColumnWidth(i,columnWidth);
+        ui->compareTableWidget->setColumnWidth(i,columnWidth);
+        i++;
+    }
+    renderGenomesTable();
+
+    //Signal to capture name change
     connect(ui->genomeTableWidget, SIGNAL(cellChanged(int, int)), this, SLOT(updateGenomeName(int, int)));
 
-    //---- Add Button Actions
+    //Add Button Actions
     buttonActions();
     buttonUpdate();
 }
 
-/*---------------------------------------------------------------------------//
-    Destructor
-//---------------------------------------------------------------------------*/
-
+//Destructor
 GenomeComparison::~GenomeComparison()
 {
     delete ui;
 }
 
-/*---------------------------------------------------------------------------//
-    Buttons
-//---------------------------------------------------------------------------*/
-
+//Buttons
 void GenomeComparison::buttonActions()
 {
     connect(ui->compareButton, SIGNAL(pressed()), this, SLOT(compareGenomes()));
@@ -103,10 +113,7 @@ void GenomeComparison::buttonUpdate()
     }
 }
 
-/*---------------------------------------------------------------------------//
-    Tables
-//---------------------------------------------------------------------------*/
-
+//Tables
 bool GenomeComparison::renderGenomesTable(){
     ui->genomeTableWidget->hide();
     ui->genomeTableWidget->clear();
@@ -134,29 +141,29 @@ bool GenomeComparison::renderGenomesTable(){
             i++;
         }
     }
-    ui->genomeTableWidget->setColumnWidth(i,30);
-    ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("E.")));
+    ui->genomeTableWidget->setColumnWidth(i,columnWidth);
+    ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("E")));
     i++;
-    ui->genomeTableWidget->setColumnWidth(i,30);
-    ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("G.")));
+    ui->genomeTableWidget->setColumnWidth(i,columnWidth);
+    ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("G")));
     i++;
-    ui->genomeTableWidget->setColumnWidth(i,30);
-    ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("N.")));
+    ui->genomeTableWidget->setColumnWidth(i,columnWidth);
+    ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("N")));
     i++;
-    ui->genomeTableWidget->setColumnWidth(i,30);
-    ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("F.")));
+    ui->genomeTableWidget->setColumnWidth(i,columnWidth);
+    ui->genomeTableWidget->setHorizontalHeaderItem(i,new QTableWidgetItem(tr("F")));
 
-    //----- Add rows if genomeList.count() != 0
+    //Add rows if genomeList.count() != 0
     if (!genomeList.empty()) {
         for(int row=0; row<genomeList.count(); row++){
-            //---- Add to table
+            //Add to table
             if (autoComparison == true && row!=0) {
-                //---- Do comparison with last genome...
+                //Do comparison with last genome...
                 QMap<QString,QString> genomeListMapA = genomeList[row-1];
                 QMap<QString,QString> genomeListMapB = genomeList[row];
                 QString compareMask;
 
-                //---- Create Masks
+                //Create Masks
                 for (int i=0; i<64; i++)
                 {
                     if (genomeListMapA["genome"].at(i) == genomeListMapB["genome"].at(i)) {
@@ -184,7 +191,7 @@ bool GenomeComparison::renderGenomesTable(){
                             ui->genomeTableWidget,
                             compareMask);
             } else {
-                //---- No compare, just add...
+                //No compare, just add...
                 insertRow(
                             row,
                             genomeList[row]["name"],
@@ -281,14 +288,14 @@ void GenomeComparison::insertRow(
         }
 
         if (comparisonMask.length() !=0 && comparisonMask.at(i) == QChar(49)) {
-            //---- There is a mask, formate...
+            //There is a mask, formate...
             table->item(row, col)->setBackground(QBrush(highlight));
         }
 
         col++;
     }
 
-    //---- Add environment as cell background
+    //Add environment as cell background
     QTableWidgetItem *newItem = new QTableWidgetItem(tr(""));
     newItem->setTextAlignment(Qt:: AlignCenter);
     newItem->setFlags(Qt::ItemIsEnabled);
@@ -297,7 +304,7 @@ void GenomeComparison::insertRow(
     table->item(row, col)->setBackgroundColor(envColour);    
     col++;
 
-    //---- Add genome colour as cell background
+    //Add genome colour as cell background
     newItem = new QTableWidgetItem(tr(""));
     newItem->setTextAlignment(Qt:: AlignCenter);
     newItem->setFlags(Qt::ItemIsEnabled);
@@ -306,7 +313,7 @@ void GenomeComparison::insertRow(
     table->item(row, col)->setBackgroundColor(genomeColour);
     col++;
 
-    //---- Add non coded colour as cell background
+    //Add non coded colour as cell background
     newItem = new QTableWidgetItem(tr(""));
     newItem->setTextAlignment(Qt:: AlignCenter);
     newItem->setFlags(Qt::ItemIsEnabled);
@@ -315,7 +322,7 @@ void GenomeComparison::insertRow(
     table->item(row, col)->setBackgroundColor(nonCodeColour);
     col++;
 
-    //---- Add Fitness
+    //Add Fitness
     newItem = new QTableWidgetItem();
     newItem->setTextAlignment(Qt:: AlignCenter);
     newItem->setFlags(Qt::ItemIsEnabled);
@@ -330,30 +337,30 @@ bool GenomeComparison::renderCompareTable() {
     ui->compareTableWidget->hide();
     ui->compareTableWidget->clear();
     ui->compareTableWidget->setRowCount(0);
-    ui->compareTableWidget->setColumnWidth(0,20);
-    ui->compareTableWidget->setColumnWidth(67,30);
-    ui->compareTableWidget->setColumnWidth(68,30);
-    ui->compareTableWidget->setColumnWidth(69,30);
-    ui->compareTableWidget->setColumnWidth(70,30);
+    ui->compareTableWidget->setColumnWidth(0,columnWidth);
+    ui->compareTableWidget->setColumnWidth(67,columnWidth);
+    ui->compareTableWidget->setColumnWidth(68,columnWidth);
+    ui->compareTableWidget->setColumnWidth(69,columnWidth);
+    ui->compareTableWidget->setColumnWidth(70,columnWidth);
 
-    //---- Setup
+    //Setup
     if (!compareList.empty()) {
         QMap<QString,QString> genomeListMapA = compareList[0];
         QMap<QString,QString> genomeListMapB = compareList[1];
         QString compareMask;
 
-        //---- Create Masks
+        //Create Masks
         for (int i=0; i<64; i++)
         {
             if (genomeListMapA["genome"].at(i) == genomeListMapB["genome"].at(i)) {
-                //---- Same bit
+                //Same bit
                 compareMask.append("0");
             } else {
                 compareMask.append("1");
             }
         }
 
-        //---- Insert Rows
+        //Insert Rows
         insertRow(
                     0,
                     genomeListMapA["name"],
@@ -392,10 +399,7 @@ bool GenomeComparison::renderCompareTable() {
     return true;
 }
 
-/*---------------------------------------------------------------------------//
-    Table Actions
-//---------------------------------------------------------------------------*/
-
+//Table Actions follow...
 void GenomeComparison::updateGenomeName(int row, int col) {
     if (col == 1) {
         QString newName = ui->genomeTableWidget->item(row, col)->text();
@@ -409,29 +413,29 @@ bool GenomeComparison::addGenomeCritter(Critter critter, quint8 *environment)
     int row = genomeList.count();
     quint32 genome;
 
-    //---- Genome
+    //Start with whole genome
     QString genomeStr;
     for (int j=0; j<64; j++)
-        //---- RJG - if genome bit is 1, number is > 0; else it's zero.
+        //RJG - if genome bit is 1, number is > 0; else it's zero.
         if (tweakers64[63-j] & critter.genome) genomeStr.append("1"); else genomeStr.append("0");
 
-    //---- Genome Colour
-    genome = (quint32)(critter.genome & ((quint64)65536*(quint64)65536-(quint64)1));
+    //Coding Genome Colour
+    genome = (quint32)(critter.genome & ((quint64)65536*(quint64)65536-(quint64)1)); //lower 32 bits
     quint32 genomeB = bitcounts[genome & 2047] * 23;
     genome /=2048;
     quint32 genomeG = bitcounts[genome & 2047] * 23;
     genome /=2048;
     quint32 genomeR = bitcounts[genome] * 25;
 
-    //---- Non coding Colour
-    genome = (quint32)(critter.genome / ((quint64)65536*(quint64)65536));
+    //Non-coding Genome Colour
+    genome = (quint32)(critter.genome / ((quint64)65536*(quint64)65536)); //upper 32 bits
     quint32 nonCodeB = bitcounts[genome & 2047] * 23;
     genome /=2048;
     quint32 nonCodeG = bitcounts[genome & 2047] * 23;
     genome /=2048;
     quint32 nonCodeR = bitcounts[genome] * 25;
 
-    //---- Fitness
+    //Fitness
     int fitness = critter.fitness;
 
     QMap<QString,QString> genomeListMap;
@@ -449,14 +453,14 @@ bool GenomeComparison::addGenomeCritter(Critter critter, quint8 *environment)
     genomeListMap.insert("fitness",QString("%1").arg(fitness));
     genomeList.append(genomeListMap);
 
-    //---- Add to table
+    //Add to table
     if (autoComparison == true && row!=0) {
-        //---- Do comparison with last genome...
+        //Do comparison with last genome...
         QMap<QString,QString> genomeListMapA = genomeList[row-1];
         QMap<QString,QString> genomeListMapB = genomeList[row];
         QString compareMask;
 
-        //---- Create Masks
+        //Create Masks
         for (int i=0; i<64; i++)
         {
             if (genomeListMapA["genome"].at(i) == genomeListMapB["genome"].at(i)) {
@@ -484,7 +488,7 @@ bool GenomeComparison::addGenomeCritter(Critter critter, quint8 *environment)
                     ui->genomeTableWidget,
                     compareMask);
     } else {
-        //---- No compare, just add...
+        //No compare, just add...
         insertRow(
                     row,
                     genomeListMap["name"],
@@ -502,7 +506,7 @@ bool GenomeComparison::addGenomeCritter(Critter critter, quint8 *environment)
                     ui->genomeTableWidget);
     }
 
-    //---- Update Button States
+    //Update Button States
     buttonUpdate();
 
     return true;
@@ -513,13 +517,13 @@ QByteArray GenomeComparison::saveComparison()
     QByteArray outData;
     QDataStream out(&outData,QIODevice::WriteOnly);
 
-    //---- Output setup variable states
+    //Output setup variable states
     out<<autoComparison;
 
-    //---- Output Manual Comparison Table Genome List
+    //Output Manual Comparison Table Genome List
     out<<compareList;
 
-    //---- Output Main Comparison Table Genome List
+    //Output Main Comparison Table Genome List
     out<<genomeList;
 
     return outData;
@@ -529,40 +533,37 @@ bool GenomeComparison::loadComparison(QByteArray inData)
 {
     QDataStream in(&inData,QIODevice::ReadOnly);
 
-    //---- Get setup variable states
+    //Get setup variable states
     in>>autoComparison;
 
-    //---- Reset All Tables
+    //Reset All Tables
     resetTables();
 
-    //---- Get Manual Comparison Table Genome List
+    //Get Manual Comparison Table Genome List
     in>>compareList;
     if (!compareList.empty()) {
         renderCompareTable();
     }
-    //---- Get Main Comparison Table Genome List
+    //Get Main Comparison Table Genome List
     in>>genomeList;
     if (!genomeList.empty()) {
         renderGenomesTable();
     }
 
-    //---- Update Button States
+    //Update Button States
     buttonUpdate();
 
     return true;
 }
 
-/*---------------------------------------------------------------------------//
-    Button Actions
-//---------------------------------------------------------------------------*/
-
+//Button Actions
 bool GenomeComparison::compareGenomes()
 {
-    //---- Are there any checked genomes?
+    //Are there any checked genomes?
     QList<int> checkedList = isGenomeChecked();
     int numChecked = checkedList.count();
 
-    //---- Check that there two genomes checked
+    //Check that there two genomes checked
     if (numChecked == 0) {
         QMessageBox msgBox;
         msgBox.setWindowTitle(tr("Genome Comparison: Error"));
@@ -605,19 +606,19 @@ bool GenomeComparison::resetTables()
 
 bool GenomeComparison::deleteGenome()
 {
-    //---- Are there any checked genomes?
+    //Are there any checked genomes?
     QList<int> checkedList = isGenomeChecked();
     int numChecked = checkedList.count();
 
     if (numChecked == 0) {
-        //---- Nothing Checked
+        //Nothing Checked
         QMessageBox msgBox;
         msgBox.setWindowTitle(tr("Genome Comparison: Error"));
         msgBox.setText(tr("You need to select at least 1 genome from the table to delete."));
         msgBox.exec();
         return false;
     } else {
-        //---- Something Checked, Remove selected from genomeList
+        //Something Checked, Remove selected from genomeList
         for(int i=0;i<numChecked; i++)
         {
             genomeList.removeAt(checkedList[i-i]);
@@ -638,15 +639,12 @@ void GenomeComparison::setAuto(bool toggle)
     if (autoComparison != toggle){
         autoComparison = toggle;
 
-        //---- Reload Genome Table
+        //Reload Genome Table
         renderGenomesTable();
     }
 }
 
-/*---------------------------------------------------------------------------//
-    Tables Functions
-//---------------------------------------------------------------------------*/
-
+//Tables Functions
 QList<int> GenomeComparison::isGenomeChecked()
 {
     QList<int> checkedList;
@@ -654,7 +652,7 @@ QList<int> GenomeComparison::isGenomeChecked()
     for (int i=0; i<genomeList.count(); i++)
     {
         if (ui->genomeTableWidget->item(i,0)->checkState() == Qt::Checked) {
-            //---- Yes, add to list
+            //Yes, add to list
             checkedList.append(i);
         }
     }
@@ -662,10 +660,8 @@ QList<int> GenomeComparison::isGenomeChecked()
     return checkedList;
 }
 
-/*---------------------------------------------------------------------------//
-    RJG - Access Functions
-//---------------------------------------------------------------------------*/
 
+//RJG - Access Functions
 QString GenomeComparison::access_genome(int row)
 {
 return genomeList[row]["genome"];
