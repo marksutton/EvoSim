@@ -794,7 +794,7 @@ p, li { white-space: pre-wrap; }
      <x>0</x>
      <y>0</y>
      <width>1220</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuCommands">
@@ -879,6 +879,9 @@ p, li { white-space: pre-wrap; }
     <property name="title">
      <string>Help</string>
     </property>
+    <addaction name="actionCode_on_GitHub"/>
+    <addaction name="actionOnline_User_Manual"/>
+    <addaction name="separator"/>
     <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuCommands"/>
@@ -1549,6 +1552,16 @@ p, li { white-space: pre-wrap; }
   <action name="actionExit">
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionCode_on_GitHub">
+   <property name="text">
+    <string>Code on GitHub</string>
+   </property>
+  </action>
+  <action name="actionOnline_User_Manual">
+   <property name="text">
+    <string>Online User Manual</string>
    </property>
   </action>
  </widget>

@@ -40,6 +40,7 @@
 #include <QStringList>
 #include <QFile>
 #include <QXmlStreamReader>
+#include <QDesktopServices>
 
 #include "analysistools.h"
 #include "version.h"
@@ -3514,4 +3515,16 @@ void MainWindow::save_settings()
 void MainWindow::on_actionExit_triggered()
 {
     QApplication::quit();
+}
+
+//ARTS - Trigger to open url to gihub repository
+void MainWindow::on_actionCode_on_GitHub_triggered()
+{
+    QDesktopServices::openUrl(QUrl(QString(GITHUB_URL) + QString(GITREPOSITORY)));
+}
+
+//ARTS - Trigger to open url to online documentation
+void MainWindow::on_actionOnline_User_Manual_triggered()
+{
+    QDesktopServices::openUrl(QUrl(QString(READTHEDOCS_URL)));
 }

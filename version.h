@@ -38,4 +38,7 @@
 #define GITHUB_URL "https://github.com/"
 #define GITREPOSITORY "marksutton/EvoSim"
 
+//Readthedocs
+#define READTHEDOCS_URL "https://revosim.readthedocs.io/en/latest/"
+
 #endif // VERSION_H
