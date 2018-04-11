@@ -14,11 +14,11 @@ The main toolbar consists of the following button:
     Figure 2 Main toolbar (with simulation running).
 	
 	
-The first four (“Run”, “Run for”, “Batch”, and “Stop”) control the initiation and cessation of simulation runs. These commands can also be accessed from the “Command” menu. Further detail on these actions can be found in 3.3.1 and 3.3.2.
+The first four (“Run”, “Run for”, “Batch”, "Pause" and “Stop”) control the initiation and cessation of simulation runs. These commands can also be accessed from the “Command” menu. Further detail on these actions can be found in 3.3.1 and 3.3.2.
 
-The fifth and sixth buttons (“Reset” and “Reseed”) allow the resetting of the simulation and reseeding of the initial genomes in the population window prior to running a simulation. Further detail on these actions can be found in 3.3.3 and 3.3.4.
+The sixth and seventh buttons (“Reset” and “Reseed”) allow the resetting of the simulation and reseeding of the initial genomes in the population window prior to running a simulation. Further detail on these actions can be found in 3.3.3 and 3.3.4.
 
-The next button (“Settings”) opens/closes the dockable settings panel.
+The eighth button (“Settings”) opens/closes the dockable settings panel.
 
 The final button (“About”) displays the program information; including version number, authors, and license information.
 
