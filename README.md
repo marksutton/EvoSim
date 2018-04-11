@@ -21,7 +21,6 @@ CONTENTS:
 ***
 
 1. COPYRIGHT AND LICENCE:
--------------------------
 
 All REvoSim code is released under the GNU General Public License.
 See LICENSE.md files in the programme directory.
@@ -38,7 +37,6 @@ hope that it will be useful, but WITHOUT ANY WARRANTY.
 ***
 
 2. INTRODUCTION
----------------
 
 REvoSim is an evolutionary model that aims to bridge the epistemological
 gap between micro- and macro-evolution; by providing an organism-level
@@ -55,7 +53,6 @@ applicable to micro-evolutionary problems.
 ***
 
 3. INSTALLATION
----------------
 
 REvoSim may be complied usign QT from the source code or installed from
 the binary releases on our github.
@@ -63,13 +60,11 @@ the binary releases on our github.
 ***
 
 4. MINIMUM REQUIRMENTS
-----------------------
 
 TBA
 
 ***
 
 4. DOCUMENTATION
-----------------
 
 All documentation fpr REvoSim is online at [http://revosim.readthedocs.io/](http://revosim.readthedocs.io/). This is a version controlled user manual automatically parsed from the .rst found under the ./docs folder in our git root.
