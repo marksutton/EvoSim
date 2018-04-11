@@ -1,7 +1,7 @@
 Window Layout
 =============
 
-.. figure:: _static/window_layout.png
+.. figure:: _static/windowLayoutWithText.png
     :align: center
 
 Each of the above mentioned features is documented in more detail on the following pages:
