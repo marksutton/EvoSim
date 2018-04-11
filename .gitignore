@@ -1,1 +1,7 @@
 *.pro.user
+/_build
+/_build/*
+/_templates
+/_templates/*
+make.bat
+Makefile
