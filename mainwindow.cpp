@@ -124,9 +124,7 @@ MainWindow::MainWindow(QWidget *parent) :
     stopButton = new QAction(QIcon(QPixmap(":/toolbar/stopButton-Enabled.png")), QString("Stop"), this);
     resetButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton-Enabled.png")), QString("Reset"), this);
     reseedButton = new QAction(QIcon(QPixmap(":/toolbar/resetButton_knowngenome-Enabled.png")), QString("Reseed"), this);
-    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/globesettingsButton-Enabled-white.png")), QString("Simulation"), this);
-    orgSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/settingsButton-Enabled-white.png")), QString("Organism"), this);
-    logSettingsButton = new QAction(QIcon(QPixmap(":/toolbar/logButton-Enabled-white.png")), QString("Output"), this);
+    settingsButton = new QAction(QIcon(QPixmap(":/toolbar/globesettingsButton-Enabled-white.png")), QString("Settings"), this);
     aboutButton = new QAction(QIcon(QPixmap(":/toolbar/aboutButton-Enabled-white.png")), QString("About"), this);
 
     //ARTS - Toolbar default settings
@@ -138,8 +136,6 @@ MainWindow::MainWindow(QWidget *parent) :
     reseedButton->setEnabled(false);
     runForBatchButton->setEnabled(false);
     settingsButton->setCheckable(true);
-    orgSettingsButton->setCheckable(true);
-    logSettingsButton->setCheckable(true);
 
     //ARTS - Toolbar layout
     ui->toolBar->addAction(startButton);
@@ -156,11 +152,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->toolBar->addSeparator();
     ui->toolBar->addAction(reseedButton);
     ui->toolBar->addSeparator();
-    ui->toolBar->addAction(orgSettingsButton);
-    ui->toolBar->addSeparator();
     ui->toolBar->addAction(settingsButton);
-    ui->toolBar->addSeparator();
-    ui->toolBar->addAction(logSettingsButton);
 
     //Spacer
     QWidget* empty = new QWidget();
@@ -184,8 +176,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(reseedButton, SIGNAL(triggered()), this, SLOT(on_actionReseed_triggered()));
     QObject::connect(runForBatchButton, SIGNAL(triggered()), this, SLOT(on_actionBatch_triggered()));
     QObject::connect(settingsButton, SIGNAL(triggered()), this, SLOT(on_actionSettings_triggered()));
-    QObject::connect(orgSettingsButton, SIGNAL(triggered()), this, SLOT(orgSettings_triggered()));
-    QObject::connect(logSettingsButton, SIGNAL(triggered()), this, SLOT(logSettings_triggered()));
     QObject::connect(aboutButton, SIGNAL (triggered()), this, SLOT (on_actionAbout_triggered()));
 
     QObject::connect(ui->actionSave_settings, SIGNAL (triggered()), this, SLOT (save_settings()));
@@ -2071,44 +2061,17 @@ void MainWindow::on_actionSettings_triggered()
     if(simulationSettingsDock->isVisible())
     {
         simulationSettingsDock->hide();
+        organismSettingsDock->hide();
+        outputSettingsDock->hide();
         settingsButton->setChecked(false);
     } else
     {
         simulationSettingsDock->show();
-        simulationSettingsDock->raise();
+        organismSettingsDock->show();
+        outputSettingsDock->show();
         settingsButton->setChecked(true);
     }
 }
-
-
-void MainWindow::orgSettings_triggered()
-{
-    if(organismSettingsDock->isVisible())
-    {
-        organismSettingsDock->hide();
-        orgSettingsButton->setChecked(false);        
-    } else
-    {
-        organismSettingsDock->show();
-        organismSettingsDock->raise();
-        orgSettingsButton->setChecked(true);
-    }
-}
-
-void MainWindow::logSettings_triggered()
-{
-    if(outputSettingsDock->isVisible())
-    {
-        outputSettingsDock->hide();
-        logSettingsButton->setChecked(false);
-    } else
-    {
-        outputSettingsDock->show();
-        outputSettingsDock->raise();
-        logSettingsButton->setChecked(true);
-    }
-}
-
 
 
 void MainWindow::on_actionMisc_triggered()
