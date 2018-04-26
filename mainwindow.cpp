@@ -189,6 +189,10 @@ MainWindow::MainWindow(QWidget *parent) :
     //RJG - Third settings docker
     outputSettingsDock = createOutputSettingsDock();
 
+    simulationSettingsDock->setObjectName("simulationSettingsDock");
+    organismSettingsDock->setObjectName("organismSettingsDock");
+    outputSettingsDock->setObjectName("outputSettingsDock");
+
     //RJG - Make docks tabbed
     tabifyDockWidget(organismSettingsDock,simulationSettingsDock);
     tabifyDockWidget(simulationSettingsDock,outputSettingsDock);
@@ -2404,25 +2408,71 @@ void MainWindow::on_actionLoad_triggered()
     if (version>FILEVERSION)
     {QMessageBox::warning(this,"","Version too high - will try to read, but may go horribly wrong");}
 
+    //Ints
     in>>gridX;
     in>>gridY;
+    in>>settleTolerance;
     in>>slotsPerSq;
     in>>startAge;
-    in>>target;
-    in>>settleTolerance;
     in>>dispersal;
     in>>food;
-    in>>breedThreshold;
     in>>breedCost;
-    in>>maxDiff;
     in>>mutate;
+    in>>pathogen_mutate;
+    in>>pathogen_frequency;
+    in>>maxDiff;
+    in>>breedThreshold;
+    in>>target;
     in>>envchangerate;
-    in>>CurrentEnvFile;
-    in>>EnvChangeCounter;
-    in>>EnvChangeForward;
-    in>>AliveCount;
+    in>>environment_mode;
     in>>RefreshRate;
-    in>>generation;
+    in>>speciesSamples;
+    in>>speciesSensitivity;
+    in>>timeSliceConnect;
+    in>>minspeciessize;
+
+    //Bools
+    in>>recalcFitness;
+    in>>toroidal;
+    in>>nonspatial;
+    in>>breeddiff;
+    in>>breedspecies;
+    in>>path_on;
+    in>>variableMutate;
+    in>>allowexcludewithissue;
+    in>>sexual;
+    in>>asexual;
+    in>>variableBreed;
+    in>>logging;
+    in>>gui;
+    in>>enviroment_interpolate;
+    in>>fitnessLoggingToFile;
+    bool in_bool;
+    in>>in_bool;
+    autodump_checkbox->setChecked(in_bool);
+    in>>in_bool;
+    save_population_count->setChecked(in_bool);
+    in>>in_bool;
+    save_mean_fitness->setChecked(in_bool);
+    in>>in_bool;
+    save_coding_genome_as_colour->setChecked(in_bool);
+    in>>in_bool;
+    save_species->setChecked(in_bool);
+    in>>in_bool;
+    save_non_coding_genome_as_colour->setChecked(in_bool);
+    in>>in_bool;
+    save_gene_frequencies->setChecked(in_bool);
+    in>>in_bool;
+    save_settles->setChecked(in_bool);
+    in>>in_bool;
+    save_fails_settles->setChecked(in_bool);
+    in>>in_bool;
+    save_environment->setChecked(in_bool);
+
+    //Strings
+    QString load_path;
+    in>>load_path;
+    path->setText(load_path);
 
     // 0 = Static
     // 1 = Once
@@ -2634,6 +2684,8 @@ void MainWindow::on_actionLoad_triggered()
     ResizeImageObjects();
     Report();
     Resize();
+
+    update_gui_from_variables();
 }
 
 //ARTS - Genome Comparison UI
