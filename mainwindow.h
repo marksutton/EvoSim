@@ -133,6 +133,7 @@ private slots:
     void on_actionSave_triggered();
     void on_actionLoad_triggered();
     void load_settings();
+    void update_gui_from_variables();
     void save_settings();
     void on_actionChoose_Log_Directory_triggered();
     void on_actionAdd_Regular_triggered();

@@ -2172,25 +2172,60 @@ void MainWindow::on_actionSave_triggered()
 
     out<<QString("EVOSIM file");
     out<<(int)FILEVERSION;
+
+
+    //Ints
     out<<gridX;
     out<<gridY;
+    out<<settleTolerance;
     out<<slotsPerSq;
     out<<startAge;
-    out<<target;
-    out<<settleTolerance;
     out<<dispersal;
     out<<food;
-    out<<breedThreshold;
     out<<breedCost;
-    out<<maxDiff;
     out<<mutate;
+    out<<pathogen_mutate;
+    out<<pathogen_frequency;
+    out<<maxDiff;
+    out<<breedThreshold;
+    out<<target;
     out<<envchangerate;
-    out<<CurrentEnvFile;
-    out<<EnvChangeCounter;
-    out<<EnvChangeForward;
-    out<<AliveCount;
+    out<<environment_mode;
     out<<RefreshRate;
-    out<<generation;
+    out<<speciesSamples;
+    out<<speciesSensitivity;
+    out<<timeSliceConnect;
+    out<<minspeciessize;
+
+    //Bools
+    out<<recalcFitness;
+    out<<toroidal;
+    out<<nonspatial;
+    out<<breeddiff;
+    out<<breedspecies;
+    out<<path_on;
+    out<<variableMutate;
+    out<<allowexcludewithissue;
+    out<<sexual;
+    out<<asexual;
+    out<<variableBreed;
+    out<<logging;
+    out<<gui;
+    out<<enviroment_interpolate;
+    out<<fitnessLoggingToFile;
+    out<<autodump_checkbox->isChecked();
+    out<<save_population_count->isChecked();
+    out<<save_mean_fitness->isChecked();
+    out<<save_coding_genome_as_colour->isChecked();
+    out<<save_species->isChecked();
+    out<<save_non_coding_genome_as_colour->isChecked();
+    out<<save_gene_frequencies->isChecked();
+    out<<save_settles->isChecked();
+    out<<save_fails_settles->isChecked();
+    out<<save_environment->isChecked();
+
+    //Strings
+    out<<path->text();
 
     //Environment mode
     out<<environment_mode;
@@ -2333,11 +2368,6 @@ void MainWindow::on_actionSave_triggered()
     //now random number array
     for (int i=0; i<65536; i++)
         out<<randoms[i];
-
-    out<<recalcFitness; //extra new parameter
-
-    out<<breeddiff;
-    out<<breedspecies;
 
     out<<species_mode;
 
@@ -2588,14 +2618,6 @@ void MainWindow::on_actionLoad_triggered()
     if (!(in.atEnd()))
         for (int i=0; i<65536; i++)
             in>>randoms[i];
-
-    if (!(in.atEnd()))
-        in>>recalcFitness;
-
-    if (!(in.atEnd()))
-        in>>breeddiff;
-    if (!(in.atEnd()))
-        in>>breedspecies;
 
     species_mode=SPECIES_MODE_BASIC;
     if (!(in.atEnd()))
@@ -3160,92 +3182,62 @@ void MainWindow::load_settings()
                 if(token == QXmlStreamReader::StartDocument)continue;
                 if(token == QXmlStreamReader::StartElement)
                     {
-                       //Ints
-                       if(settings_file_in.name() == "revosim")continue;
-                       if(settings_file_in.name() == "gridX"){gridX=settings_file_in.readElementText().toInt();
-                            gridX_spin->setValue(gridX);}
-                       if(settings_file_in.name() == "gridY"){gridY=settings_file_in.readElementText().toInt();
-                            gridY_spin->setValue(gridY);}
-                       if(settings_file_in.name() == "settleTolerance"){settleTolerance=settings_file_in.readElementText().toInt();
-                            settleTolerance_spin->setValue(settleTolerance);}
-                       if(settings_file_in.name() == "slotsPerSq"){slotsPerSq=settings_file_in.readElementText().toInt();
-                            slots_spin->setValue(slotsPerSq);}
-                       if(settings_file_in.name() == "startAge"){startAge=settings_file_in.readElementText().toInt();
-                            startAge_spin->setValue(startAge);}
-                       if(settings_file_in.name() == "dispersal"){dispersal=settings_file_in.readElementText().toInt();
-                            dispersal_spin->setValue(dispersal);}
-                       if(settings_file_in.name() == "food"){food=settings_file_in.readElementText().toInt();
-                            energy_spin->setValue(food);}
-                       if(settings_file_in.name() == "breedCost"){breedCost=settings_file_in.readElementText().toInt();
-                            breedCost_spin->setValue(breedCost);}
-                       if(settings_file_in.name() == "mutate"){mutate=settings_file_in.readElementText().toInt();
-                            mutate_spin->setValue(mutate);}
-                       if(settings_file_in.name() == "pathogen_mutate"){pathogen_mutate=settings_file_in.readElementText().toInt();
-                            pathogen_mutate_spin->setValue(pathogen_mutate);}
-                       if(settings_file_in.name() == "pathogen_frequency"){pathogen_frequency=settings_file_in.readElementText().toInt();
-                            pathogen_frequency_spin->setValue(pathogen_frequency);}
-                       if(settings_file_in.name() == "maxDiff"){maxDiff=settings_file_in.readElementText().toInt();
-                            maxDiff_spin->setValue(maxDiff);}
-                       if(settings_file_in.name() == "breedThreshold"){breedThreshold=settings_file_in.readElementText().toInt();
-                            breedThreshold_spin->setValue(breedThreshold);}
-                       if(settings_file_in.name() == "target"){target=settings_file_in.readElementText().toInt();
-                            target_spin->setValue(target);}
-                       if(settings_file_in.name() == "envchangerate"){envchangerate=settings_file_in.readElementText().toInt();
-                            environment_rate_spin->setValue(envchangerate);}
-                       if(settings_file_in.name() == "RefreshRate"){RefreshRate=settings_file_in.readElementText().toInt();
-                            refreshRateSpin->setValue(RefreshRate);}
-                       if(settings_file_in.name() == "environment_mode")environment_mode_changed(settings_file_in.readElementText().toInt(),true);
-                       //No Gui options for the remaining settings as yet.
-                       if(settings_file_in.name() == "speciesSamples")speciesSamples=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "speciesSensitivity")speciesSensitivity=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "timeSliceConnect")timeSliceConnect=settings_file_in.readElementText().toInt();
-                       if(settings_file_in.name() == "minspeciessize")minspeciessize=settings_file_in.readElementText().toInt();
+                         //Ints
+                         if(settings_file_in.name() == "revosim")continue;
+                         if(settings_file_in.name() == "gridX")gridX=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "gridY")gridY=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "settleTolerance")settleTolerance=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "slotsPerSq")slotsPerSq=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "startAge")startAge=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "dispersal")dispersal=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "food")food=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "breedCost")breedCost=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "mutate")mutate=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "pathogen_mutate")pathogen_mutate=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "pathogen_frequency")pathogen_frequency=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "maxDiff")maxDiff=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "breedThreshold")breedThreshold=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "target")target=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "envchangerate")envchangerate=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "RefreshRate")RefreshRate=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "environment_mode")environment_mode_changed(settings_file_in.readElementText().toInt(),true);
+                         //No Gui options for the remaining settings as yet.
+                         if(settings_file_in.name() == "speciesSamples")speciesSamples=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "speciesSensitivity")speciesSensitivity=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "timeSliceConnect")timeSliceConnect=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "minspeciessize")minspeciessize=settings_file_in.readElementText().toInt();
 
-                       //Bools
-                       if(settings_file_in.name() == "recalcFitness"){recalcFitness=settings_file_in.readElementText().toInt();
-                            recalcFitness_checkbox->setChecked(recalcFitness);}
-                       if(settings_file_in.name() == "toroidal"){toroidal=settings_file_in.readElementText().toInt();
-                            toroidal_checkbox->setChecked(toroidal);}
-                       if(settings_file_in.name() == "nonspatial"){nonspatial=settings_file_in.readElementText().toInt();
-                            nonspatial_checkbox->setChecked(nonspatial);}
-                       if(settings_file_in.name() == "breeddiff"){breeddiff=settings_file_in.readElementText().toInt();
-                            breeddiff_checkbox->setChecked(breeddiff);}
-                       if(settings_file_in.name() == "breedspecies"){breedspecies=settings_file_in.readElementText().toInt();
-                            breedspecies_checkbox->setChecked(breedspecies);}
-                       if(settings_file_in.name() == "path_on"){path_on=settings_file_in.readElementText().toInt();
-                            pathogens_checkbox->setChecked(path_on);}
-                       if(settings_file_in.name() == "variableMutate"){variableMutate=settings_file_in.readElementText().toInt();
-                            variable_mutation_checkbox->setChecked(variableMutate);}
-                       if(settings_file_in.name() == "allowexcludewithissue"){allowexcludewithissue=settings_file_in.readElementText().toInt();
-                            exclude_without_issue_checkbox->setChecked(allowexcludewithissue);}
-                       if(settings_file_in.name() == "sexual"){sexual=settings_file_in.readElementText().toInt();
-                            sexual_radio->setChecked(sexual);}
-                       if(settings_file_in.name() == "asexual"){asexual=settings_file_in.readElementText().toInt();
-                            asexual_radio->setChecked(asexual);}
-                       if(settings_file_in.name() == "variableBreed"){variableBreed=settings_file_in.readElementText().toInt();
-                            variableBreed_radio->setChecked(variableBreed);}
-                       if(settings_file_in.name() == "logging"){logging=settings_file_in.readElementText().toInt();
-                            logging_checkbox->setChecked(logging);}
-                       if(settings_file_in.name() == "gui"){gui=settings_file_in.readElementText().toInt();
-                            gui_checkbox->setChecked(gui);}
-                       if(settings_file_in.name() == "enviroment_interpolate"){enviroment_interpolate=settings_file_in.readElementText().toInt();
-                            interpolateCheckbox->setChecked(enviroment_interpolate);}
-                       //No gui options for below
-                       if(settings_file_in.name() == "fitnessLoggingToFile")fitnessLoggingToFile=settings_file_in.readElementText().toInt();
-                       //Only GUI options
-                       if(settings_file_in.name() == "autodump")autodump_checkbox->setChecked(settings_file_in.readElementText().toInt());
-                       if(settings_file_in.name() == "save_population_count")save_population_count->setChecked(settings_file_in.readElementText().toInt());
-                       if(settings_file_in.name() == "save_mean_fitness")save_mean_fitness->setChecked(settings_file_in.readElementText().toInt());
-                       if(settings_file_in.name() == "save_coding_genome_as_colour")save_coding_genome_as_colour->setChecked(settings_file_in.readElementText().toInt());
-                       if(settings_file_in.name() == "save_species")save_species->setChecked(settings_file_in.readElementText().toInt());
-                       if(settings_file_in.name() == "save_non_coding_genome_as_colour")save_non_coding_genome_as_colour->setChecked(settings_file_in.readElementText().toInt());
-                       if(settings_file_in.name() == "save_gene_frequencies")save_gene_frequencies->setChecked(settings_file_in.readElementText().toInt());
-                       if(settings_file_in.name() == "save_settles")save_settles->setChecked(settings_file_in.readElementText().toInt());
-                       if(settings_file_in.name() == "save_fails_settles")save_fails_settles->setChecked(settings_file_in.readElementText().toInt());
-                       if(settings_file_in.name() == "save_environment")save_environment->setChecked(settings_file_in.readElementText().toInt());
+                         //Bools
+                         if(settings_file_in.name() == "recalcFitness")recalcFitness=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "toroidal")toroidal=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "nonspatial")nonspatial=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "breeddiff")breeddiff=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "breedspecies")breedspecies=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "path_on")path_on=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "variableMutate")variableMutate=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "allowexcludewithissue")allowexcludewithissue=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "sexual")sexual=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "asexual")asexual=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "variableBreed")variableBreed=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "logging")logging=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "gui")gui=settings_file_in.readElementText().toInt();
+                         if(settings_file_in.name() == "enviroment_interpolate")enviroment_interpolate=settings_file_in.readElementText().toInt();
+                         //No gui options for below
+                         if(settings_file_in.name() == "fitnessLoggingToFile")fitnessLoggingToFile=settings_file_in.readElementText().toInt();
+                         //Only GUI options
+                         if(settings_file_in.name() == "autodump")autodump_checkbox->setChecked(settings_file_in.readElementText().toInt());
+                         if(settings_file_in.name() == "save_population_count")save_population_count->setChecked(settings_file_in.readElementText().toInt());
+                         if(settings_file_in.name() == "save_mean_fitness")save_mean_fitness->setChecked(settings_file_in.readElementText().toInt());
+                         if(settings_file_in.name() == "save_coding_genome_as_colour")save_coding_genome_as_colour->setChecked(settings_file_in.readElementText().toInt());
+                         if(settings_file_in.name() == "save_species")save_species->setChecked(settings_file_in.readElementText().toInt());
+                         if(settings_file_in.name() == "save_non_coding_genome_as_colour")save_non_coding_genome_as_colour->setChecked(settings_file_in.readElementText().toInt());
+                         if(settings_file_in.name() == "save_gene_frequencies")save_gene_frequencies->setChecked(settings_file_in.readElementText().toInt());
+                         if(settings_file_in.name() == "save_settles")save_settles->setChecked(settings_file_in.readElementText().toInt());
+                         if(settings_file_in.name() == "save_fails_settles")save_fails_settles->setChecked(settings_file_in.readElementText().toInt());
+                         if(settings_file_in.name() == "save_environment")save_environment->setChecked(settings_file_in.readElementText().toInt());
 
-                       //Strings
-                       if(settings_file_in.name() == "path")path->setText(settings_file_in.readElementText());
+                         //Strings
+                         if(settings_file_in.name() == "path")path->setText(settings_file_in.readElementText());
 
                        }
                }
@@ -3254,6 +3246,46 @@ void MainWindow::load_settings()
            else setStatusBarText("Loaded settings file");
 
            settings_file.close();
+
+           update_gui_from_variables();
+}
+
+//RJG - Call this from either load settings, or plain load. Updates gui from those variables held as simulation globals
+void MainWindow::update_gui_from_variables()
+{
+    //Ints
+         gridX_spin->setValue(gridX);
+         gridY_spin->setValue(gridY);
+         settleTolerance_spin->setValue(settleTolerance);
+         slots_spin->setValue(slotsPerSq);
+         startAge_spin->setValue(startAge);
+         dispersal_spin->setValue(dispersal);
+         energy_spin->setValue(food);
+         breedCost_spin->setValue(breedCost);
+         mutate_spin->setValue(mutate);
+         pathogen_mutate_spin->setValue(pathogen_mutate);
+         pathogen_frequency_spin->setValue(pathogen_frequency);
+         maxDiff_spin->setValue(maxDiff);
+         breedThreshold_spin->setValue(breedThreshold);
+         target_spin->setValue(target);
+         environment_rate_spin->setValue(envchangerate);
+         refreshRateSpin->setValue(RefreshRate);
+
+    //Bools
+         recalcFitness_checkbox->setChecked(recalcFitness);
+         toroidal_checkbox->setChecked(toroidal);
+         nonspatial_checkbox->setChecked(nonspatial);
+         breeddiff_checkbox->setChecked(breeddiff);
+         breedspecies_checkbox->setChecked(breedspecies);
+         pathogens_checkbox->setChecked(path_on);
+         variable_mutation_checkbox->setChecked(variableMutate);
+         exclude_without_issue_checkbox->setChecked(allowexcludewithissue);
+         sexual_radio->setChecked(sexual);
+         asexual_radio->setChecked(asexual);
+         variableBreed_radio->setChecked(variableBreed);
+         logging_checkbox->setChecked(logging);
+         gui_checkbox->setChecked(gui);
+         interpolateCheckbox->setChecked(enviroment_interpolate);
 }
 
 void MainWindow::save_settings()
