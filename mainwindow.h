@@ -85,7 +85,7 @@ private:
     QDockWidget *simulationSettingsDock, *organismSettingsDock, *outputSettingsDock;
 
     //RJG - GUI buttons and settings docker options which need to be accessible via slots, especially for load settings function
-    QAction *startButton, *stopButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton, *orgSettingsButton, *logSettingsButton, *aboutButton;
+    QAction *startButton, *stopButton, *pauseButton, *runForButton, *resetButton, *reseedButton, *runForBatchButton, *settingsButton, *aboutButton;
     //RJG - Save images checkboxes
     QCheckBox *gui_checkbox, *save_population_count, *save_mean_fitness, *save_coding_genome_as_colour, *save_species, *save_non_coding_genome_as_colour, *save_gene_frequencies, *save_settles, *save_fails_settles, *save_environment, *interpolateCheckbox;
     //RJG - other checkboxes
@@ -122,8 +122,6 @@ private slots:
     void on_actionPause_Sim_triggered();
     void on_actionStop_Sim_triggered();
     void on_actionSettings_triggered();
-    void orgSettings_triggered();
-    void logSettings_triggered();
     void on_actionCount_Peaks_triggered();
     void on_actionMisc_triggered();
     void report_mode_changed(QAction *);
@@ -135,6 +133,7 @@ private slots:
     void on_actionSave_triggered();
     void on_actionLoad_triggered();
     void load_settings();
+    void update_gui_from_variables();
     void save_settings();
     void on_actionChoose_Log_Directory_triggered();
     void on_actionAdd_Regular_triggered();
